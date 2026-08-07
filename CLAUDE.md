@@ -41,7 +41,13 @@ in this repo, next to this file, so the two move together); this table is how to
 | | branches | GitHub account | commit | push |
 |---|---|---|---|---|
 | **project** (`project/`) | `main`, plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
-| **stacks** (`project/<dir>/`) | mainline per repo in [`repos.sh`](repos.sh) — greenfield repos are `main` only, no staging branch; plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking**, on the job's branch | **ask every time** |
+| **stacks** (`project/<dir>/`) | ★ not set — mainline will come from [`repos.sh`](repos.sh) | ★ not set | ★ **ask** | ★ **ask** |
+
+★ **No stack repo exists, and no stack policy has been given yet** — it gets stated per
+stack when each repo is decided. Until a `stack:*` or `stack:<key>` row lands in
+`git.sh`, an unconfigured scope **fails closed**: every stack commit and push asks first.
+That is enforced, not a note — `git_may stack:<anything> commit|push` returns "ask" while
+the row is absent.
 
 Read it back, never guess:
 

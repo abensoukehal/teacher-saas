@@ -24,7 +24,14 @@
 GIT_POLICY_TABLE=(
   # "scope|account|remote|mainline|commit|push"
   "project|abensoukehal|abensoukehal/teacher-saas|main|auto|auto"
-  "stack:*|abensoukehal|||auto|ask"
+
+  # ── stacks: NOT CONFIGURED YET ────────────────────────────────────────────────
+  # No stack repo exists, and the policy for them has not been given — so there is
+  # deliberately no stack:* row. An unconfigured scope FAILS CLOSED: git_may returns
+  # "ask" for commit AND push, so nothing about a stack repo happens unattended
+  # until a row lands here. Uncomment and fill when the first stack is decided:
+  # "stack:*|<account>|<owner>/<repo> or empty||<auto|ask>|<auto|ask>"
+  # "stack:be|<account>|<owner>/<repo>||<auto|ask>|<auto|ask>"   # per-repo override
 )
 
 # ── read it back ───────────────────────────────────────────────────────────────
@@ -44,19 +51,18 @@ GIT_POLICY_TABLE=(
 #   Read it with `git_policy harness`; change it there. (Adding a `harness` row here
 #   would override it for this clone only — the project table is searched first.)
 #
-# ── why the values above (chosen 2026-08-07) ───────────────────────────────────
-#   project  auto/auto — private management repo: specs, profile, docs graph, job
+# ── why the values above (given 2026-08-07) ────────────────────────────────────
+#   project  abensoukehal/teacher-saas · main · commit auto · push auto — stated by
+#            the user. Private management repo: specs, profile, docs graph, job
 #            branches. Nothing outward-facing, so committing and pushing as work
-#            lands costs nothing and keeps job history durable.
-#   stack:*  auto/ask  — product code is the only layer that reaches other people,
-#            so it keeps the standing baseline: commit freely on the job's branch,
-#            every push waits for you. Mainline comes from repos.sh; greenfield
-#            repos are single-branch (prod only, empty integration field), so
-#            /merge-back skips them until a staging branch exists.
+#            lands costs nothing and keeps job history durable. Jobs still branch
+#            off main as feature/<slug> — auto never means "commit on main".
 #
-#   No stack repo exists yet, so stack:* carries the whole policy. When one lands
-#   under a different owner or a stricter gate, add an override instead of editing
-#   stack:*:   "stack:be|acme-inc|acme-inc/teacher-backend||auto|ask"
+#   stacks   UNSET, on purpose. The user will state each stack's account, branches
+#            and gates when the repo is decided; guessing them here would be the
+#            one place a wrong default could push product code somewhere unasked.
+#            Until then every stack action asks. When a row is added, its BRANCHES
+#            still come from repos.sh (leave the mainline field empty).
 #
 # ── engine contract ────────────────────────────────────────────────────────────
 #   SOURCED (not executed) by tools/profile.sh; lookups live in tools/git-lib.sh.
