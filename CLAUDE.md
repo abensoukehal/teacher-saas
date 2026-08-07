@@ -33,19 +33,46 @@ The project repo holds the profile, `features/`, `stack-skeletons/` and `docs/`.
 **not** hold product code; each service gets its own repo, cloned into `project/` and
 registered in `repos.sh`.
 
-**Who owns each remote, which branch is the mainline, and whether I may commit/push
-without asking** is not restated here — it is the git policy table, and it is the only
-place to read or change it:
+## Git rules — branches, accounts, commit/push
+
+Three questions, one answer per layer. [`git.sh`](git.sh) is the binding version (it sits
+in this repo, next to this file, so the two move together); this table is how to read it.
+
+| | branches | GitHub account | commit | push |
+|---|---|---|---|---|
+| **project** (`project/`) | `main`, plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
+| **stacks** (`project/<dir>/`) | mainline per repo in [`repos.sh`](repos.sh) — greenfield repos are `main` only, no staging branch; plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking**, on the job's branch | **ask every time** |
+
+Read it back, never guess:
 
 ```bash
 source tools/profile.sh && git_policy project   # scope | account | remote | mainline | commit | push
+git_may stack:be push && echo "push freely" || echo "ask first"
 ```
 
-- **project + stack rows** → [`git.sh`](git.sh), per product.
-- **the harness row** → `tools/git-lib.sh` (engine), so every clone answers the same and
-  `tools/harness push`/`pull` keeps them aligned.
-- **PR and merge stay gated on every layer**, whatever the push column says
-  ([`workflow/conventions/git-branching.md`](../workflow/conventions/git-branching.md)).
+What the table cannot relax:
+
+- **PR and merge are gated on every layer**, whatever the push column says — that is
+  `/open-pr` (feature → base) and `/merge-back` (feature → staging), and both ask first
+  ([`git-branching.md`](../workflow/conventions/git-branching.md)).
+- **No commits on a mainline or staging branch**, even where commit is autonomous. Work
+  happens on `feature/*` · `bugfix/*` · `hotfix/*`, one branch per job per repo, named
+  after the job slug.
+- **A stack repo with no staging branch is skipped by `/merge-back`** — that is the empty
+  integration field in `repos.sh`, which is where every branch fact for a stack repo lives.
+
+Per-repo exceptions go in `git.sh` as a `stack:<key>` row (a repo under a different
+account, or one that needs a stricter gate); `stack:*` covers the rest.
+
+### The harness layer is not configured here
+
+Its rules — `main`, commit and push without asking — are **engine**, in
+`tools/git-lib.sh`, so every harness clone answers the same and `tools/harness push`/`pull`
+keeps them aligned. That file states the *policy* only: the account and remote are derived
+from each clone's own `origin`, so the engine never names an account or a product. Read it
+with `git_policy harness`. One caveat recorded there: the harness's `push` means the
+path-scoped `tools/harness push`, never a raw `git push` from the clone root — the root's
+`origin` is the shared harness remote.
 
 ## Architecture in one diagram
 
