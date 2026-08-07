@@ -15,11 +15,44 @@
         "contracts": {
           "status": "locked",
           "derived_from": {
-            "seed": "25041a6fd6c28ee2"
+            "seed": "c1a9b74b9fa22bdc"
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-3": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-4": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-3": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-4": {
+          "status": "todo",
+          "tag": "hardening"
+        }
+      }
     }
   }
 }
