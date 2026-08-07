@@ -114,6 +114,39 @@ describe("positive — an honest save indicator", () => {
   });
 });
 
+describe("QA regression — a failed boot must not silently drop every save", () => {
+  test("if boot identity fails, generating still saves (identity is recovered)", async () => {
+    let teacherCalls = 0;
+    let creates = 0;
+    mockFetch((url, init) => {
+      if (url === "/api/teacher") {
+        teacherCalls += 1;
+        // The FIRST call — the boot one — fails, as a network blip would.
+        if (teacherCalls === 1) return { ok: false, status: 500, json: async () => ({}) };
+        return ok(201, { teacherId: TID });
+      }
+      if (url === "/api/generate") return ok(200, { data: EXAM });
+      if (url === "/api/subjects" && init.method === "POST") {
+        creates += 1;
+        return ok(201, { id: "s1", createdAt: "t", updatedAt: "t", subject: EXAM });
+      }
+      return ok(200, { subjects: [] });
+    });
+
+    const { default: App } = await import("@/App");
+    render(<App />);
+    // Boot failed, so no id is stored yet.
+    await waitFor(() => expect(teacherCalls).toBe(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+
+    // The exam must still reach the store — a 125-second generation silently
+    // discarded is the exact harm this job removes.
+    await waitFor(() => expect(creates).toBe(1));
+    await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
+  });
+});
+
 describe("negative — nothing else changed", () => {
   test("nothing is announced before any write happens", async () => {
     mockFetch((url) => {

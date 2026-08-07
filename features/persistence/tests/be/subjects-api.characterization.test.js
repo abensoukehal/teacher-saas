@@ -346,6 +346,71 @@ describe("negative — the frozen perimeter", () => {
   });
 });
 
+describe("the store is down — the promise be-1 deferred to here", () => {
+  const { spawn } = require("node:child_process");
+  const PORT = 9298;
+  let child;
+
+  beforeAll(async () => {
+    child = spawn(process.execPath, [path.join(process.env.CHAR_ROOTDIR, "dist/index.js")], {
+      env: { ...process.env, PORT: String(PORT), MONGO_URL: "mongodb://127.0.0.1:1", RUN_LOG: "" },
+      stdio: "ignore",
+    });
+    for (let i = 0; i < 60; i++) {
+      try {
+        await fetch(`http://localhost:${PORT}/health`);
+        return;
+      } catch {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+    throw new Error("dead-store probe instance never came up");
+  }, 30000);
+
+  afterAll(() => child && child.kill("SIGTERM"));
+
+  async function dead(method, url, body) {
+    const send = body !== undefined && method !== "GET";
+    const res = await fetch(`http://localhost:${PORT}${url}`, {
+      method,
+      headers: {
+        ...(send ? { "content-type": "application/json" } : {}),
+        "x-teacher-id": "0123456789abcdef0123456789abcdef",
+      },
+      ...(send ? { body: JSON.stringify(body) } : {}),
+    });
+    return { status: res.status, body: await res.json() };
+  }
+
+  test("every store-touching route is 503 store_unavailable, NEVER a bare 500", async () => {
+    const cases = [
+      ["GET", "/api/subjects", undefined],
+      ["POST", "/api/subjects", { subject: SUBJECT }],
+      ["GET", "/api/subjects/000000000000000000000000", undefined],
+      ["PUT", "/api/subjects/000000000000000000000000/exercises/ex1", { exercise: SUBJECT.exercises[0] }],
+    ];
+    for (const [m, u, b] of cases) {
+      const r = await dead(m, u, b);
+      expect(r.status).toBe(503);
+      expect(r.body.error.type).toBe("store_unavailable");
+    }
+  }, 30000);
+
+  test("identity still works with the store down — it needs no database", async () => {
+    const res = await fetch(`http://localhost:${PORT}/api/teacher`, { method: "POST" });
+    expect(res.status).toBe(201);
+  });
+
+  test("a repeated call still fails cleanly — a dead attempt is not cached forever", async () => {
+    // The single-flight connect must not memoise a REJECTED promise, or one blip
+    // would leave the process permanently unable to reach a recovered database.
+    const a = await dead("GET", "/api/subjects");
+    const b = await dead("GET", "/api/subjects");
+    expect(a.status).toBe(503);
+    expect(b.status).toBe(503);
+  }, 30000);
+});
+
 describe("observability", () => {
   test("a create emits store.write carrying the subject id and correlation id", async () => {
     const t = await newTeacher();
