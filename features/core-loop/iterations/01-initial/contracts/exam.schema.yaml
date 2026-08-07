@@ -1,0 +1,95 @@
+# exam.schema.yaml — the wire shape fe consumes from be.
+#
+# NOT hand-written: derived from the recorded runs in ../recordings/ (SEED kit §2).
+# Re-derive after any skill change:
+#   jq -r '.data | keys' ../recordings/gen1.json
+#
+# SEED kit §3: no consumers exist yet, so this is a NEW contract, not a versioned
+# change. The binding constraint is that ../recordings/ keeps reproducing it.
+
+ExamSubject:
+  type: object
+  required: [title, meta, exercises]
+  properties:
+    title:     { type: string, description: "Arabic. e.g. اختبار في مادة الرياضيات" }
+    meta:      { $ref: "#/ExamMeta" }
+    exercises:
+      type: array
+      minItems: 1
+      items: { $ref: "#/Exercise" }
+
+ExamMeta:
+  type: object
+  required: [totalPoints]
+  properties:
+    stream:          { type: string, description: "شعبة الرياضيات · علوم تجريبية …" }
+    level:           { type: string, example: "3AS" }
+    format:          { type: string, enum: [devoir, composition] }
+    durationMinutes: { type: integer, example: 90 }
+    totalPoints:     { type: integer, default: 20 }
+    topic:           { type: string, description: "from the fixed taxonomy; may DIFFER from the requested topic — see note" }
+    assumptions:
+      type: array
+      items: { type: string }
+      description: |
+        Arabic. What the generator had to assume, INCLUDING refusals. When a
+        requested topic is off-programme the generator refuses it, records why
+        here, substitutes confirmed topics, and rewrites meta.topic.
+        Recorded: ../recordings/gen3-curriculum-gap.json
+        ⚠ fe MUST surface this — a teacher who asked for الحسابيات and silently
+        got something else would be misled.
+
+Exercise:
+  type: object
+  required: [id, label, points, statement]
+  properties:
+    id:
+      type: string
+      pattern: "^ex[0-9]+$"
+      description: |
+        STABLE and positional (ex1…exN, in order). This is the join key for
+        refinement — a changed id drops or duplicates the teacher's edit.
+    label:      { type: string, description: "Arabic ordinal, e.g. التمرين الثاني. Belongs to the SLOT, not the content." }
+    points:     { type: integer, description: "Σ points == meta.totalPoints. Invariant across a refine." }
+    difficulty: { type: string, enum: [سهل, متوسط, صعب] }
+    topics:
+      type: array
+      items: { type: string }
+    statement:
+      type: string
+      description: |
+        Arabic markdown. Numbered questions as a markdown list.
+        Math in KaTeX delimiters: $…$ inline, $$…$$ display.
+        ⚠ The LaTeX is TRANSPORT. It is rendered before a teacher sees it and is
+        never shown, echoed, or requested from them.
+
+GenerateRequest:
+  type: object
+  required: [skill, input]
+  properties:
+    skill:     { type: string, enum: [exam-subject, refine-exercise] }
+    input:     { description: "object (serialised for the skill) or string" }
+    sessionId: { type: string, description: "optional; the loop does not need it — see flows.md" }
+
+GenerateResponse:
+  type: object
+  required: [text, data, durationMs]
+  properties:
+    text:       { type: string, description: "raw skill output" }
+    data:       { description: "parsed JSON — ExamSubject | Exercise — or null if the run returned prose" }
+    sessionId:  { type: string }
+    costUsd:    { type: number }
+    durationMs: { type: integer, description: "measured 114000–133000 for a draft, ~48000 for a refine" }
+
+ErrorResponse:
+  type: object
+  properties:
+    error:
+      type: object
+      properties:
+        message: { type: string }
+        type:
+          type: string
+          enum: [claude_auth, claude_not_installed, claude_timeout, claude_exit, invalid_request, internal_error]
+        detail:  { type: string }
+    correlationId: { type: string }

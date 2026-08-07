@@ -289,5 +289,20 @@ workspace's skills and curriculum). No `infra`.
 - [x] observability baseline stated — blind spots called out (kit §5)
 - [x] no undispositioned unknowns (kit §6)
 - [x] sweep statement present — the unswept edge named (kit §7)
-- [ ] **lock re-verification: every §2 recording reproduced at seal time** — pending
-      the user's approval to seal (§2 re-run costs ~$1.76 and ~7 min of generation)
+- [x] **lock re-verification: every §2 recording reproduced at seal time** — 2026-08-07
+
+### Seal re-verification (2026-08-07)
+
+Every §2 command re-run once against the live lane. For an LLM surface
+"reproduces" cannot mean byte-identical — a fresh exam is genuinely different
+prose. What must reproduce is the **contract**, and it did:
+
+| recording | re-run | reproduced |
+|---|---|---|
+| gen1 | 119.7 s · $0.545 | 4 exercises · ids `ex1…ex4` · points **20** · Arabic-only |
+| gen2 | 133.3 s · $0.558 | 3 exercises · ids stable · points **20** · Arabic-only |
+| gen3 | 132.6 s · $0.559 | **still refuses `الحسابيات`**, `topic → مواضيع مختلطة من البرنامج` |
+| refine1 | 48.1 s · $0.326 | one exercise · `id`/`points`/`label` preserved (`ex2`, 4, التمرين الثاني) |
+
+Re-verification cost **$1.99 / ~7 min**. Latency held (119–133 s draft, 48 s
+refine), confirming §2's numbers were not a fluke and R3's economics stand.
