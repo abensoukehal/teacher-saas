@@ -1,0 +1,11 @@
+{
+  "skill": "exam-subject",
+  "input": {
+    "stream": "شعبة الرياضيات",
+    "level": "3AS",
+    "topic": "الحسابيات",
+    "difficulty": "متوسط",
+    "exerciseCount": 3,
+    "durationMinutes": 90
+  }
+}

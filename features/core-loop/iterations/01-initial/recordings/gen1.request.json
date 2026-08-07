@@ -1,0 +1,12 @@
+{
+  "skill": "exam-subject",
+  "input": {
+    "stream": "علوم تجريبية",
+    "level": "3AS",
+    "topic": "الدوال الأسية واللوغاريتمية",
+    "difficulty": "متوسط",
+    "exerciseCount": 4,
+    "durationMinutes": 120,
+    "format": "composition"
+  }
+}
