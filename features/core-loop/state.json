@@ -15,22 +15,34 @@
         "contracts": {
           "status": "locked",
           "derived_from": {
-            "seed": "25041a6fd6c28ee2"
+            "seed": "17ec8b4351069998"
           }
         }
       },
       "subissues": {
         "be-1": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "be-2": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-1": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-2": {
           "status": "todo",
