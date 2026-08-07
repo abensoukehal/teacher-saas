@@ -128,7 +128,7 @@
           "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         }
       },
-      "summary": "Core loop shipped: controls to draft exam, per-exercise refinement in Arabic, printable paper \u2014 both PRs open for review"
+      "summary": "Core loop shipped and landed: controls to draft exam, per-exercise refinement in Arabic, printable paper \u2014 both PRs merged into main"
     }
   }
 }
