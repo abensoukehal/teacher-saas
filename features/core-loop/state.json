@@ -1,0 +1,25 @@
+{
+  "slug": "core-loop",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-07",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "4a5855dad0d50d8e"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "25041a6fd6c28ee2"
+          }
+        }
+      },
+      "subissues": {}
+    }
+  }
+}
