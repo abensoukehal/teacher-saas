@@ -14,11 +14,12 @@ exercises, exams and the rest of the material that goes with a class. The users 
 teachers; the product's job is to take what a teacher is teaching and turn it into
 ready-to-use prepared material.
 
-> **Status: greenfield, one stack repo in.** As of 2026-08-07 the only stack repo is
-> `cc-api` (the LLM edge) — there is no application backend, frontend or datastore yet.
-> Sections still marked ★ PENDING are stubs on purpose: they get written from the real
-> checkouts as each repo lands, not guessed ahead of it. See `workflow/PROFILE.md` →
-> "Greenfield deltas" for how the phases behave until then.
+> **Status: greenfield, two stack repos in.** As of 2026-08-07 the stacks are `be`
+> (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
+> (React + Vite). Both are scaffolds: they run, but no product feature is built and
+> no datastore is chosen. Sections still marked ★ PENDING are stubs on purpose — they
+> get written from the real checkouts as work lands, not guessed ahead of it. See
+> `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
 ## The three git layers
 
@@ -28,7 +29,7 @@ One product, three repos, each versioned on its own — the convention this clon
 |---|---|---|
 | harness (engine) | `abensoukehal/project-harness` | this clone root |
 | project (management) | `abensoukehal/teacher-saas` | `project/` |
-| stacks (code) | one repo per service — `abensoukehal/claude-code-openai-wrapper` | `project/cc-api/` |
+| stacks (code) | `abensoukehal/teacher-be` · `abensoukehal/teacher-fe` | `project/teacher-be/` · `project/teacher-fe/` |
 
 The project repo holds the profile, `features/`, `stack-skeletons/` and `docs/`. It does
 **not** hold product code; each service gets its own repo, cloned into `project/` and
@@ -42,7 +43,7 @@ in this repo, next to this file, so the two move together); this table is how to
 | | branches | GitHub account | commit | push |
 |---|---|---|---|---|
 | **project** (`project/`) | `main`, plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
-| **stacks** (`project/<dir>/`) | mainline from [`repos.sh`](repos.sh) (`cc-api` → `main`), plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
+| **stacks** (`project/<dir>/`) | mainline from [`repos.sh`](repos.sh) (`be`, `fe` → `main`), plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
 
 The stack row is `stack:*` — one default covering every stack repo. Autonomous commit and
 push are safe there because they only ever move a **job branch**: work never happens on a
@@ -94,76 +95,109 @@ way to tell the products apart. With no `origin`, it falls back to the directory
 ## Architecture in one diagram
 
 ```
-★ PARTIAL — only the LLM edge exists. The app tier that will call it is not built yet.
-
-  (teacher app — ★ PENDING)                       cc-api  :9000
-   lesson / exercise / exam            OpenAI-shaped   ┌──────────────────────┐
-   generation                    ─────────HTTP────────▶│ FastAPI              │
-                                  /v1/chat/completions │  src/main.py         │
-                                  /v1/messages         │  claude_cli.py       │
-                                                       └──────────┬───────────┘
-                                                                  │ Claude Agent SDK
-                                                                  ▼
-                                                        Anthropic API · Bedrock
-                                                        · Vertex · Claude CLI auth
+  fe · teacher-fe  :10000                    be · teacher-be  :9000
+  ┌────────────────────────┐                 ┌──────────────────────────────────┐
+  │ React 19 + TS (Vite)   │   /api/*        │ Express + TS (ESM)               │
+  │                        │─── proxy ──────▶│  src/app.ts     routes           │
+  │ teacher describes what │  (relative,     │  src/config.ts  env, once        │
+  │ they're teaching       │   same-origin)  │                                  │
+  └────────────────────────┘                 │  src/claude/    ◀── the wrapper  │
+                                             └───────────────┬──────────────────┘
+                                                             │ spawns, headless
+                                                             │ claude -p --output-format json
+                                                             ▼
+                                               ┌─────────────────────────────┐
+                                               │ claude  (Claude Code CLI)   │
+                                               │  .claude/skills/<name>/     │
+                                               │      SKILL.md  ◀── the      │
+                                               │      capabilities           │
+                                               └─────────────────────────────┘
 ```
 
-Reading it: the product's generation features do **not** embed a provider SDK. They
-speak OpenAI-compatible HTTP to `cc-api`, which owns auth, model selection, session
-continuity, cost/token accounting and rate limiting in one place.
+Reading it: **there is no LLM provider SDK anywhere in this product, and no API key.**
+Coursework is generated by running Claude Code as a subprocess, and the unit of
+capability is a Claude Code **skill**. Adding a new kind of material — an exam, a
+rubric, a revision sheet — means writing a `SKILL.md`, not writing orchestration code.
+
+The consequence that shapes everything downstream: a generation is a **whole agent
+loop**, not a completion. It takes minutes, it can queue, and it fails in ways a user
+must distinguish (expired login vs. timeout vs. a bad run). That is why `be` classifies
+failures instead of returning 500, and why `fe`'s loading and error states are
+load-bearing rather than polish.
 
 ## Repos
 
-One section per repo key in [`repos.sh`](repos.sh).
+One section per repo key in [`repos.sh`](repos.sh). Both are **single-branch** (`main`),
+so their integration field in `repos.sh` is empty and `/merge-back` skips them.
 
-### `cc-api` — the LLM edge
+### `be` — application tier + the Claude Code wrapper
 
 | | |
 |---|---|
-| **repo** | `abensoukehal/claude-code-openai-wrapper` — a fork of `RichardAtCT/claude-code-openai-wrapper` (upstream v2.3.0) |
-| **dir** | `project/cc-api/` |
-| **stack** | Python 3.10+ · FastAPI · uvicorn · Poetry · pytest (`black` @ 100 cols, `mypy`, `bandit` in the repo's own CI) |
-| **branches** | `main` only — **single-branch**, so the integration field in `repos.sh` is empty and `/merge-back` skips this repo |
-| **local port** | base `9000` (lane ports 9000/9100/…); log stem `teacher-cc-api`; health `/health` |
-| **deploy** | ★ PENDING — no deploy target yet |
+| **repo** | `abensoukehal/teacher-be` (private) |
+| **dir** | `project/teacher-be/` |
+| **stack** | Express 4 · TypeScript 5 · ESM · Node 20+ · `tsx` in dev, `tsc` to build |
+| **local** | base port `9000` (lanes 9000/9100/…); log stem `teacher-backend`; health `/health` |
+| **deploy** | ★ PENDING |
 
-**Purpose.** An OpenAI-API-compatible wrapper over the Claude Agent SDK. Everything in
-teacher-saas that turns a teacher's subject matter into prepared material (lesson plans,
-exercises, exams) goes through it, so the product depends on one stable HTTP surface
-rather than on a provider SDK scattered through the app tier.
+**Two jobs at once.** It owns the product's API and data *and* the Claude Code CLI
+wrapper that does the generating.
 
-**Key modules** (flat under `src/`, no package tree):
-
-| module | owns |
+| path | owns |
 |---|---|
-| `main.py` | every FastAPI route (~2k lines) — the whole HTTP surface |
-| `models.py` | Pydantic request/response shapes — **the public contract** |
-| `claude_cli.py` | the Claude Agent SDK call path |
-| `auth.py` | multi-provider auth detection: CLI · API key · Bedrock · Vertex |
-| `session_manager.py` | conversation continuity — **in-memory, per-process** |
-| `tool_manager.py`, `mcp_client.py` | optional Claude Code tools + MCP servers |
-| `rate_limiter.py`, `parameter_validator.py`, `message_adapter.py` | slowapi limits, request validation, OpenAI↔Anthropic message translation |
+| `src/index.ts` | process entry — listen + graceful shutdown |
+| `src/app.ts` | the Express app: middleware, routes, error classification |
+| `src/config.ts` | env parsed once into one typed object — the **only** place env is read |
+| `src/claude/runner.ts` | spawns the CLI; concurrency gate, timeout, error mapping |
+| `src/claude/skills.ts` | reads the skill catalogue; validates a requested skill |
+| `.claude/skills/<name>/SKILL.md` | **the capabilities themselves** |
 
-**API surface.** `/v1/chat/completions` · `/v1/messages` · `/v1/models` · `/v1/sessions*`
-· `/v1/tools*` · `/v1/mcp/*` · `/v1/auth/status` · `/v1/debug/request` · `/health` ·
-`/version` · `/` (an interactive API explorer).
+**API surface.** `/health` (also reports the CLI's version, whether it authenticates,
+and queue depth) · `/api` · `/api/skills` · `/api/generate`.
 
-**Two things to know before touching it.**
+**What must not be undone here:**
 
-1. **It is a live fork.** Keep local edits narrow and deliberate, and check whether a
-   change belongs upstream first — divergence taxes every future `git pull upstream main`.
-2. **It executes Claude Code tools when they are enabled.** Upstream binds `0.0.0.0`;
-   locally we bind `127.0.0.1` (see `start_cc-api()` in [`recipes.sh`](recipes.sh)). Do
-   not widen that without saying so.
+1. **Skill names are validated against the catalogue** before spawning — the name is
+   interpolated into the prompt as `/<name>`, so caller input must never reach the CLI
+   unchecked.
+2. **stdout is parsed before the exit code is checked.** The CLI emits its result JSON
+   even on failure, with the real reason in `result`; reading the exit code first
+   discards the only useful diagnostic and yields a bare "exited 1". This was found the
+   first time a real run failed — the reason was an expired login, and the original code
+   hid it.
+3. **The concurrency cap stays.** Each run is a full agent loop that can spawn tools and
+   subagents; unbounded fan-out exhausts the machine long before the API.
+4. **`--setting-sources project`** pins the CLI to this repo's `.claude/`, so behaviour
+   doesn't depend on the ambient config of whoever started the server.
 
-Also note: `session_manager` state is per-process, so a lane restart wipes it — no test
-may assume a session outlives the process. And live calls to the completion endpoints
-spend Claude quota.
+**Failure classification:** `503 claude_auth` (a human must re-login — not retryable) ·
+`503 claude_not_installed` · `504 claude_timeout` · `502 claude_exit` · `500` for this
+service's own bugs.
 
-**Known engine gap.** `tools/ci` hardcodes the keys `be|fe|ai` and does not know
-`cc-api`, so `tools/ci cc-api` is not available yet. Until that is fixed, run a job's
-suite directly: `poetry run pytest features/<slug>/tests/cc-api/` (tests still live under
-`features/<slug>/tests/cc-api/`, never inside the repo tree — WF-53).
+### `fe` — the teacher-facing UI
+
+| | |
+|---|---|
+| **repo** | `abensoukehal/teacher-fe` (private) |
+| **dir** | `project/teacher-fe/` |
+| **stack** | React 19 · TypeScript · Vite 8 · oxlint |
+| **local** | base port `10000` (lanes 10000/10100/…); log stem `teacher-frontend`; health `/` |
+| **deploy** | ★ PENDING |
+
+Talks **only** to `be`; never reaches an LLM directly. `vite.config.ts` is adapted to the
+harness lane model, and the three adaptations all guard the same failure — a job lane
+silently talking to the main checkout:
+
+- `PORT` and `BACKEND_API` come from the environment (`tools/dev` passes the lane's
+  values); the literals in the config are standalone fallbacks only.
+- `/api` is **proxied**, so app code fetches relative URLs and no absolute backend URL is
+  ever compiled into a component.
+- `strictPort: true` — Vite's default drift to `port+1` would land the dev server on the
+  next lane's port. A refused boot is the better failure.
+
+**Known engine gap.** `tools/ci` hardcodes its target keys (`be|fe|ai`) and resolves them
+against an older repo layout, so verify it gates correctly before relying on it. Tests
+still belong in `features/<slug>/tests/<key>/`, never inside a repo tree (WF-53).
 
 ## Ports and log stems (reserved)
 
@@ -173,7 +207,7 @@ the infra layer, so teacher-saas claims a disjoint band up front — see
 
 | | lablabee (taken) | teacher-saas (reserved) |
 |---|---|---|
-| service base ports | 3000, 4000, 8008 | **9000, then +1000 per service** — `cc-api` holds 9000 |
+| service base ports | 3000, 4000, 8008 | **9000, then +1000 per service** — `be` 9000, `fe` 10000 |
 | `RUN_STEM` | `lablabee-run` | `teacher-run` |
 | log stems | `lablabee-*`, `tapai-native` | `teacher-*` |
 | local DB name | `lablabee` | `teacher_saas` |
@@ -183,10 +217,14 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-★ PENDING — no store chosen yet, and `cc-api` does not need one: it is stateless apart
-from in-memory sessions (`src/session_manager.py`), which are per-process and lost on
-restart. Record the primary store, the tables/collections that matter, and the
-field-naming gotchas once the app tier lands.
+★ PENDING — no store chosen yet. Neither stack has one: `be` is stateless today, and
+conversation continuity is delegated to the Claude Code CLI's own sessions (a run returns
+its `sessionId`, which a caller passes back to continue). That is a real limit worth
+naming — those sessions are the CLI's, not the product's, so nothing generated is
+durable, queryable or owned by a teacher account yet.
+
+Record the primary store, the tables/collections that matter, and the field-naming
+gotchas the first time a job needs one.
 
 ## Deployments
 
@@ -196,13 +234,17 @@ field-naming gotchas once the app tier lands.
 
 ## Integrations
 
-**Anthropic / Claude — via `cc-api`, not directly.** The LLM integration is the `cc-api`
-service; nothing else in the product should hold a provider SDK. Its auth is
-multi-provider and auto-detected (`src/auth.py`): Claude CLI subscription auth,
-`ANTHROPIC_API_KEY`, AWS Bedrock, or Google Vertex — override with `CLAUDE_AUTH_METHOD`.
-Config lives in `project/cc-api/.env` (gitignored; `.env.example` documents every key:
-`PORT`, `DEFAULT_MODEL`, `FAST_MODEL`, `CLAUDE_MODELS_OVERRIDE`, the `RATE_LIMIT_*`
-family). Check what is actually active at runtime with `/v1/auth/status`.
+**Claude Code — as a subprocess, not an API.** The only integration today, and it is
+deliberately not an HTTP provider integration: `be` spawns the `claude` binary
+(`src/claude/runner.ts`). There is **no API key in this product** — the CLI carries its
+own credentials, so auth is configured by running `claude` interactively and `/login`,
+not by an env var. Tunables live in `project/teacher-be/.env` (gitignored;
+`.env.example` documents them): `CLAUDE_BIN`, `CLAUDE_CWD`, `CLAUDE_TIMEOUT_MS`,
+`CLAUDE_MAX_CONCURRENT`.
 
-★ PENDING — everything else (payments, mail, storage, auth for teachers) once the app
-tier exists.
+The operational consequence: **an expired CLI login takes generation down**, and no
+config change fixes it — a human must re-authenticate. `GET /health` reports this
+(`claude.ok`), and `/api/generate` returns `503 claude_auth` rather than a retryable
+error, so it is visible rather than looking like a flaky backend.
+
+★ PENDING — everything else (payments, mail, storage, teacher accounts) as it lands.

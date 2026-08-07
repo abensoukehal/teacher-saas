@@ -51,17 +51,20 @@
 # Greenfield convention (workflow/PROFILE.md): a repo with no staging branch yet
 # leaves the integration field EMPTY — /merge-back then skips it, e.g.
 #   "app|teacher-app||main"
+# Integration fields are EMPTY on purpose — both repos are single-branch (`main`
+# only), so the staging axis (/merge-back) skips them until a staging branch
+# exists. That is the greenfield convention, not an oversight (workflow/PROFILE.md).
 REPO_TABLE=(
   # "key|repo-dir|integration-branch|prod-branch"
-  #
-  # cc-api — abensoukehal/claude-code-openai-wrapper, a fork of
-  # RichardAtCT/claude-code-openai-wrapper. FastAPI service exposing Claude Code
-  # through an OpenAI-compatible API (/v1/chat/completions, /v1/messages). This is
-  # the product's LLM edge: everything that generates lessons/exercises/exams
-  # talks to it instead of to a provider SDK directly.
-  #
-  # Integration field EMPTY on purpose — the repo is single-branch (`main` only),
-  # so the staging axis (/merge-back) skips it until a staging branch exists.
-  # That is the greenfield convention, not an oversight (workflow/PROFILE.md).
-  "cc-api|cc-api||main"
+
+  # be — abensoukehal/teacher-be. Express + TypeScript (ESM, Node 20+). The
+  # application tier: teacher/course data, and the CLAUDE CODE CLI WRAPPER that
+  # turns a teacher's subject matter into prepared material. That wrapper is an
+  # internal service module (src/claude/), NOT a separate repo — generation is
+  # driven by Claude Code skills rather than by a provider SDK.
+  "be|teacher-be||main"
+
+  # fe — abensoukehal/teacher-fe. React 19 + TypeScript on Vite. The teacher-facing
+  # UI. Talks only to `be`; never reaches an LLM directly.
+  "fe|teacher-fe||main"
 )

@@ -26,7 +26,7 @@ GIT_POLICY_TABLE=(
   "project|abensoukehal|abensoukehal/teacher-saas|main|auto|auto"
 
   # ── stacks ────────────────────────────────────────────────────────────────────
-  # The default for EVERY stack repo, stated by the user when cc-api landed
+  # The default for EVERY stack repo, stated by the user when the first stacks landed
   # (2026-08-07): same autonomy as the project layer — commit and push freely on
   # the job's branch. Remote is EMPTY because stack:* covers many repos; mainline
   # is EMPTY so the branch stays single-sourced in repos.sh (prod-branch field).
@@ -60,7 +60,7 @@ GIT_POLICY_TABLE=(
 #            off main as feature/<slug> — auto never means "commit on main".
 #
 #   stacks   abensoukehal · commit auto · push auto — stated by the user when the
-#            first stack repo (cc-api) landed. Same autonomy as the project layer:
+#            first stack repos (be, fe) landed. Same autonomy as the project layer:
 #            work happens on feature/* and lands through a REVIEWED PR anyway, so
 #            autonomous commit+push only ever moves a job branch forward. The two
 #            gates that matter are below and no value here relaxes them.

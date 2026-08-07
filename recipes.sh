@@ -42,27 +42,33 @@
 #       .venv/bin/uvicorn main:app --port "$(sv_port ai)"
 #   }
 
-# cc-api — FastAPI + Poetry (claude-code-openai-wrapper).
-#
-# Deliberately NOT `poetry run claude-wrapper`: that entry point calls
-# prompt_for_api_protection(), which BLOCKS on stdin for an interactive API-key
-# prompt — fatal under start_app, which runs detached with its output in a log.
-# Serving src.main:app through uvicorn skips run_server() entirely, so the
-# service comes up unattended with no key protection (local dev only).
-#
-# Binds 127.0.0.1, not the upstream 0.0.0.0 default: this wrapper will happily
-# execute Claude Code tools, so it must not be reachable off the machine.
-#
-# Refuses LOUDLY when the venv is missing rather than starting the wrong thing
-# (WF-64) — `poetry install` in the checkout creates it.
-start_cc-api(){
-  local dir; dir="$(sv_dir cc-api)"
-  local venv; venv="$(cd "$dir" && poetry env info --path 2>/dev/null || true)"
-  [ -n "$venv" ] && [ -x "$venv/bin/uvicorn" ] || {
-    err "cc-api: no poetry venv in $dir — run 'poetry install' there first"; return 1; }
-  start_app cc-api "$dir" \
-    env PORT="$(sv_port cc-api)" CLAUDE_WRAPPER_HOST=127.0.0.1 \
-    "$venv/bin/uvicorn" src.main:app --host 127.0.0.1 --port "$(sv_port cc-api)"
+# Both stacks are Node. Each refuses LOUDLY when node_modules is missing rather
+# than starting the wrong thing (WF-64) — `npm install` in the checkout fixes it.
+_need_node_modules(){ # _need_node_modules KEY DIR
+  [ -d "$2/node_modules" ] || { err "$1: no node_modules in $2 — run 'npm install' there first"; return 1; }
+}
+
+# be — Express + TypeScript (ESM), run through tsx so there's no build step in dev.
+# Hosts the Claude Code CLI wrapper (src/claude/), so it needs `claude` on PATH;
+# that is checked at request time, not here — the service must still boot and
+# report the problem over /health rather than refusing to start.
+start_be(){
+  local dir; dir="$(sv_dir be)"
+  _need_node_modules be "$dir" || return 1
+  start_app be "$dir" \
+    env PORT="$(sv_port be)" HOST=127.0.0.1 \
+        CORS_ORIGINS="http://localhost:$(sv_port fe)" \
+    npx tsx src/index.ts
+}
+
+# fe — Vite dev server. BACKEND_API must be this LANE's backend port, never the
+# base: otherwise a job lane's UI silently proxies to the main checkout's API.
+start_fe(){
+  local dir; dir="$(sv_dir fe)"
+  _need_node_modules fe "$dir" || return 1
+  start_app fe "$dir" \
+    env PORT="$(sv_port fe)" BACKEND_API="http://127.0.0.1:$(sv_port be)" \
+    npx vite
 }
 
 # ---- 2. the E2E verify recipe (tools/obs verify) --------------------------------
