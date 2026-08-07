@@ -45,28 +45,52 @@
           }
         },
         "fe-2": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-3": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-4": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-5": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "fe-6": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         },
         "be-3": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          }
         }
       }
     }
