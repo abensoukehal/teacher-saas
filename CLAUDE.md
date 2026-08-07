@@ -227,6 +227,18 @@ wrapper that does the generating.
 **API surface.** `/health` (also reports the CLI's version, whether it authenticates,
 and queue depth) · `/api` · `/api/skills` · `/api/generate`.
 
+**The two skills** (`.claude/skills/`) — the product's actual capabilities:
+
+| skill | in | out |
+|---|---|---|
+| `exam-subject` | controls: topic, difficulty, exercise count, duration, stream | the whole exam — `exercises[]` with stable `ex1…exN` ids |
+| `refine-exercise` | `{instruction, exercise, examContext}`, instruction in plain Arabic | **one** exercise, `id`/`points`/`label` unchanged |
+
+`refine-exercise` is core-loop step 4. `exam-subject`'s per-exercise output shape
+exists to make it possible — a skill emitting one blob of exam text would leave the
+product's central interaction unbuildable. Both return JSON only; `/api/generate`
+returns it as `data` (`null` when a run returns prose).
+
 **What must not be undone here:**
 
 1. **Skill names are validated against the catalogue** before spawning — the name is
