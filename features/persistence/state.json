@@ -73,7 +73,8 @@
           "tag": "hardening",
           "reviewed": "null"
         }
-      }
+      },
+      "summary": "Exam subjects persist in MongoDB with per-teacher ownership; generating no longer destroys the previous exam"
     }
   }
 }

@@ -22,10 +22,10 @@ Full reasoning — thesis, business model, roadmap, validation plan — is in
 file is the condensed engineering-facing half; if the two disagree, the brief wins and
 this file is stale.
 
-> **Status: greenfield, two stack repos in.** As of 2026-08-07 the stacks are `be`
-> (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
-> (React + Vite). Both are scaffolds: they run, but **no product feature is built** and
-> no datastore is chosen. Sections still marked ★ PENDING are stubs on purpose — they
+> **Status: the core loop ships, and exams persist.** As of 2026-08-08 the stacks are
+> `be` (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
+> (React + Vite). The core loop is built (`core-loop`), and exam subjects are stored in
+> MongoDB with per-teacher ownership (`persistence`). Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -172,18 +172,24 @@ way to tell the products apart. With no `origin`, it falls back to the directory
   │                        │  (relative,     │  src/config.ts  env, once        │
   │ controls → draft exam  │   same-origin)  │                                  │
   │ → refine one exercise  │                 │  src/claude/    ◀── the wrapper  │
-  │ → print                │                 │                                  │
-  └────────────────────────┘                 │  ★ no store yet — see Data model │
-                                             └───────────────┬──────────────────┘
-                                                             │ spawns, headless
-                                                             │ claude -p --output-format json
-                                                             ▼
-                                               ┌─────────────────────────────┐
-                                               │ claude  (Claude Code CLI)   │
-                                               │  .claude/skills/<name>/     │
-                                               │      SKILL.md  ◀── the      │
-                                               │      capabilities           │
-                                               └─────────────────────────────┘
+  │ → reopen a saved exam  │                 │  src/store/     ◀── the subjects │
+  │ → print                │                 │  src/routes/    ◀── subject API  │
+  └────────────────────────┘                 └──────┬──────────────────┬────────┘
+                                                    │                  │ mongodb
+                                                    │                  ▼
+                                                    │      ┌─────────────────────┐
+                                                    │      │ teacher_saas        │
+                                                    │      │  subjects — 1 coll. │
+                                                    │      └─────────────────────┘
+                                                    │ spawns, headless
+                                                    │ claude -p --output-format json
+                                                    ▼
+                                      ┌─────────────────────────────┐
+                                      │ claude  (Claude Code CLI)   │
+                                      │  .claude/skills/<name>/     │
+                                      │      SKILL.md  ◀── the      │
+                                      │      capabilities           │
+                                      └─────────────────────────────┘
 ```
 
 Reading it: **there is no LLM provider SDK anywhere in this product, and no API key.**
@@ -222,10 +228,15 @@ wrapper that does the generating.
 | `src/config.ts` | env parsed once into one typed object — the **only** place env is read |
 | `src/claude/runner.ts` | spawns the CLI; concurrency gate, timeout, error mapping |
 | `src/claude/skills.ts` | reads the skill catalogue; validates a requested skill |
+| `src/store/client.ts` | the Mongo connection — lazy, single-flight, never caches a failure |
+| `src/store/subjects.ts` | the `subjects` collection. **`create` inserts; there is no upsert** |
+| `src/routes/subjects.ts` | the subject surfaces |
+| `src/teacher.ts` | issues + resolves the opaque teacher id |
 | `.claude/skills/<name>/SKILL.md` | **the capabilities themselves** |
 
-**API surface.** `/health` (also reports the CLI's version, whether it authenticates,
-and queue depth) · `/api` · `/api/skills` · `/api/generate`.
+**API surface.** `/health` (reports the CLI's version, whether it authenticates,
+queue depth, **and the datastore**) · `/api` · `/api/skills` · `/api/generate` ·
+`/api/teacher` · `/api/subjects` (create · list · get · replace one exercise).
 
 **The two skills** (`.claude/skills/`) — the product's actual capabilities:
 
@@ -255,8 +266,10 @@ returns it as `data` (`null` when a run returns prose).
    doesn't depend on the ambient config of whoever started the server.
 
 **Failure classification:** `503 claude_auth` (a human must re-login — not retryable) ·
-`503 claude_not_installed` · `504 claude_timeout` · `502 claude_exit` · `500` for this
-service's own bugs.
+`503 claude_not_installed` · `504 claude_timeout` · `502 claude_exit` ·
+**`503 store_unavailable` (datastore down — RETRYABLE)** · `500` for this service's own
+bugs. Note that `claude_auth` and `store_unavailable` share a status and mean opposite
+things: callers branch on `error.type`, never on the code.
 
 ### `fe` — the teacher-facing UI
 
@@ -308,29 +321,55 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-★ PENDING — no store chosen. But the brief now fixes the **shape**, so this is no longer
-a blank slate, and the first job that needs a store should honour these:
+**MongoDB, database `teacher_saas`, one collection: `subjects`.** Chosen because Mongo
+already runs as declared shared infra on this machine and `services.sh` had already
+reserved that db name — and because an exam subject *is* a JSON document, so the stored
+shape and the wire shape are the same object with no mapping layer to drift.
 
-- **The exam subject is the unit of everything.** It is the billing unit under the
-  favoured model (one credit = one finished subject, unlimited iteration inside it until
-  export), and it is the unit a teacher reasons about. It must be a first-class
-  persisted entity, not a transient response.
-- **An exercise is addressable inside its subject.** The core loop refines *one*
-  exercise — change its values, change its difficulty, swap it — so exercises need
-  stable ids and independent regeneration, not a single blob of exam text.
-- **Iteration is unbounded and must not be metered.** Whatever is stored has to allow
-  many revisions per exercise without that count meaning anything commercially.
-- **Everything generated is worth keeping** — the personal exercise library (roadmap 6)
-  is the retention play, and it is nearly free if nothing is thrown away from day one.
+```
+subjects
+  _id        ObjectId
+  teacherId  string · 32 hex          ← the owner
+  subject    { title, meta, exercises[] }   ← the generated payload, VERBATIM
+  controls   object | null
+  createdAt  Date
+  updatedAt  Date
 
-**The gap today:** `be` is stateless, and continuity is delegated to the Claude Code
-CLI's own sessions (a run returns `sessionId`; a caller passes it back). Those sessions
-are the CLI's, not the product's — per-process, lost on restart, not queryable and not
-owned by a teacher account. So the current stack **cannot** persist a subject, bill for
-one, or build a library. That is the first real architectural decision to make.
+index: { teacherId: 1, updatedAt: -1 }      ← the only query the product makes
+```
 
-Record the primary store, the collections that matter, and the field-naming gotchas when
-that job lands.
+**The rules that shape it:**
+
+- **`create` inserts. There is no upsert and no fixed key.** The defect this replaced
+  was a single `localStorage` key, where a teacher's second exam destroyed their first.
+  Insert-only makes that unrepresentable, not merely guarded.
+- **There is no delete route.** Nothing generated is thrown away — that is what makes
+  the exercise library (roadmap 6) cheap to add.
+- **An exercise is replaced in place, by id.** An unknown id raises rather than
+  appending. Exercise ids (`ex1…exN`) are the join key the whole core loop turns on.
+- **Ownership is scoped inside the query.** Another teacher's subject returns the same
+  not-found as one that never existed; existence is not probeable.
+- **`subject` nests the payload verbatim** — never spread into columns.
+
+**There is no `teachers` collection.** The id is generated, handed to the client, and
+never written down; a well-formed unknown id is accepted and owns nothing. It is a
+**bearer value** — whoever holds it reads that teacher's exams — and a deliberate
+placeholder a real accounts layer can adopt without moving data. It must not silently
+become the auth model.
+
+**Not the datastore:** `run-log.jsonl` is an append-only file carrying run cost/duration
+plus `{op, subjectId}` link lines. It holds no teacher content and must not start to.
+
+### Still not persisted (the honest gaps)
+
+| Gap | Consequence |
+|---|---|
+| **The teacher id itself** | Clearing site data orphans every exam — they exist server-side but nothing can find them again. Same reason there is no cross-device access. This is what the accounts job fixes. |
+| **Exercise revision history** | `replaceExercise` overwrites in place, so earlier versions of a reworked exercise are gone. "Everything generated is worth keeping" is only half-honoured: subjects accumulate, revisions do not. |
+| **Generation cost per subject** | `sessionId` and the run's `correlationId` are not tied to the stored subject, so cost-per-exam is still unanswerable. Revisions-per-exam *is* answerable. |
+| **Failed saves** | Retry is offered in-session only; a failed save is not queued across a reload. |
+| **Accounts, billing, credits** | Nothing. The store makes them possible; none is built. |
+| **Backups / a deploy target** | Mongo is local-only. See Deployments. |
 
 ## Deployments
 
