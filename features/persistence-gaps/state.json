@@ -1,0 +1,25 @@
+{
+  "slug": "persistence-gaps",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-08",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "28c5be29bf8ad58e"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "25041a6fd6c28ee2"
+          }
+        }
+      },
+      "subissues": {}
+    }
+  }
+}
