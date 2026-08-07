@@ -29,11 +29,16 @@ One product, three repos, each versioned on its own — the convention this clon
 |---|---|---|
 | harness (engine) | `abensoukehal/project-harness` | this clone root |
 | project (management) | `abensoukehal/teacher-saas` | `project/` |
-| stacks (code) | `abensoukehal/teacher-be` · `abensoukehal/teacher-fe` | `project/teacher-be/` · `project/teacher-fe/` |
+| stacks (code) | `abensoukehal/teacher-be` · `abensoukehal/teacher-fe` | `project/stacks/teacher-be/` · `project/stacks/teacher-fe/` |
 
 The project repo holds the profile, `features/`, `stack-skeletons/` and `docs/`. It does
-**not** hold product code; each service gets its own repo, cloned into `project/` and
-registered in `repos.sh`.
+**not** hold product code; each service gets its own repo, cloned into
+**`project/stacks/`** and registered in `repos.sh` with that prefix in its `dir` field
+(`"be|stacks/teacher-be||main"`).
+
+> Don't confuse the two similarly-named dirs: **`stacks/`** holds the repo CHECKOUTS,
+> **`stack-skeletons/`** holds the per-repo sub-issue TEMPLATES. See
+> [`workflow/PROFILE.md`](../workflow/PROFILE.md) item 5.
 
 ## Git rules — branches, accounts, commit/push
 
@@ -135,7 +140,7 @@ so their integration field in `repos.sh` is empty and `/merge-back` skips them.
 | | |
 |---|---|
 | **repo** | `abensoukehal/teacher-be` (private) |
-| **dir** | `project/teacher-be/` |
+| **dir** | `project/stacks/teacher-be/` |
 | **stack** | Express 4 · TypeScript 5 · ESM · Node 20+ · `tsx` in dev, `tsc` to build |
 | **local** | base port `9000` (lanes 9000/9100/…); log stem `teacher-backend`; health `/health` |
 | **deploy** | ★ PENDING |
@@ -179,7 +184,7 @@ service's own bugs.
 | | |
 |---|---|
 | **repo** | `abensoukehal/teacher-fe` (private) |
-| **dir** | `project/teacher-fe/` |
+| **dir** | `project/stacks/teacher-fe/` |
 | **stack** | React 19 · TypeScript · Vite 8 · oxlint |
 | **local** | base port `10000` (lanes 10000/10100/…); log stem `teacher-frontend`; health `/` |
 | **deploy** | ★ PENDING |
@@ -238,7 +243,7 @@ gotchas the first time a job needs one.
 deliberately not an HTTP provider integration: `be` spawns the `claude` binary
 (`src/claude/runner.ts`). There is **no API key in this product** — the CLI carries its
 own credentials, so auth is configured by running `claude` interactively and `/login`,
-not by an env var. Tunables live in `project/teacher-be/.env` (gitignored;
+not by an env var. Tunables live in `project/stacks/teacher-be/.env` (gitignored;
 `.env.example` documents them): `CLAUDE_BIN`, `CLAUDE_CWD`, `CLAUDE_TIMEOUT_MS`,
 `CLAUDE_MAX_CONCURRENT`.
 
