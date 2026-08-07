@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import gen2 from "../../iterations/01-initial/recordings/gen2.request.json";
+import gen2 from "./recordings/gen2.request.json";
 import {
   DEFAULT_CONTROLS,
   TOPICS,

@@ -13,6 +13,30 @@
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 
+/**
+ * PROMOTED to the regression net (WF-54).
+ *
+ * These are black-box: they drive a running backend and assert against a real
+ * MongoDB. On a mainline checkout with no lane up there is nothing to verify, so
+ * the suite SKIPS rather than fails — a red that only means "the server isn't
+ * running" trains people to ignore the gate.
+ *
+ * To actually run them: tools/dev up -d, then tools/ci be.
+ */
+const { execSync } = require("node:child_process");
+const LANE_UP = (() => {
+  try {
+    execSync("nc -z localhost 9200", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const gate = LANE_UP ? describe : describe.skip;
+if (!LANE_UP) {
+  console.log("skipping: no backend on :9200 (run tools/dev up -d to exercise these)");
+}
+
 const BE = "http://localhost:9200";
 const ROOT = process.env.CHAR_ROOTDIR;
 
@@ -31,7 +55,7 @@ beforeAll(async () => {
   }
 });
 
-describe("positive — the store is connected and visible", () => {
+gate("positive — the store is connected and visible", () => {
   test("/health reports the store, ok and named", async () => {
     const { status, body } = await getJson(`${BE}/health`);
     expect(status).toBe(200);
@@ -52,7 +76,7 @@ describe("positive — the store is connected and visible", () => {
   });
 });
 
-describe("positive — a dead store degrades honestly", () => {
+gate("positive — a dead store degrades honestly", () => {
   let child;
   const PORT = 9299;
 
@@ -94,7 +118,7 @@ describe("positive — a dead store degrades honestly", () => {
   }, 20000);
 });
 
-describe("negative — the frozen perimeter is untouched", () => {
+gate("negative — the frozen perimeter is untouched", () => {
   test("/health's claude sub-object is bit-stable", async () => {
     const { body } = await getJson(`${BE}/health`);
     expect(Object.keys(body.claude).sort()).toEqual(

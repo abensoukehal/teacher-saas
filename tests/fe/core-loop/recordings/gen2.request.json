@@ -1,0 +1,12 @@
+{
+  "skill": "exam-subject",
+  "input": {
+    "stream": "شعبة الرياضيات",
+    "level": "3AS",
+    "topic": "الأعداد المركبة",
+    "difficulty": "متوسط",
+    "exerciseCount": 3,
+    "durationMinutes": 90,
+    "format": "devoir"
+  }
+}

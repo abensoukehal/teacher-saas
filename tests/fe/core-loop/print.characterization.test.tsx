@@ -2,8 +2,8 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import ExamView from "@/components/ExamView";
 import type { ExamSubject } from "@/lib/exam";
-import gen1 from "../../iterations/01-initial/recordings/gen1.json";
-import gen3 from "../../iterations/01-initial/recordings/gen3-curriculum-gap.json";
+import gen1 from "./recordings/gen1.json";
+import gen3 from "./recordings/gen3-curriculum-gap.json";
 
 const exam = gen1.data as ExamSubject;
 

@@ -11,12 +11,36 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+/**
+ * PROMOTED to the regression net (WF-54).
+ *
+ * These are black-box: they drive a running backend and assert against a real
+ * MongoDB. On a mainline checkout with no lane up there is nothing to verify, so
+ * the suite SKIPS rather than fails — a red that only means "the server isn't
+ * running" trains people to ignore the gate.
+ *
+ * To actually run them: tools/dev up -d, then tools/ci be.
+ */
+const { execSync } = require("node:child_process");
+const LANE_UP = (() => {
+  try {
+    execSync("nc -z localhost 9200", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const gate = LANE_UP ? describe : describe.skip;
+if (!LANE_UP) {
+  console.log("skipping: no backend on :9200 (run tools/dev up -d to exercise these)");
+}
+
 const BE = "http://localhost:9200";
 const RUNLOG = path.join(process.env.CHAR_ROOTDIR, "run-log.jsonl");
 
 const SUBJECT = JSON.parse(
   fs.readFileSync(
-    path.join(__dirname, "../../iterations/01-initial/contracts/rec-exam-subject.2026-08-07.json"),
+    path.join(__dirname, "fixtures/rec-exam-subject.2026-08-07.json"),
     "utf8",
   ),
 ).data;
@@ -63,7 +87,7 @@ beforeAll(async () => {
   teacher = r.body.teacherId;
 }, 30000);
 
-describe("positive — the join key exists", () => {
+gate("positive — the join key exists", () => {
   test("a create appends a subject link carrying subjectId and correlationId", async () => {
     const { body } = await call("POST", "/api/subjects", { teacher, body: { subject: SUBJECT } });
 
@@ -100,7 +124,7 @@ describe("positive — the join key exists", () => {
   });
 });
 
-describe("negative — the run log's guarantees hold", () => {
+gate("negative — the run log's guarantees hold", () => {
   test("NO teacher content is ever written — no Arabic, no statements, no titles", async () => {
     const { body: made } = await call("POST", "/api/subjects", {
       teacher,

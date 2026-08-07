@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import ExamView from "@/components/ExamView";
 import { spliceExercise, type ExamSubject } from "@/lib/exam";
-import gen1 from "../../iterations/01-initial/recordings/gen1.json";
-import gen2 from "../../iterations/01-initial/recordings/gen2.json";
-import gen3 from "../../iterations/01-initial/recordings/gen3-curriculum-gap.json";
-import refine1 from "../../iterations/01-initial/recordings/refine1.json";
+import gen1 from "./recordings/gen1.json";
+import gen2 from "./recordings/gen2.json";
+import gen3 from "./recordings/gen3-curriculum-gap.json";
+import refine1 from "./recordings/refine1.json";
 
 const exams: Array<[string, ExamSubject]> = [
   ["gen1", gen1.data as ExamSubject],
