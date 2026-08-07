@@ -25,13 +25,14 @@ GIT_POLICY_TABLE=(
   # "scope|account|remote|mainline|commit|push"
   "project|abensoukehal|abensoukehal/teacher-saas|main|auto|auto"
 
-  # ── stacks: NOT CONFIGURED YET ────────────────────────────────────────────────
-  # No stack repo exists, and the policy for them has not been given — so there is
-  # deliberately no stack:* row. An unconfigured scope FAILS CLOSED: git_may returns
-  # "ask" for commit AND push, so nothing about a stack repo happens unattended
-  # until a row lands here. Uncomment and fill when the first stack is decided:
-  # "stack:*|<account>|<owner>/<repo> or empty||<auto|ask>|<auto|ask>"
-  # "stack:be|<account>|<owner>/<repo>||<auto|ask>|<auto|ask>"   # per-repo override
+  # ── stacks ────────────────────────────────────────────────────────────────────
+  # The default for EVERY stack repo, stated by the user when cc-api landed
+  # (2026-08-07): same autonomy as the project layer — commit and push freely on
+  # the job's branch. Remote is EMPTY because stack:* covers many repos; mainline
+  # is EMPTY so the branch stays single-sourced in repos.sh (prod-branch field).
+  "stack:*|abensoukehal|||auto|auto"
+  # Per-repo override, if one ever needs a different owner or a stricter gate:
+  # "stack:be|<account>|<owner>/<repo>||<auto|ask>|<auto|ask>"
 )
 
 # ── read it back ───────────────────────────────────────────────────────────────
@@ -58,11 +59,12 @@ GIT_POLICY_TABLE=(
 #            lands costs nothing and keeps job history durable. Jobs still branch
 #            off main as feature/<slug> — auto never means "commit on main".
 #
-#   stacks   UNSET, on purpose. The user will state each stack's account, branches
-#            and gates when the repo is decided; guessing them here would be the
-#            one place a wrong default could push product code somewhere unasked.
-#            Until then every stack action asks. When a row is added, its BRANCHES
-#            still come from repos.sh (leave the mainline field empty).
+#   stacks   abensoukehal · commit auto · push auto — stated by the user when the
+#            first stack repo (cc-api) landed. Same autonomy as the project layer:
+#            work happens on feature/* and lands through a REVIEWED PR anyway, so
+#            autonomous commit+push only ever moves a job branch forward. The two
+#            gates that matter are below and no value here relaxes them.
+#            BRANCHES still come from repos.sh — the mainline field stays empty.
 #
 # ── engine contract ────────────────────────────────────────────────────────────
 #   SOURCED (not executed) by tools/profile.sh; lookups live in tools/git-lib.sh.

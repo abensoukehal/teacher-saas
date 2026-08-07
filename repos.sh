@@ -53,5 +53,15 @@
 #   "app|teacher-app||main"
 REPO_TABLE=(
   # "key|repo-dir|integration-branch|prod-branch"
-  # ← EMPTY ON PURPOSE: no stack repos exist yet (greenfield, 2026-08-07).
+  #
+  # cc-api — abensoukehal/claude-code-openai-wrapper, a fork of
+  # RichardAtCT/claude-code-openai-wrapper. FastAPI service exposing Claude Code
+  # through an OpenAI-compatible API (/v1/chat/completions, /v1/messages). This is
+  # the product's LLM edge: everything that generates lessons/exercises/exams
+  # talks to it instead of to a provider SDK directly.
+  #
+  # Integration field EMPTY on purpose — the repo is single-branch (`main` only),
+  # so the staging axis (/merge-back) skips it until a staging branch exists.
+  # That is the greenfield convention, not an oversight (workflow/PROFILE.md).
+  "cc-api|cc-api||main"
 )

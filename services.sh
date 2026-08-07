@@ -49,10 +49,15 @@
 # Honour this band when adding records below; do not reuse a lablabee base.
 SERVICE_TABLE=(
   # "key|repo-key|label|base-port|log-stem|health-path"
-  # ← EMPTY ON PURPOSE: no stack repos exist yet (greenfield, 2026-08-07).
-  #   First records, when the stacks land — keep the reserved band:
-  #   "fe|fe|frontend|9000|teacher-frontend|/"
+  #
+  # cc-api takes the FIRST base of the reserved band (9000). Lane ports are
+  # 9000/9100/9200… — ten lanes clear of the next base at 10000, and clear of
+  # AirPlay's :5000/:7000. The upstream default is 8000; we never use it, because
+  # the lablabee clone shares this machine's /tmp and port space.
+  "cc-api|cc-api|CC API (OpenAI-compat)|9000|teacher-cc-api|/health"
+  #   Next services keep stepping by 1000:
   #   "be|be|backend|10000|teacher-backend|/api"
+  #   "fe|fe|frontend|11000|teacher-frontend|/"
 )
 
 # Shared infra (never lane-shifted — all lanes use the same instances):

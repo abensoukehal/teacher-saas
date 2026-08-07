@@ -14,10 +14,11 @@ exercises, exams and the rest of the material that goes with a class. The users 
 teachers; the product's job is to take what a teacher is teaching and turn it into
 ready-to-use prepared material.
 
-> **Status: greenfield.** As of 2026-08-07 no stack repos exist yet — only the harness
-> clone and the project repo. The sections below are stubs on purpose: they get written
-> from the real checkouts once the first stack repo lands, not guessed ahead of it. See
-> `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
+> **Status: greenfield, one stack repo in.** As of 2026-08-07 the only stack repo is
+> `cc-api` (the LLM edge) — there is no application backend, frontend or datastore yet.
+> Sections still marked ★ PENDING are stubs on purpose: they get written from the real
+> checkouts as each repo lands, not guessed ahead of it. See `workflow/PROFILE.md` →
+> "Greenfield deltas" for how the phases behave until then.
 
 ## The three git layers
 
@@ -27,7 +28,7 @@ One product, three repos, each versioned on its own — the convention this clon
 |---|---|---|
 | harness (engine) | `abensoukehal/project-harness` | this clone root |
 | project (management) | `abensoukehal/teacher-saas` | `project/` |
-| stacks (code) | one repo per service — *none yet* | `project/<dir>/` |
+| stacks (code) | one repo per service — `abensoukehal/claude-code-openai-wrapper` | `project/cc-api/` |
 
 The project repo holds the profile, `features/`, `stack-skeletons/` and `docs/`. It does
 **not** hold product code; each service gets its own repo, cloned into `project/` and
@@ -41,13 +42,17 @@ in this repo, next to this file, so the two move together); this table is how to
 | | branches | GitHub account | commit | push |
 |---|---|---|---|---|
 | **project** (`project/`) | `main`, plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
-| **stacks** (`project/<dir>/`) | ★ not set — mainline will come from [`repos.sh`](repos.sh) | ★ not set | ★ **ask** | ★ **ask** |
+| **stacks** (`project/<dir>/`) | mainline from [`repos.sh`](repos.sh) (`cc-api` → `main`), plus one `feature/<slug>` per job | `abensoukehal` (personal) | **without asking** | **without asking** |
 
-★ **No stack repo exists, and no stack policy has been given yet** — it gets stated per
-stack when each repo is decided. Until a `stack:*` or `stack:<key>` row lands in
-`git.sh`, an unconfigured scope **fails closed**: every stack commit and push asks first.
-That is enforced, not a note — `git_may stack:<anything> commit|push` returns "ask" while
-the row is absent.
+The stack row is `stack:*` — one default covering every stack repo. Autonomous commit and
+push are safe there because they only ever move a **job branch**: work never happens on a
+mainline, and landing it still goes through a reviewed PR. A repo that must differ (a
+different owner, a stricter gate) gets its own `stack:<key>` row.
+
+Resolution is most-specific-first: an exact `stack:<key>` row wins, then `stack:*`, then
+the engine defaults. Since `stack:*` is now present, **every** stack key inherits it —
+including a repo cloned but not yet added to `repos.sh`. Fail-closed only remains for a
+scope no row matches at all.
 
 Read it back, never guess:
 
@@ -89,15 +94,76 @@ way to tell the products apart. With no `origin`, it falls back to the directory
 ## Architecture in one diagram
 
 ```
-★ PENDING — no stack repos yet. Draw the request path once the first services exist.
+★ PARTIAL — only the LLM edge exists. The app tier that will call it is not built yet.
+
+  (teacher app — ★ PENDING)                       cc-api  :9000
+   lesson / exercise / exam            OpenAI-shaped   ┌──────────────────────┐
+   generation                    ─────────HTTP────────▶│ FastAPI              │
+                                  /v1/chat/completions │  src/main.py         │
+                                  /v1/messages         │  claude_cli.py       │
+                                                       └──────────┬───────────┘
+                                                                  │ Claude Agent SDK
+                                                                  ▼
+                                                        Anthropic API · Bedrock
+                                                        · Vertex · Claude CLI auth
 ```
+
+Reading it: the product's generation features do **not** embed a provider SDK. They
+speak OpenAI-compatible HTTP to `cc-api`, which owns auth, model selection, session
+continuity, cost/token accounting and rate limiting in one place.
 
 ## Repos
 
-★ PENDING — `repos.sh` is intentionally empty: no stack repos have been created.
-Add one section here per repo key as each lands (purpose, stack, key modules, API
-surface, deployment trigger), in step with `repos.sh`, `.claude/agents/<key>.md` and
-`stack-skeletons/<key>.md`.
+One section per repo key in [`repos.sh`](repos.sh).
+
+### `cc-api` — the LLM edge
+
+| | |
+|---|---|
+| **repo** | `abensoukehal/claude-code-openai-wrapper` — a fork of `RichardAtCT/claude-code-openai-wrapper` (upstream v2.3.0) |
+| **dir** | `project/cc-api/` |
+| **stack** | Python 3.10+ · FastAPI · uvicorn · Poetry · pytest (`black` @ 100 cols, `mypy`, `bandit` in the repo's own CI) |
+| **branches** | `main` only — **single-branch**, so the integration field in `repos.sh` is empty and `/merge-back` skips this repo |
+| **local port** | base `9000` (lane ports 9000/9100/…); log stem `teacher-cc-api`; health `/health` |
+| **deploy** | ★ PENDING — no deploy target yet |
+
+**Purpose.** An OpenAI-API-compatible wrapper over the Claude Agent SDK. Everything in
+teacher-saas that turns a teacher's subject matter into prepared material (lesson plans,
+exercises, exams) goes through it, so the product depends on one stable HTTP surface
+rather than on a provider SDK scattered through the app tier.
+
+**Key modules** (flat under `src/`, no package tree):
+
+| module | owns |
+|---|---|
+| `main.py` | every FastAPI route (~2k lines) — the whole HTTP surface |
+| `models.py` | Pydantic request/response shapes — **the public contract** |
+| `claude_cli.py` | the Claude Agent SDK call path |
+| `auth.py` | multi-provider auth detection: CLI · API key · Bedrock · Vertex |
+| `session_manager.py` | conversation continuity — **in-memory, per-process** |
+| `tool_manager.py`, `mcp_client.py` | optional Claude Code tools + MCP servers |
+| `rate_limiter.py`, `parameter_validator.py`, `message_adapter.py` | slowapi limits, request validation, OpenAI↔Anthropic message translation |
+
+**API surface.** `/v1/chat/completions` · `/v1/messages` · `/v1/models` · `/v1/sessions*`
+· `/v1/tools*` · `/v1/mcp/*` · `/v1/auth/status` · `/v1/debug/request` · `/health` ·
+`/version` · `/` (an interactive API explorer).
+
+**Two things to know before touching it.**
+
+1. **It is a live fork.** Keep local edits narrow and deliberate, and check whether a
+   change belongs upstream first — divergence taxes every future `git pull upstream main`.
+2. **It executes Claude Code tools when they are enabled.** Upstream binds `0.0.0.0`;
+   locally we bind `127.0.0.1` (see `start_cc-api()` in [`recipes.sh`](recipes.sh)). Do
+   not widen that without saying so.
+
+Also note: `session_manager` state is per-process, so a lane restart wipes it — no test
+may assume a session outlives the process. And live calls to the completion endpoints
+spend Claude quota.
+
+**Known engine gap.** `tools/ci` hardcodes the keys `be|fe|ai` and does not know
+`cc-api`, so `tools/ci cc-api` is not available yet. Until that is fixed, run a job's
+suite directly: `poetry run pytest features/<slug>/tests/cc-api/` (tests still live under
+`features/<slug>/tests/cc-api/`, never inside the repo tree — WF-53).
 
 ## Ports and log stems (reserved)
 
@@ -107,7 +173,7 @@ the infra layer, so teacher-saas claims a disjoint band up front — see
 
 | | lablabee (taken) | teacher-saas (reserved) |
 |---|---|---|
-| service base ports | 3000, 4000, 8008 | **9000, then +1000 per service** |
+| service base ports | 3000, 4000, 8008 | **9000, then +1000 per service** — `cc-api` holds 9000 |
 | `RUN_STEM` | `lablabee-run` | `teacher-run` |
 | log stems | `lablabee-*`, `tapai-native` | `teacher-*` |
 | local DB name | `lablabee` | `teacher_saas` |
@@ -117,8 +183,10 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-★ PENDING — no store chosen yet. Record the primary store, the tables/collections that
-matter, and the field-naming gotchas once it exists.
+★ PENDING — no store chosen yet, and `cc-api` does not need one: it is stateless apart
+from in-memory sessions (`src/session_manager.py`), which are per-process and lost on
+restart. Record the primary store, the tables/collections that matter, and the
+field-naming gotchas once the app tier lands.
 
 ## Deployments
 
@@ -128,5 +196,13 @@ matter, and the field-naming gotchas once it exists.
 
 ## Integrations
 
-★ PENDING — expect at least an LLM provider, since generating lessons/exercises/exams is
-the core. Record each service, what it's used for, and where its config lives.
+**Anthropic / Claude — via `cc-api`, not directly.** The LLM integration is the `cc-api`
+service; nothing else in the product should hold a provider SDK. Its auth is
+multi-provider and auto-detected (`src/auth.py`): Claude CLI subscription auth,
+`ANTHROPIC_API_KEY`, AWS Bedrock, or Google Vertex — override with `CLAUDE_AUTH_METHOD`.
+Config lives in `project/cc-api/.env` (gitignored; `.env.example` documents every key:
+`PORT`, `DEFAULT_MODEL`, `FAST_MODEL`, `CLAUDE_MODELS_OVERRIDE`, the `RATE_LIMIT_*`
+family). Check what is actually active at runtime with `/v1/auth/status`.
+
+★ PENDING — everything else (payments, mail, storage, auth for teachers) once the app
+tier exists.

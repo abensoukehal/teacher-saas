@@ -42,7 +42,28 @@
 #       .venv/bin/uvicorn main:app --port "$(sv_port ai)"
 #   }
 
-# ← FILL ME: one start_<key>() per SERVICE_TABLE key
+# cc-api — FastAPI + Poetry (claude-code-openai-wrapper).
+#
+# Deliberately NOT `poetry run claude-wrapper`: that entry point calls
+# prompt_for_api_protection(), which BLOCKS on stdin for an interactive API-key
+# prompt — fatal under start_app, which runs detached with its output in a log.
+# Serving src.main:app through uvicorn skips run_server() entirely, so the
+# service comes up unattended with no key protection (local dev only).
+#
+# Binds 127.0.0.1, not the upstream 0.0.0.0 default: this wrapper will happily
+# execute Claude Code tools, so it must not be reachable off the machine.
+#
+# Refuses LOUDLY when the venv is missing rather than starting the wrong thing
+# (WF-64) — `poetry install` in the checkout creates it.
+start_cc-api(){
+  local dir; dir="$(sv_dir cc-api)"
+  local venv; venv="$(cd "$dir" && poetry env info --path 2>/dev/null || true)"
+  [ -n "$venv" ] && [ -x "$venv/bin/uvicorn" ] || {
+    err "cc-api: no poetry venv in $dir — run 'poetry install' there first"; return 1; }
+  start_app cc-api "$dir" \
+    env PORT="$(sv_port cc-api)" CLAUDE_WRAPPER_HOST=127.0.0.1 \
+    "$venv/bin/uvicorn" src.main:app --host 127.0.0.1 --port "$(sv_port cc-api)"
+}
 
 # ---- 2. the E2E verify recipe (tools/obs verify) --------------------------------
 # Your product's headless end-to-end check: mint/obtain auth, drive the entry

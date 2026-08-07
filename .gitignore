@@ -16,6 +16,7 @@
 # ★ PROFILE — add one anchored line per repo dir in repos.sh, e.g.:
 # /my-frontend/
 # /my-backend/
+/cc-api/
 
 # Generated lane manifest (tools/dev up) — regenerated every boot
 features/*/dev-up.md
