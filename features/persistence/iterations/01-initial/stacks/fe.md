@@ -135,7 +135,7 @@ estimate: M
    `git status --short -- src/lib/api.ts`
 
 4. **Oracle (two-sided, executable):** suite in
-   `features/persistence/tests/fe/api-subjects.spec.ts`:
+   `features/persistence/tests/fe/api-subjects.characterization.test.ts`:
    - *positive:* each function issues a **relative** `/api/...` URL (assert the
      string starts with `/api/` — an absolute URL crosses lanes) and attaches
      `x-teacher-id` on every subject call.
@@ -192,7 +192,7 @@ estimate: L
    `git status --short -- src/App.tsx src/lib/persist.ts`
 
 4. **Oracle (two-sided, executable):** suite in
-   `features/persistence/tests/fe/app-persistence.spec.ts`:
+   `features/persistence/tests/fe/app-persistence.characterization.test.tsx`:
    - *positive (the defect, pinned):* generate A, then generate B → **two**
      `POST /api/subjects` calls with **different** returned ids, and A is still
      retrievable via `getSubject(idA)`. **An implementation that overwrites fails
@@ -256,7 +256,7 @@ estimate: M
    `git status --short -- src/components/SubjectList.tsx src/App.tsx src/App.css`
 
 4. **Oracle (two-sided, executable):** suite in
-   `features/persistence/tests/fe/subject-list.spec.ts`:
+   `features/persistence/tests/fe/subject-list.characterization.test.tsx`:
    - *positive:* given N summaries, renders N rows, **newest first**, each showing
      title, topic, exercise count and total points.
    - *positive (states):* `empty` → an Arabic empty-state message, never a blank
@@ -320,7 +320,7 @@ estimate: S
    `git status --short -- src/App.tsx src/App.css`
 
 4. **Oracle (two-sided, executable):** suite in
-   `features/persistence/tests/fe/save-state.spec.ts`:
+   `features/persistence/tests/fe/save-state.characterization.test.tsx`:
    - *positive:* a successful create/update drives `saving → saved`, and `saved` is
      visible to the teacher in Arabic.
    - *positive:* a `503 store_unavailable` drives `error`, shows an Arabic message

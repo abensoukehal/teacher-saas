@@ -35,6 +35,32 @@
 Pinned by `features/persistence/tests/be/*.characterization.*` — the WF-53 home,
 never inside the repo tree. Run via `tools/ci be --slug persistence`.
 
+### Test harness — settled by probe, not by assumption (read before writing a test)
+
+`be` has **never had a test**; core-loop wrote `fe` suites only. Three constraints
+were established by running the gate, and each rules out an obvious approach:
+
+1. **Filename must match `*.characterization.test.js`** — `tools/tests/jest.characterization.config.js`
+   sets exactly that `testMatch`, and `tools/ci`'s `has_tests()` additionally
+   requires `characterization` in the name. A `.spec.ts` file is silently invisible
+   and the gate reports "no tests resolved".
+2. **`.js` only, no TypeScript, no transform.** There is no babel/ts-jest in the
+   chain.
+3. **The built `dist/` cannot be imported.** `dist/` is ESM (`module: ESNext`), and
+   a dynamic `import()` from the CJS test fails with
+   *"A dynamic import callback was invoked without --experimental-vm-modules"*.
+   That flag lives in the **engine** config, which travels between harness clones —
+   **out of scope for this job to change.**
+
+**Therefore `be` tests are black-box:** drive the running lane over HTTP
+(`localhost:9200`) and assert stored state directly with the `mongodb` driver
+(proved reachable from inside the gate). This is what WF-44 asks for anyway — the
+runtime that matters, not an in-process client that lies.
+
+**Precondition:** `tools/dev up -d` must be running from the job worktree. A suite
+that cannot reach `:9200` must **fail**, never skip — a gate that cannot verify is
+red, not green.
+
 ### Run headless
 ```bash
 cd project-worktrees/persistence && ../../tools/dev up -d      # lane slot 2 → be :9200
@@ -156,9 +182,12 @@ estimate: M
      (`mongodb://127.0.0.1:1/`), `/health` returns `.store.ok == false` and the
      overall `status` is **not** `"ok"` — the service must not look healthy while
      the store is down.
-   - *positive (classification):* a probe route that touches the store while Mongo
-     is unreachable returns **`503`** with `error.type == "store_unavailable"`,
-     never `500`.
+   - *positive (classification):* ~~a probe route that touches the store~~ —
+     **moved to `be-3`.** Asserting a classified `503` needs a route that touches
+     the store, and `be-1`'s Delta deliberately contains no routes. Adding one just
+     to test it would have put unreachable code in the product. The `StoreError` →
+     `503 store_unavailable` mapping is implemented here (`src/app.ts` error
+     middleware) and **pinned by `be-3`'s negative oracle**, where real routes exist.
    - *negative:* `POST /api/generate` is untouched — replay
      `contracts/rec-exam-subject.2026-08-07.json`'s request and assert the response
      envelope keys are exactly `{text,data,sessionId,costUsd,durationMs,correlationId}`.
@@ -191,6 +220,17 @@ estimate: M
 
 ### be-2 — the `subjects` repository: many per teacher, never overwritten
 
+> **FOLDED INTO `be-3` during IMPLEMENT.** The repository is a pure module with no
+> HTTP surface, and the test harness settled above cannot import `be`'s ESM `dist/`
+> — so a standalone `be-2` would have shipped **code no gate could verify**, which
+> is exactly the failure the six-slot model exists to prevent. It is built and
+> gated as one slice with `be-3`.
+>
+> **Nothing is dropped.** Every oracle clause below is expressible over HTTP plus a
+> direct Mongo read, and each is carried verbatim into `be-3`'s suite — including
+> the load-bearing one: *create twice → two records*. The clauses are kept here as
+> the record of what `be-3` must prove.
+
 1. **Intent:** the defect this whole job exists to fix is single-slot overwrite
    (SEED → Problem). Build the storage layer whose *only* create operation is an
    insert, so "second exam destroys the first" becomes unrepresentable.
@@ -215,7 +255,7 @@ estimate: M
 
 4. **Oracle (two-sided, executable):** unit-level against a real Mongo (WF-44 — the
    runtime that matters; no in-memory fake), suite in
-   `features/persistence/tests/be/subjects.spec.ts`:
+   `features/persistence/tests/be/subjects-store.characterization.test.js`:
    - *positive:* `create()` twice for one `teacherId` with the recorded payload →
      `listByTeacher()` returns **2** records, newest first. **This is the regression
      pin for the defect** — an implementation that upserts fails here.
@@ -280,7 +320,7 @@ estimate: L
    `git status --short -- src/teacher.ts src/routes/ src/app.ts`
 
 4. **Oracle (two-sided, executable):** suite in
-   `features/persistence/tests/be/subjects-api.spec.ts`, driven over HTTP against
+   `features/persistence/tests/be/subjects-api.characterization.test.js`, driven over HTTP against
    the running lane (WF-44), plus live probes:
    - *positive:* `POST /api/teacher` → `201`, `teacherId` matches `^[0-9a-f]{32}$`.
    - *positive:* `POST /api/subjects` with the recorded payload → `201`; then a
@@ -334,6 +374,26 @@ estimate: S
 ```
 
 ### be-4 — tie a run to the subject it produced
+
+> **Implemented differently from the Delta, deliberately.** The Delta said "add
+> `subjectId` to `RunRecord`, pass it from the routes". That cannot work as
+> written: `recordRun` fires inside `POST /api/generate`, and **the subject does
+> not exist yet** — `fe` creates it afterwards, in a separate request. Setting
+> `subjectId` there would have meant either inventing an id before the store saw
+> it, or writing `durationMs: 0` lies into a *run* log.
+>
+> What shipped instead: a second, clearly-tagged line kind in the same file —
+> `{kind:"subject", op:"create"|"replaceExercise", subjectId, correlationId}`
+> (`src/runlog.ts` → `recordSubjectLink`). Run lines are untouched. Counting
+> `op:"replaceExercise"` per `subjectId` answers kit §5's question — *how many
+> refines per exam* — directly, which the original Delta would not have.
+>
+> **Still open, and not done here:** joining a *subject* back to the **generation
+> cost** needs the generate call's `correlationId`, which `generateExam` discards
+> (it returns only `data`). `fe` now propagates a correlation id on create
+> (`api.ts` → `createSubject(..., correlationId)`), but nothing passes one yet,
+> because plumbing it would change a frozen return type. Left for the job that
+> needs cost-per-subject — flagged rather than half-built.
 
 1. **Intent:** core-loop wanted "how many refines per exam" and could not answer it
    (its SEED, direction item 6; SEED kit §5 blind spot 3). Now that a subject has an

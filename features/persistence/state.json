@@ -21,35 +21,35 @@
       },
       "subissues": {
         "be-1": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-3": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-4": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening"
         },
         "fe-1": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "fe-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "fe-3": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "fe-4": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening"
         }
       }
