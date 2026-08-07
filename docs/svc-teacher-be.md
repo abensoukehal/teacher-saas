@@ -22,3 +22,4 @@ against a workspace that ships inside this repo.
 ## Modules
 - [[mod-be-claude-wrapper]] — spawns and supervises the CLI, classifies failures
 - [[mod-be-agent-workspace]] — the context and capabilities the CLI runs with
+- [[mod-be-subject-store]] — where a teacher's exams are kept

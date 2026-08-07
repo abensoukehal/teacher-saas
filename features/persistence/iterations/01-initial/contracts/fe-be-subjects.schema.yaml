@@ -1,0 +1,194 @@
+# Schema — fe ⇄ be · subjects (job: persistence, iteration 01-initial)
+# Companion to fe-be-subjects.contract.md. Additive only: no existing surface here.
+openapi: 3.0.3
+info:
+  title: teacher-be · subjects
+  version: "1.0.0"
+
+components:
+  responses:
+    BadRequest:
+      description: invalid_request — malformed body, duplicate/absent exercise ids, id mismatch
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NoTeacher:
+      description: teacher_required — x-teacher-id missing or malformed
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NotFound:
+      description: subject_not_found — absent OR owned by another teacher (not probeable)
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    StoreDown:
+      description: store_unavailable — datastore unreachable. RETRYABLE, unlike claude_auth.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  parameters:
+    TeacherId:
+      name: x-teacher-id
+      in: header
+      required: true
+      schema: { type: string, pattern: "^[0-9a-f]{32}$" }
+  schemas:
+    Exercise:
+      type: object
+      required: [id, label, points, statement]
+      properties:
+        id:         { type: string, pattern: "^ex[0-9]+$", example: "ex1" }
+        label:      { type: string, example: "التمرين الأول" }
+        points:     { type: number, example: 6 }
+        difficulty: { type: string, example: "سهل" }
+        topics:     { type: array, items: { type: string } }
+        statement:  { type: string, description: "Arabic + LaTeX math. Never shown raw to a teacher." }
+    ExamMeta:
+      type: object
+      required: [totalPoints]
+      properties:
+        stream:          { type: string }
+        level:           { type: string }
+        format:          { type: string }
+        durationMinutes: { type: integer }
+        totalPoints:     { type: number }
+        topic:           { type: string }
+        assumptions:     { type: array, items: { type: string } }
+    ExamSubject:
+      type: object
+      required: [title, meta, exercises]
+      properties:
+        title:     { type: string }
+        meta:      { $ref: "#/components/schemas/ExamMeta" }
+        exercises:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/Exercise" }
+    SubjectRecord:
+      type: object
+      required: [id, createdAt, updatedAt, subject]
+      properties:
+        id:        { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        subject:   { $ref: "#/components/schemas/ExamSubject" }
+    SubjectSummary:
+      type: object
+      required: [id, title, exerciseCount, totalPoints, createdAt, updatedAt]
+      properties:
+        id:            { type: string }
+        title:         { type: string }
+        topic:         { type: string }
+        exerciseCount: { type: integer }
+        totalPoints:   { type: number }
+        createdAt:     { type: string, format: date-time }
+        updatedAt:     { type: string, format: date-time }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message, type]
+          properties:
+            message: { type: string }
+            type:
+              type: string
+              enum: [invalid_request, teacher_required, subject_not_found,
+                     exercise_not_found, store_unavailable]
+
+paths:
+  /api/teacher:
+    post:
+      summary: Issue an opaque teacher id (not an account, not authenticated)
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [teacherId]
+                properties:
+                  teacherId: { type: string, pattern: "^[0-9a-f]{32}$" }
+        "503": { $ref: "#/components/responses/StoreDown" }
+
+  /api/subjects:
+    post:
+      summary: Create a subject. NEVER overwrites — each call is a new record.
+      parameters: [{ $ref: "#/components/parameters/TeacherId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject]
+              properties:
+                subject:  { $ref: "#/components/schemas/ExamSubject" }
+                controls: { type: object, nullable: true }
+      responses:
+        "201":
+          content: { application/json: { schema: { $ref: "#/components/schemas/SubjectRecord" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/NoTeacher" }
+        "503": { $ref: "#/components/responses/StoreDown" }
+    get:
+      summary: List this teacher's subjects, newest first. Summaries only — no statements.
+      parameters: [{ $ref: "#/components/parameters/TeacherId" }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subjects]
+                properties:
+                  subjects:
+                    type: array
+                    items: { $ref: "#/components/schemas/SubjectSummary" }
+        "401": { $ref: "#/components/responses/NoTeacher" }
+        "503": { $ref: "#/components/responses/StoreDown" }
+
+  /api/subjects/{id}:
+    get:
+      summary: Read one subject. 404 also covers "owned by another teacher" — not probeable.
+      parameters:
+        - { $ref: "#/components/parameters/TeacherId" }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          content: { application/json: { schema: { $ref: "#/components/schemas/SubjectRecord" } } }
+        "401": { $ref: "#/components/responses/NoTeacher" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/StoreDown" }
+
+  /api/subjects/{id}/exercises/{exerciseId}:
+    put:
+      summary: Write through one refinement. Replaces in place, never appends.
+      parameters:
+        - { $ref: "#/components/parameters/TeacherId" }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: exerciseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exercise]
+              properties:
+                exercise: { $ref: "#/components/schemas/Exercise" }
+      responses:
+        "200":
+          content: { application/json: { schema: { $ref: "#/components/schemas/SubjectRecord" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/NoTeacher" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: exercise id not present in this subject — never appended
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "503": { $ref: "#/components/responses/StoreDown" }
+
+  # ---- FROZEN: recorded here so the negative oracle can pin it. Not modified by this job.
+  /api/generate:
+    post:
+      summary: "FROZEN (SEED kit §3). Request and response shapes must stay bit-stable."
+      responses:
+        "200":
+          description: "{text, data, sessionId, costUsd, durationMs, correlationId}"
+          content: { application/json: { schema: { type: object } } }
+
+# (shared responses live in components.responses above — see the top of this file)

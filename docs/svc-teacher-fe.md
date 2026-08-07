@@ -16,8 +16,9 @@ tags: [frontend, react, vite, rtl]
 
 ## Role in the platform
 Renders the exam builder and calls `teacher-be` through a same-origin `/api`
-proxy. It never reaches a model directly and holds the working draft locally —
-there is no datastore in the product yet.
+proxy. It never reaches a model directly. Exams are stored by the backend; local
+storage now holds only the teacher id, which exam is open, and a paint cache.
 
 ## Modules
-- [[mod-fe-exam-builder]] — controls, request assembly, long-run UX, draft state
+- [[mod-fe-exam-builder]] — controls, request assembly, long-run UX, exam state
+- [[cmp-fe-subject-list]] — saved exams, reopening, and the local migration
