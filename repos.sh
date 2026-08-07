@@ -44,6 +44,10 @@
 #   3. anchor its dir in .gitignore      + services.sh record, honouring the reserved
 #   4. stack-skeletons/<key>.md            port band, and a start_<key>() in recipes.sh
 #
+# Its BRANCHES are the two fields below; its GitHub account and commit/push rules
+# come from git.sh — the `stack:*` row covers every repo, so add a `stack:<key>`
+# row there ONLY if this repo must differ (a different owner, a stricter gate).
+#
 # Greenfield convention (workflow/PROFILE.md): a repo with no staging branch yet
 # leaves the integration field EMPTY — /merge-back then skips it, e.g.
 #   "app|teacher-app||main"
