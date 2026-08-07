@@ -26,7 +26,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "be-2": {
           "status": "done",
@@ -34,7 +35,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-1": {
           "status": "done",
@@ -42,7 +44,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-2": {
           "status": "done",
@@ -50,7 +53,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-3": {
           "status": "done",
@@ -58,7 +62,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-4": {
           "status": "done",
@@ -66,7 +71,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-5": {
           "status": "done",
@@ -74,7 +80,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "fe-6": {
           "status": "done",
@@ -82,7 +89,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         },
         "be-3": {
           "status": "done",
@@ -90,7 +98,8 @@
           "derived_from": {
             "seed": "17ec8b4351069998",
             "contracts": "9453a7dd7d245a79"
-          }
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
         }
       }
     }
