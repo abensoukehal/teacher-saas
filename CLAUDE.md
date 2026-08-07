@@ -9,17 +9,82 @@
 > at the harness clone root. What belongs here: architecture, repos, data model,
 > deployments, integrations. See [`workflow/PROFILE.md`](../workflow/PROFILE.md) item 6.
 
-**teacher-saas** is a SaaS that helps teachers prepare their coursework: lesson plans,
-exercises, exams and the rest of the material that goes with a class. The users are
-teachers; the product's job is to take what a teacher is teaching and turn it into
-ready-to-use prepared material.
+**teacher-saas** is an AI exam-prep tool for **Algerian lycée BAC mathematics teachers**.
+A teacher describes what they want, gets a full draft exam subject in seconds, then
+drills into individual exercises and refines them in plain Arabic until it matches what
+they'll actually hand their class. Then they print it.
+
+The value sold is **time** — an evening's work compressed into minutes. Not more
+material, not better pedagogy: the same exam the teacher would have written, faster.
+
+Full reasoning — thesis, business model, roadmap, validation plan — is in
+[`docs/product-brief.md`](docs/product-brief.md), which is the source of record. This
+file is the condensed engineering-facing half; if the two disagree, the brief wins and
+this file is stale.
 
 > **Status: greenfield, two stack repos in.** As of 2026-08-07 the stacks are `be`
 > (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
-> (React + Vite). Both are scaffolds: they run, but no product feature is built and
+> (React + Vite). Both are scaffolds: they run, but **no product feature is built** and
 > no datastore is chosen. Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
+
+## Hard constraints
+
+These are not preferences. Each one invalidates a plausible-looking implementation, so
+check a design against this table before building it.
+
+| Constraint | What it rules out |
+|---|---|
+| **Arabic only, RTL throughout** | Any LTR-first layout, any English UI string, any component that breaks under `dir="rtl"`. Not a later i18n pass — it is the only locale. |
+| **Math renders via KaTeX** | Non-negotiable for equations, fractions and arrays. Plain-text or image math is not acceptable output. |
+| **LaTeX is fully hidden** | Teachers do not know what LaTeX is and must never see it. No LaTeX in an input, an editable field, an error message or an export. Refinement is natural-language only — "make the numbers smaller", never `\frac{}{}`. |
+| **Inside the official Algerian curriculum** | Generation must stay on-syllabus. Not locked to exact textbook wording, but off-syllabus content is a correctness bug, not a style issue. |
+| **Don't over-engineer** | Ship lean, test fast. The next milestone is two teacher friends reacting to a working core loop — not a platform. |
+
+## The core loop
+
+Everything in the MVP serves this, in order:
+
+1. Structured controls — topic, difficulty, exercise count, duration
+2. Optional free-text note, with topic-aware suggestion chips
+3. Generate a full draft exam
+4. **Drill into one exercise and refine it** — change the values, change *that* exercise's
+   difficulty, or swap it for a different one on the same topic
+5. Export to a printable sheet (print-to-PDF from a standalone printable page)
+
+Step 4 is the product. Iterate-until-right is the behaviour everything else exists to
+support — which is why metering it is a business-model landmine (see the brief §4) and
+why latency and partial-result UX matter more here than anywhere else.
+
+## Scope — what this is NOT
+
+Deliberately excluded. Building any of these is scope error, not initiative:
+
+- **Lesson plans, course content, lesson summaries** — teachers have the textbook and
+  their own notes. Explicitly skipped.
+- **Anything student-facing** — that is a separate e-learning project. Mixing them
+  muddies both.
+- **Slides and presentations** — most Algerian lycée classrooms have no projector.
+- **Subjects other than mathematics** — math first; others later.
+
+## Roadmap, ranked
+
+Not the MVP, but the shape work should grow into — the ordering is deliberate and comes
+from one strategic problem: **exam generation is low-frequency** (3–6 real exams per
+trimester), which is a weak habit loop. Additions should raise usage frequency.
+
+1. **Solution sheets** (التصحيح النموذجي) with the grading scale (السلّم) — same engine,
+   near-zero extra build, more tedious by hand than the exam. Arguably MVP.
+2. **Multiple versions of one exam** (نماذج متعددة) — same questions, different numbers,
+   shuffled. Anti-cheating in crowded rooms. Cheap once exercise-level regeneration works.
+3. **Weekly exercise series** (سلاسل التمارين) — needed *weekly*, not per trimester.
+   **This is the fix for the frequency problem.** If only one thing is added, this.
+4. **Devoirs vs compositions** as distinct formats — 1h narrow vs 2h trimestrial.
+5. **Remediation sheets** (تمارين الدعم) — targeted easier exercises for a weak chapter.
+6. **Personal exercise library** — searchable by chapter; real switching cost.
+
+Later, large: OCR auto-correction of submitted student exams.
 
 ## The three git layers
 
@@ -103,10 +168,12 @@ way to tell the products apart. With no `origin`, it falls back to the directory
   fe · teacher-fe  :10000                    be · teacher-be  :9000
   ┌────────────────────────┐                 ┌──────────────────────────────────┐
   │ React 19 + TS (Vite)   │   /api/*        │ Express + TS (ESM)               │
-  │                        │─── proxy ──────▶│  src/app.ts     routes           │
-  │ teacher describes what │  (relative,     │  src/config.ts  env, once        │
-  │ they're teaching       │   same-origin)  │                                  │
-  └────────────────────────┘                 │  src/claude/    ◀── the wrapper  │
+  │ Arabic · RTL · KaTeX   │─── proxy ──────▶│  src/app.ts     routes           │
+  │                        │  (relative,     │  src/config.ts  env, once        │
+  │ controls → draft exam  │   same-origin)  │                                  │
+  │ → refine one exercise  │                 │  src/claude/    ◀── the wrapper  │
+  │ → print                │                 │                                  │
+  └────────────────────────┘                 │  ★ no store yet — see Data model │
                                              └───────────────┬──────────────────┘
                                                              │ spawns, headless
                                                              │ claude -p --output-format json
@@ -222,14 +289,29 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-★ PENDING — no store chosen yet. Neither stack has one: `be` is stateless today, and
-conversation continuity is delegated to the Claude Code CLI's own sessions (a run returns
-its `sessionId`, which a caller passes back to continue). That is a real limit worth
-naming — those sessions are the CLI's, not the product's, so nothing generated is
-durable, queryable or owned by a teacher account yet.
+★ PENDING — no store chosen. But the brief now fixes the **shape**, so this is no longer
+a blank slate, and the first job that needs a store should honour these:
 
-Record the primary store, the tables/collections that matter, and the field-naming
-gotchas the first time a job needs one.
+- **The exam subject is the unit of everything.** It is the billing unit under the
+  favoured model (one credit = one finished subject, unlimited iteration inside it until
+  export), and it is the unit a teacher reasons about. It must be a first-class
+  persisted entity, not a transient response.
+- **An exercise is addressable inside its subject.** The core loop refines *one*
+  exercise — change its values, change its difficulty, swap it — so exercises need
+  stable ids and independent regeneration, not a single blob of exam text.
+- **Iteration is unbounded and must not be metered.** Whatever is stored has to allow
+  many revisions per exercise without that count meaning anything commercially.
+- **Everything generated is worth keeping** — the personal exercise library (roadmap 6)
+  is the retention play, and it is nearly free if nothing is thrown away from day one.
+
+**The gap today:** `be` is stateless, and continuity is delegated to the Claude Code
+CLI's own sessions (a run returns `sessionId`; a caller passes it back). Those sessions
+are the CLI's, not the product's — per-process, lost on restart, not queryable and not
+owned by a teacher account. So the current stack **cannot** persist a subject, bill for
+one, or build a library. That is the first real architectural decision to make.
+
+Record the primary store, the collections that matter, and the field-naming gotchas when
+that job lands.
 
 ## Deployments
 
