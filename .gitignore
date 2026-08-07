@@ -1,0 +1,30 @@
+# This is a PROJECT repo (WF-78): it versions the profile (repos.sh, services.sh,
+# recipes.sh), the product context (CLAUDE.md, .claude/agents/, stacks/), the docs
+# graph and the job workspaces (features/). The ENGINE lives one level up in the
+# harness repo and is NOT tracked here.
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Secrets / local env
+*.env
+.obs.env
+.claude/settings.local.json
+
+# Cloned code repos — each is its OWN git repo, versioned separately.
+# ★ PROFILE — add one anchored line per repo dir in repos.sh, e.g.:
+# /my-frontend/
+# /my-backend/
+
+# Generated lane manifest (tools/dev up) — regenerated every boot
+features/*/dev-up.md
+
+# Large / generated artifacts
+/screenshots/
+
+# Editor
+.vscode/
+
+# Node
+node_modules/

@@ -1,0 +1,9 @@
+{
+  "_comment": "Sync ledger for a DIRECT ISSUE (bugfix/hotfix) — OWNED BY the /linear-sync skill (planner.py), do not hand-edit. A direct issue has no project/milestones; it anchors to a single upstream Issue that already exists (company_linear_issue_id, seeded from 00-brief source_url). Sync only pushes the rolled-up status + summary back to that one issue. Sub-issues are PERSONAL and never appear here.",
+  "kind": "issue",
+  "feature_slug": "<slug>",
+  "source_url": null,
+  "company_linear_issue_id": null,
+  "last_synced_at": null,
+  "issue": { "id": "i1", "company_linear_id": null, "title_hash": null, "summary_hash": null, "status": null }
+}
