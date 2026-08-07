@@ -75,10 +75,16 @@ account, or one that needs a stricter gate); `stack:*` covers the rest.
 Its rules — `main`, commit and push without asking — are **engine**, in
 `tools/git-lib.sh`, so every harness clone answers the same and `tools/harness push`/`pull`
 keeps them aligned. That file states the *policy* only: the account and remote are derived
-from each clone's own `origin`, so the engine never names an account or a product. Read it
-with `git_policy harness`. One caveat recorded there: the harness's `push` means the
+from each clone's own harness remote, so the engine never names an account or a product.
+Read it with `git_policy harness`. One caveat recorded there: the harness's `push` means the
 path-scoped `tools/harness push`, never a raw `git push` from the clone root — the root's
-`origin` is the shared harness remote.
+`harness` remote is the shared harness remote.
+
+**This clone's root remote is named `harness`, not `origin`** (as is `~/workspace/lablabee`'s).
+Both clones are clones of one repo, so both had the same `origin` URL — and the Claude Code
+sidebar labels a project by its origin, which listed them both as "project-harness" with no
+way to tell the products apart. With no `origin`, it falls back to the directory name.
+`tools/harness` follows either name, so a clone that never renamed is unaffected.
 
 ## Architecture in one diagram
 
