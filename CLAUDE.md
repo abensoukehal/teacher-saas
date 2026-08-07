@@ -279,9 +279,16 @@ silently talking to the main checkout:
 - `strictPort: true` — Vite's default drift to `port+1` would land the dev server on the
   next lane's port. A refused boot is the better failure.
 
-**Known engine gap.** `tools/ci` hardcodes its target keys (`be|fe|ai`) and resolves them
-against an older repo layout, so verify it gates correctly before relying on it. Tests
-still belong in `features/<slug>/tests/<key>/`, never inside a repo tree (WF-53).
+**Test gate.** `tools/ci <be|fe> --slug <slug>`, **run from the job worktree** — it
+resolves both repos and runs jest/vitest. Its hardcoded third key `ai` has no repo here
+and reports "repo not attached", which is harmless. Tests belong in
+`features/<slug>/tests/<key>/`, never inside a repo tree (WF-53).
+
+> Run it from the worktree **and** pass `--slug`. From the clone root, `tools/ci <key>`
+> resolves to the *main* checkout and gates the promoted regression net
+> (`project/tests/<key>`) instead of the job — and passes on zero tests. That is also
+> why a fresh job's provision receipt reads `ci baseline: green` when the job in fact
+> has no gate at all; see `features/<slug>/build.md` → "CI baseline".
 
 ## Ports and log stems (reserved)
 
