@@ -1,0 +1,355 @@
+{
+  "generated_at": "2026-08-07T22:36:05",
+  "nodes": {
+    "cmp-be-claude-runner": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "CLI runner",
+      "path": "docs/cmp-be-claude-runner.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-generate-endpoint": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Generation endpoint",
+      "path": "docs/cmp-be-generate-endpoint.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-skill-exam-subject": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Exam generation capability",
+      "path": "docs/cmp-be-skill-exam-subject.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-skill-refine-exercise": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Exercise refinement capability",
+      "path": "docs/cmp-be-skill-refine-exercise.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-fe-controls": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Exam controls",
+      "path": "docs/cmp-fe-controls.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-fe-exam-view": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Exam view",
+      "path": "docs/cmp-fe-exam-view.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-fe-refine": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Refinement panel",
+      "path": "docs/cmp-fe-refine.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "feat-exam-generation": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Generate a draft exam",
+      "path": "docs/feat-exam-generation.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "feat-exam-print": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Print the paper",
+      "path": "docs/feat-exam-print.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "feat-exercise-refinement": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Rework one exercise",
+      "path": "docs/feat-exercise-refinement.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-generate-exam": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Generating a draft exam",
+      "path": "docs/flow-generate-exam.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-refine-exercise": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Reworking one exercise",
+      "path": "docs/flow-refine-exercise.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "mod-be-agent-workspace": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Agent workspace",
+      "path": "docs/mod-be-agent-workspace.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "mod-be-claude-wrapper": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Claude Code CLI wrapper",
+      "path": "docs/mod-be-claude-wrapper.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "mod-fe-exam-builder": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Exam builder UI",
+      "path": "docs/mod-fe-exam-builder.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "prod-exam-builder": {
+      "kind": "product",
+      "plane": "product",
+      "title": "Exam builder",
+      "path": "docs/prod-exam-builder.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "svc-teacher-be": {
+      "kind": "service",
+      "plane": "implementation",
+      "title": "teacher-be",
+      "path": "docs/svc-teacher-be.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@db7332c"
+      ]
+    },
+    "svc-teacher-fe": {
+      "kind": "service",
+      "plane": "implementation",
+      "title": "teacher-fe",
+      "path": "docs/svc-teacher-fe.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@2e1dc9f"
+      ]
+    }
+  },
+  "edges": [
+    {
+      "from": "cmp-be-claude-runner",
+      "to": "mod-be-claude-wrapper",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-generate-endpoint",
+      "to": "cmp-be-claude-runner",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-generate-endpoint",
+      "to": "mod-be-claude-wrapper",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-skill-exam-subject",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-skill-refine-exercise",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-controls",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-exam-view",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-refine",
+      "to": "cmp-fe-exam-view",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-refine",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-be-claude-runner",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-be-generate-endpoint",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-be-skill-exam-subject",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-fe-controls",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-fe-exam-view",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "flow-generate-exam",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-exam-print",
+      "to": "cmp-fe-exam-view",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-print",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "cmp-be-claude-runner",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "cmp-be-generate-endpoint",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "cmp-be-skill-refine-exercise",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "cmp-fe-exam-view",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "cmp-fe-refine",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "flow-refine-exercise",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-refinement",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-be-claude-runner",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-be-generate-endpoint",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-be-skill-exam-subject",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-fe-controls",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-fe-exam-view",
+      "type": "step"
+    },
+    {
+      "from": "flow-refine-exercise",
+      "to": "cmp-be-claude-runner",
+      "type": "step"
+    },
+    {
+      "from": "flow-refine-exercise",
+      "to": "cmp-be-generate-endpoint",
+      "type": "step"
+    },
+    {
+      "from": "flow-refine-exercise",
+      "to": "cmp-be-skill-refine-exercise",
+      "type": "step"
+    },
+    {
+      "from": "flow-refine-exercise",
+      "to": "cmp-fe-exam-view",
+      "type": "step"
+    },
+    {
+      "from": "flow-refine-exercise",
+      "to": "cmp-fe-refine",
+      "type": "step"
+    },
+    {
+      "from": "mod-be-agent-workspace",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-claude-wrapper",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-fe-exam-builder",
+      "to": "svc-teacher-fe",
+      "type": "part_of"
+    },
+    {
+      "from": "prod-exam-builder",
+      "to": "svc-teacher-be",
+      "type": "composed_of"
+    },
+    {
+      "from": "prod-exam-builder",
+      "to": "svc-teacher-fe",
+      "type": "composed_of"
+    }
+  ]
+}

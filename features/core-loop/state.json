@@ -1,0 +1,134 @@
+{
+  "slug": "core-loop",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-07",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "644cb5d75f6c83b6"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "17ec8b4351069998"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "subissues": "b334324d362cc5df"
+          }
+        },
+        "staging": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "b334324d362cc5df"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "b334324d362cc5df"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "subissues": "b334324d362cc5df"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-5": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "fe-6": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "17ec8b4351069998",
+            "contracts": "9453a7dd7d245a79"
+          },
+          "reviewed": "{\"contracts\": \"9453a7dd7d245a79\", \"seed\": \"17ec8b4351069998\"}"
+        }
+      },
+      "summary": "Core loop shipped and landed: controls to draft exam, per-exercise refinement in Arabic, printable paper \u2014 both PRs merged into main"
+    }
+  }
+}
