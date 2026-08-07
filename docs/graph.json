@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T22:36:05",
+  "generated_at": "2026-08-08T00:25:56",
   "nodes": {
     "cmp-be-claude-runner": {
       "kind": "component",
@@ -33,6 +33,16 @@
       "status": "fresh",
       "repos": []
     },
+    "cmp-be-subjects-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Subject endpoints and teacher identity",
+      "path": "docs/cmp-be-subjects-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@2c56bef"
+      ]
+    },
     "cmp-fe-controls": {
       "kind": "component",
       "plane": "implementation",
@@ -56,6 +66,16 @@
       "path": "docs/cmp-fe-refine.md",
       "status": "fresh",
       "repos": []
+    },
+    "cmp-fe-subject-list": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Saved exams list",
+      "path": "docs/cmp-fe-subject-list.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@132202c"
+      ]
     },
     "feat-exam-generation": {
       "kind": "feature",
@@ -81,6 +101,14 @@
       "status": "fresh",
       "repos": []
     },
+    "feat-subject-library": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Keep every exam",
+      "path": "docs/feat-subject-library.md",
+      "status": "fresh",
+      "repos": []
+    },
     "flow-generate-exam": {
       "kind": "flow",
       "plane": "flow",
@@ -94,6 +122,14 @@
       "plane": "flow",
       "title": "Reworking one exercise",
       "path": "docs/flow-refine-exercise.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-save-and-reopen": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Saving an exam and reopening it later",
+      "path": "docs/flow-save-and-reopen.md",
       "status": "fresh",
       "repos": []
     },
@@ -112,6 +148,16 @@
       "path": "docs/mod-be-claude-wrapper.md",
       "status": "fresh",
       "repos": []
+    },
+    "mod-be-subject-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Subject store",
+      "path": "docs/mod-be-subject-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@2c56bef"
+      ]
     },
     "mod-fe-exam-builder": {
       "kind": "module",
@@ -177,6 +223,16 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-be-subjects-api",
+      "to": "mod-be-subject-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-subjects-api",
+      "to": "mod-be-subject-store",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-fe-controls",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
@@ -193,6 +249,11 @@
     },
     {
       "from": "cmp-fe-refine",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-subject-list",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
     },
@@ -277,6 +338,26 @@
       "type": "part_of"
     },
     {
+      "from": "feat-subject-library",
+      "to": "cmp-be-subjects-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-subject-library",
+      "to": "cmp-fe-subject-list",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-subject-library",
+      "to": "flow-save-and-reopen",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-subject-library",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "flow-generate-exam",
       "to": "cmp-be-claude-runner",
       "type": "step"
@@ -327,12 +408,42 @@
       "type": "step"
     },
     {
+      "from": "flow-save-and-reopen",
+      "to": "cmp-be-generate-endpoint",
+      "type": "step"
+    },
+    {
+      "from": "flow-save-and-reopen",
+      "to": "cmp-be-subjects-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-save-and-reopen",
+      "to": "cmp-fe-controls",
+      "type": "step"
+    },
+    {
+      "from": "flow-save-and-reopen",
+      "to": "cmp-fe-subject-list",
+      "type": "step"
+    },
+    {
+      "from": "flow-save-and-reopen",
+      "to": "mod-be-subject-store",
+      "type": "step"
+    },
+    {
       "from": "mod-be-agent-workspace",
       "to": "svc-teacher-be",
       "type": "part_of"
     },
     {
       "from": "mod-be-claude-wrapper",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-subject-store",
       "to": "svc-teacher-be",
       "type": "part_of"
     },

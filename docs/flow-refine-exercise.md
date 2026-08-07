@@ -22,5 +22,6 @@ tags: []
 
 ## Notes
 The frontend assembles the whole request; the backend does not know what an exam
-is. Nothing is stored server-side, so each refinement carries the current exercise
-with it — which is also why refinements compose naturally.
+is: each refinement carries the current exercise with it, which is why refinements
+compose naturally. The reworked exercise is then written back to the stored exam by
+id — see [[flow-save-and-reopen]].

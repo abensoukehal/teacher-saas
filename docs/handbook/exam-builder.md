@@ -18,11 +18,12 @@ value is time: an evening's work compressed into minutes.
 - [Generate a draft exam](../feat-exam-generation.md) — produce a draft exam from structured choices
 - [Rework one exercise](../feat-exercise-refinement.md) — rework one exercise in the teacher's own words
 - [Print the paper](../feat-exam-print.md) — a printable paper
+- [Keep every exam](../feat-subject-library.md) — every exam is kept and can be reopened
 
 ### Boundaries
 Mathematics only, and one stream's programme so far. Nothing student-facing.
-No accounts, no saved library, no billing: a draft lives in the browser for the
-session and is lost if it is cleared.
+No sign-in and no billing. Exams are kept, but they are tied to the browser they
+were made in, and there is no search, no folders and no deleting.
 
 ## Features
 
@@ -118,16 +119,75 @@ times on one paper.
 
 ### Notes
 The frontend assembles the whole request; the backend does not know what an exam
-is. Nothing is stored server-side, so each refinement carries the current exercise
-with it — which is also why refinements compose naturally.
+is: each refinement carries the current exercise with it, which is why refinements
+compose naturally. The reworked exercise is then written back to the stored exam by
+id — see [Saving an exam and reopening it later](../flow-save-and-reopen.md).
+
+## Keep every exam
+
+### Product behavior (what the user gets)
+
+Every exam a teacher generates is kept. Making a new one does not disturb the old
+ones, and the list in the sidebar is the way back into any of them: open it, and it
+is editable again exactly as it was — the same exercises, still refinable one by one.
+
+Before this, the product held **one** exam at a time. Generating a second silently
+destroyed the first, with no warning and no way back. Since an exam takes about two
+minutes to generate and is then reworked by hand, that was the most expensive thing
+the product could lose, and a teacher making their second exam of the trimester hit
+it every time.
+
+The teacher never signs in. Identity is handled invisibly, so nothing about this
+asks them to make an account or remember anything.
+
+When a save does not go through, the interface says so and offers to try again —
+but only when trying again can actually help. A teacher must never be shown a
+reassuring "saved" for work that was not.
+
+### What it does not do yet
+
+Exams are tied to the browser they were made in — there is no sign-in, so a
+different device shows a different (empty) list. There is no search, no folders, and
+nothing can be deleted.
+
+### Implementation parallel
+| Node | Stack | Role |
+|---|---|---|
+| [Saved exams list](../cmp-fe-subject-list.md) | fe | the list, its states, and the local migration |
+| [Subject endpoints and teacher identity](../cmp-be-subjects-api.md) | be | the endpoints and the invisible identity |
+| [Subject store](../mod-be-subject-store.md) | be | where exams are kept, and the insert-only rule |
+| [Saving an exam and reopening it later](../flow-save-and-reopen.md) | — | the sequence end to end |
+
+## Saving an exam and reopening it later
+
+### Sequence
+
+1. **First load** — the frontend asks for a teacher id if it has none and keeps it.
+   Any exam left over from the old browser-only scheme is uploaded once here.
+2. [Exam controls](../cmp-fe-controls.md) — the teacher sets what they want and generates
+3. [Generation endpoint](../cmp-be-generate-endpoint.md) — produces the exam, unchanged by this feature
+4. [Subject endpoints and teacher identity](../cmp-be-subjects-api.md) — the exam is stored as a **new** subject
+5. [Subject store](../mod-be-subject-store.md) — inserted; earlier exams are untouched
+6. [Saved exams list](../cmp-fe-subject-list.md) — it appears at the top of the list
+7. **Later** — the teacher picks any earlier exam and it opens in full, refinable
+   again. Reworking an exercise writes that exercise back to its stored exam.
+
+### Notes
+
+Generation itself is untouched by this flow — the exam is produced first and stored
+afterwards, as a separate call. That is why the backend's generation surface did not
+have to change, and why frontend and backend could ship in either order.
+
+The list is ordered by when an exam was last *touched*, not created, so reworking an
+old paper brings it back to the top.
 
 
 ## Under the hood
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Agent workspace, Claude Code CLI wrapper | CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint |
-| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel |
+| [teacher-be](../svc-teacher-be.md) | Agent workspace, Claude Code CLI wrapper, Subject store | CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity |
+| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list |
 
 
 ## Map
@@ -138,16 +198,21 @@ flowchart TD
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
   cmp_be_skill_exam_subject["cmp-be-skill-exam-subject"]
   cmp_be_skill_refine_exercise["cmp-be-skill-refine-exercise"]
+  cmp_be_subjects_api["cmp-be-subjects-api"]
   cmp_fe_controls["cmp-fe-controls"]
   cmp_fe_exam_view["cmp-fe-exam-view"]
   cmp_fe_refine["cmp-fe-refine"]
+  cmp_fe_subject_list["cmp-fe-subject-list"]
   feat_exam_generation["feat-exam-generation"]
   feat_exam_print["feat-exam-print"]
   feat_exercise_refinement["feat-exercise-refinement"]
+  feat_subject_library["feat-subject-library"]
   flow_generate_exam["flow-generate-exam"]
   flow_refine_exercise["flow-refine-exercise"]
+  flow_save_and_reopen["flow-save-and-reopen"]
   mod_be_agent_workspace["mod-be-agent-workspace"]
   mod_be_claude_wrapper["mod-be-claude-wrapper"]
+  mod_be_subject_store["mod-be-subject-store"]
   mod_fe_exam_builder["mod-fe-exam-builder"]
   prod_exam_builder["prod-exam-builder"]
   svc_teacher_be["svc-teacher-be"]
@@ -157,10 +222,13 @@ flowchart TD
   cmp_be_generate_endpoint -.-> mod_be_claude_wrapper
   cmp_be_skill_exam_subject -.-> mod_be_agent_workspace
   cmp_be_skill_refine_exercise -.-> mod_be_agent_workspace
+  cmp_be_subjects_api -->|depends_on| mod_be_subject_store
+  cmp_be_subjects_api -.-> mod_be_subject_store
   cmp_fe_controls -.-> mod_fe_exam_builder
   cmp_fe_exam_view -.-> mod_fe_exam_builder
   cmp_fe_refine -->|depends_on| cmp_fe_exam_view
   cmp_fe_refine -.-> mod_fe_exam_builder
+  cmp_fe_subject_list -.-> mod_fe_exam_builder
   feat_exam_generation -->|realized_by| cmp_be_claude_runner
   feat_exam_generation -->|realized_by| cmp_be_generate_endpoint
   feat_exam_generation -->|realized_by| cmp_be_skill_exam_subject
@@ -177,6 +245,10 @@ flowchart TD
   feat_exercise_refinement -->|realized_by| cmp_fe_refine
   feat_exercise_refinement -->|realized_by| flow_refine_exercise
   feat_exercise_refinement -.-> prod_exam_builder
+  feat_subject_library -->|realized_by| cmp_be_subjects_api
+  feat_subject_library -->|realized_by| cmp_fe_subject_list
+  feat_subject_library -->|realized_by| flow_save_and_reopen
+  feat_subject_library -.-> prod_exam_builder
   flow_generate_exam -->|step| cmp_be_claude_runner
   flow_generate_exam -->|step| cmp_be_generate_endpoint
   flow_generate_exam -->|step| cmp_be_skill_exam_subject
@@ -187,8 +259,14 @@ flowchart TD
   flow_refine_exercise -->|step| cmp_be_skill_refine_exercise
   flow_refine_exercise -->|step| cmp_fe_exam_view
   flow_refine_exercise -->|step| cmp_fe_refine
+  flow_save_and_reopen -->|step| cmp_be_generate_endpoint
+  flow_save_and_reopen -->|step| cmp_be_subjects_api
+  flow_save_and_reopen -->|step| cmp_fe_controls
+  flow_save_and_reopen -->|step| cmp_fe_subject_list
+  flow_save_and_reopen -->|step| mod_be_subject_store
   mod_be_agent_workspace -.-> svc_teacher_be
   mod_be_claude_wrapper -.-> svc_teacher_be
+  mod_be_subject_store -.-> svc_teacher_be
   mod_fe_exam_builder -.-> svc_teacher_fe
   prod_exam_builder -->|composed_of| svc_teacher_be
   prod_exam_builder -->|composed_of| svc_teacher_fe
@@ -196,6 +274,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,feat_exam_generation,feat_exam_print,feat_exercise_refinement,flow_generate_exam,flow_refine_exercise,mod_be_agent_workspace,mod_be_claude_wrapper,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_subjects_api,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_subject_list,feat_exam_generation,feat_exam_print,feat_exercise_refinement,feat_subject_library,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_subject_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 
