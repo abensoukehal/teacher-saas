@@ -74,3 +74,18 @@ so history contains each superseded version exactly once.
 **Now covered** by two clauses: two simultaneous refines, and ten. Every version that was
 accepted (`200`) must still be reachable, on the sheet or in history. Verified to have
 teeth — removing the CAS fails both.
+
+### Second correction — `updatedAt` was the wrong version token
+
+The first fix used `updatedAt` as the compare-and-set token. It held for two concurrent
+refines and failed **~50% of runs at ten**, because `Date` has millisecond resolution: two
+replaces inside the same millisecond write an identical value, so the CAS matches when it
+must not and a version is lost exactly as before.
+
+Caught by the very test added for the first fix — which is the argument for writing the
+concurrency clause at a width the real world can exceed, not just at double-click width.
+
+Now a monotonic `rev` counter, `$inc`-ed on each successful replace, with legacy documents
+(no `rev`) matched on its absence. Six consecutive green runs including the ten-way case.
+The exact-key pin caught the new field immediately and was updated to expect it —
+which is the pin doing precisely the job it was restored for.

@@ -231,6 +231,9 @@ describeIfLane(BE, "be-3 — exercise revision history", () => {
           "controls",
           "createdAt",
           "genCorrelationId",
+          // the optimistic-concurrency counter, added when the millisecond-resolution
+          // updatedAt proved unsafe as a version token
+          "rev",
           "subject",
           "teacherId",
           "updatedAt",

@@ -277,9 +277,40 @@ describeIfLane(BE, "be-2 — recovery + rejection", () => {
     });
 
     test("the backfill touched teachers only — subjects were not rewritten", async () => {
-      const sample = await db.collection("subjects").findOne({});
-      expect(Object.keys(sample).sort()).toEqual(
-        ["_id", "controls", "createdAt", "subject", "teacherId", "updatedAt"].sort(),
+      // Deterministic on purpose. This used to assert an exact key set against
+      // `findOne({})` in NATURAL ORDER, which is a coin flip once be-4 added a field:
+      // legacy documents have six keys and new ones seven, so the same code passed or
+      // failed depending on which document Mongo happened to return. A flaky pin in a
+      // regression net is worse than no pin — it trains people to re-run until green.
+      const legacy = await db
+        .collection("subjects")
+        .findOne({ genCorrelationId: { $exists: false } });
+      if (legacy) {
+        // A pre-existing document: untouched by the backfill, and still exactly as it was.
+        expect(Object.keys(legacy).sort()).toEqual(
+          ["_id", "controls", "createdAt", "subject", "teacherId", "updatedAt"].sort(),
+        );
+      }
+
+      // And a document this test creates itself — the current shape, pinned exactly.
+      const t = await signup();
+      const made = await call("POST", "/api/subjects", {
+        teacher: t.teacherId,
+        body: { subject: SUBJECT, controls: null },
+      });
+      const fresh = await db
+        .collection("subjects")
+        .findOne({ _id: new (require("mongodb").ObjectId)(made.body.id) });
+      expect(Object.keys(fresh).sort()).toEqual(
+        [
+          "_id",
+          "controls",
+          "createdAt",
+          "genCorrelationId",
+          "subject",
+          "teacherId",
+          "updatedAt",
+        ].sort(),
       );
     });
   });

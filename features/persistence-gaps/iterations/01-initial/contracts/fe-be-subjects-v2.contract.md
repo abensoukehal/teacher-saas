@@ -80,9 +80,15 @@ serves it directly.
 Request and response shapes are **unchanged**. The side effect is that the superseded
 version is appended to `exercise_revisions`.
 
-**Concurrency: the write is a compare-and-set on the document's `updatedAt`.** Only the
-writer whose read is still current may land; a loser re-reads and retries, and after five
-failed attempts the caller gets `409 conflict` (Arabic message, retryable by the teacher).
+**Concurrency: the write is a compare-and-set on a monotonic `rev` counter** (`$inc`-ed on
+every successful replace; absent on documents written before it existed, treated as 0). Only the writer whose read is still current may land; a loser re-reads and retries, and
+after five failed attempts the caller gets `409 conflict` (Arabic message, retryable).
+
+`updatedAt` was tried first and is **not** a safe version token — millisecond resolution
+means two replaces inside the same millisecond produce an identical value, the CAS matches
+when it must not, and a version is lost anyway. That failed ~50% of runs under ten
+concurrent refines and passed under two, which is exactly the shape of bug a
+sequential-only oracle never sees.
 
 Without it, two simultaneous refines of the same exercise both returned `200` and one
 version vanished from the sheet *and* from history — reproduced 5/5 at ordinary
@@ -123,6 +129,7 @@ subjects
   …
   genCorrelationId  string | null   ← the correlationId of the /api/generate run
                                       that produced this subject. null when unknown.
+  rev               int (optional)  ← optimistic-concurrency counter for replaceExercise
 ```
 
 `null` for every one of the ~90 existing documents, and for any subject created without it.
