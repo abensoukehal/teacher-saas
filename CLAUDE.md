@@ -319,7 +319,10 @@ and reports "repo not attached", which is harmless. Tests belong in
 > skipped, which is what black-box suites do when no lane is up — reports
 > `gate FAIL` in job mode and `gate INCOMPLETE` on a mainline. It never reads as PASS.
 > The old note here claimed a fresh job's receipt reads `ci baseline: green` with no gate
-> at all; that is no longer true, and the receipt now reports RED honestly.
+> at all. That was true, and stayed true longer than it looked: the receipt gated the
+> *mainline* net rather than the job, and only recorded RED while those suites happened to
+> hard-fail. Fixed properly in WF-83 — the receipt now runs the JOB's gate from the job
+> worktree, and a fresh job honestly reads `RED — no gate yet`.
 >
 > Black-box suites take their lane from `CHAR_BE_URL` / `CHAR_BE_LOG`, which `tools/ci`
 > derives from the checkout's own slot. **Never hardcode a port in a suite** — it will skip
