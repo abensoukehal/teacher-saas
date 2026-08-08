@@ -19,7 +19,44 @@
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-3": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-4": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-5": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-3": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-4": {
+          "status": "todo",
+          "tag": "hardening"
+        }
+      }
     }
   }
 }
