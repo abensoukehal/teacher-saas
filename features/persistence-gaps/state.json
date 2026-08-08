@@ -1,0 +1,143 @@
+{
+  "slug": "persistence-gaps",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-08",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "4b83eaec8661ec38"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "subissues": "58a53c82864c9c66"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "subissues": "58a53c82864c9c66"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "58a53c82864c9c66"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "be-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "be-5": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "fe-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "fe-4": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          },
+          "reviewed": "{\"contracts\": \"d5cbc1a2000b8fc0\", \"seed\": \"b8d00d32f8b875c9\"}"
+        },
+        "qa-1": {
+          "status": "done",
+          "tag": "hardening",
+          "reviewed": "null"
+        },
+        "qa-2": {
+          "status": "done",
+          "tag": "hardening",
+          "reviewed": "null"
+        },
+        "qa-3": {
+          "status": "done",
+          "tag": "hardening",
+          "reviewed": "null"
+        }
+      },
+      "summary": "Accounts with a recovery code, exercise revision history, cost attribution, queued saves \u2014 and the orphaned test data purged"
+    }
+  }
+}

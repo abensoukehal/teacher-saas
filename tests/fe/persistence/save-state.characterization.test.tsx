@@ -37,6 +37,19 @@ async function bootAndGenerate() {
 
 beforeEach(() => {
   localStorage.clear();
+  // RE-BASELINED for persistence-gaps fe-1 (declared supersession, WF-65).
+  //
+  // These suites were written when the app minted an ANONYMOUS teacher id on boot
+  // (POST /api/teacher) and walked straight into the builder. fe-1's declared scope is
+  // to gate the app on a teacher id and render the auth panel when there is none, so
+  // that boot-time mint no longer happens and every one of these mounts stopped at the
+  // sign-in screen.
+  //
+  // The invariants these suites exist for are UNCHANGED — a second exam must not destroy
+  // the first, every subject call carries the teacher header, a legacy draft is adopted
+  // exactly once. Seeding the id puts the app back in the state each test was actually
+  // written to exercise, so the pins keep testing what they were built to test.
+  localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
   vi.unstubAllGlobals();
   vi.resetModules();
   Element.prototype.scrollIntoView = vi.fn();
@@ -115,16 +128,23 @@ describe("positive — an honest save indicator", () => {
 });
 
 describe("QA regression — a failed boot must not silently drop every save", () => {
-  test("if boot identity fails, generating still saves (identity is recovered)", async () => {
-    let teacherCalls = 0;
+  /**
+   * SUPERSEDED by persistence-gaps fe-1 (WF-65), 2026-08-08.
+   *
+   * This pinned the BOOT-MINT RETRY: POST /api/teacher failed on boot, and the app
+   * recovered by minting again later. fe-1 gates the app on a teacher id, so there is no
+   * boot mint to fail — identity now comes from sign-in, whose failure states (retryable
+   * store_unavailable vs. non-retryable invalid_credentials) are pinned in
+   * features/persistence-gaps/tests/fe/auth.characterization.test.tsx.
+   *
+   * The invariant that outlives the flow is the narrow one asserted here: a flaky
+   * identity endpoint must never leave a teacher who HAS an identity unable to save.
+   */
+  test("a failing /api/teacher never blocks saving for a teacher who has an id", async () => {
     let creates = 0;
     mockFetch((url, init) => {
-      if (url === "/api/teacher") {
-        teacherCalls += 1;
-        // The FIRST call — the boot one — fails, as a network blip would.
-        if (teacherCalls === 1) return { ok: false, status: 500, json: async () => ({}) };
-        return ok(201, { teacherId: TID });
-      }
+      // Hard-fail identity issuance for the whole test. It must be irrelevant.
+      if (url === "/api/teacher") return { ok: false, status: 500, json: async () => ({}) };
       if (url === "/api/generate") return ok(200, { data: EXAM });
       if (url === "/api/subjects" && init.method === "POST") {
         creates += 1;
@@ -135,15 +155,9 @@ describe("QA regression — a failed boot must not silently drop every save", ()
 
     const { default: App } = await import("@/App");
     render(<App />);
-    // Boot failed, so no id is stored yet.
-    await waitFor(() => expect(teacherCalls).toBe(1));
 
-    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
-
-    // The exam must still reach the store — a 125-second generation silently
-    // discarded is the exact harm this job removes.
+    fireEvent.click(await screen.findByRole("button", { name: "توليد الموضوع" }));
     await waitFor(() => expect(creates).toBe(1));
-    await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
   });
 });
 

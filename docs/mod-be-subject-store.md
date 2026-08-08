@@ -4,8 +4,8 @@ id: mod-be-subject-store
 title: "Subject store"
 plane: implementation
 part_of: svc-teacher-be
-repos: [teacher-be@2c56bef]
-source: [teacher-be/src/store/client.ts, teacher-be/src/store/subjects.ts]
+repos: [teacher-be@f6cf955]
+source: [teacher-be/src/store/client.ts, teacher-be/src/store/subjects.ts, teacher-be/src/store/revisions.ts]
 status: fresh
 last_verified: 2026-08-08
 tags: [backend, mongodb, persistence]

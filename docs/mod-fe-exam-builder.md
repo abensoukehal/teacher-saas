@@ -6,7 +6,7 @@ plane: implementation
 part_of: svc-teacher-fe
 source: [teacher-fe/src/]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-08
 tags: [rtl, katex]
 ---
 

@@ -4,9 +4,9 @@ id: cmp-be-subjects-api
 title: "Subject endpoints and teacher identity"
 plane: implementation
 part_of: mod-be-subject-store
-realizes: [feat-subject-library]
+realizes: [feat-subject-library, feat-exercise-history]
 depends_on: [mod-be-subject-store]
-repos: [teacher-be@2c56bef]
+repos: [teacher-be@f6cf955]
 source: [teacher-be/src/routes/subjects.ts, teacher-be/src/teacher.ts]
 status: fresh
 last_verified: 2026-08-08

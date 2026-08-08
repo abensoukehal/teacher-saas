@@ -418,9 +418,27 @@ gate("the store is down — the promise be-1 deferred to here", () => {
     }
   }, 30000);
 
-  test("identity still works with the store down — it needs no database", async () => {
+  /**
+   * SUPERSEDED BY persistence-gaps be-2 (WF-65), 2026-08-08.
+   *
+   * This pinned "identity needs no database": POST /api/teacher minted an id in memory
+   * and returned 201 even with the store dead. be-2 makes that route RECORD the id it
+   * mints, because requireTeacher now rejects ids the server never recorded — so
+   * handing back an unrecorded id would give a teacher a credential that fails on its
+   * very next request. Needing the store is the point, not an oversight.
+   *
+   * The invariant the pin protected — this service degrades HONESTLY when the store is
+   * down, never with a bare 500 — is unchanged, and is what the flipped expectation
+   * asserts: a classified, retryable 503.
+   *
+   * Practically nothing is lost: with the store down the old 201 handed back an id that
+   * could not create or list a single subject.
+   */
+  test("identity now needs the store, and says so honestly (503, not 500)", async () => {
     const res = await fetch(`http://localhost:${PORT}/api/teacher`, { method: "POST" });
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error.type).toBe("store_unavailable");
   });
 
   test("a repeated call still fails cleanly — a dead attempt is not cached forever", async () => {

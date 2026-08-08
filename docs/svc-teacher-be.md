@@ -3,10 +3,10 @@ kind: service
 id: svc-teacher-be
 title: "teacher-be"
 plane: implementation
-repos: [teacher-be@db7332c]
+repos: [teacher-be@f6cf955]
 source: [teacher-be/]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-08
 tags: [backend, express, typescript]
 ---
 

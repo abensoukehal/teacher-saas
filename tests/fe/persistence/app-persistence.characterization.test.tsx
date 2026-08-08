@@ -76,6 +76,19 @@ async function generate() {
 
 beforeEach(() => {
   localStorage.clear();
+  // RE-BASELINED for persistence-gaps fe-1 (declared supersession, WF-65).
+  //
+  // These suites were written when the app minted an ANONYMOUS teacher id on boot
+  // (POST /api/teacher) and walked straight into the builder. fe-1's declared scope is
+  // to gate the app on a teacher id and render the auth panel when there is none, so
+  // that boot-time mint no longer happens and every one of these mounts stopped at the
+  // sign-in screen.
+  //
+  // The invariants these suites exist for are UNCHANGED — a second exam must not destroy
+  // the first, every subject call carries the teacher header, a legacy draft is adopted
+  // exactly once. Seeding the id puts the app back in the state each test was actually
+  // written to exercise, so the pins keep testing what they were built to test.
+  localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
   vi.unstubAllGlobals();
   vi.resetModules();
   // jsdom does not implement scrollIntoView, and RefinePanel calls it on mount to
@@ -122,12 +135,28 @@ describe("THE DEFECT — a second exam must not destroy the first", () => {
 });
 
 describe("F1 — identity", () => {
-  test("no stored id → exactly one POST /api/teacher, and it is persisted", async () => {
+  /**
+   * SUPERSEDED by persistence-gaps fe-1 (WF-65), 2026-08-08.
+   *
+   * This pinned the ANONYMOUS BOOT MINT: with no stored id the app called
+   * POST /api/teacher once and persisted the result. fe-1's declared scope is to gate
+   * the app on a teacher id, so there is no boot mint any more — an unidentified visitor
+   * gets the sign-in screen instead.
+   *
+   * The invariant worth keeping is the one flipped below: with no identity the app must
+   * NOT touch a teacher's data. It used to satisfy that by minting; it now satisfies it
+   * by asking who you are. Either way, no subject call may leave the browser.
+   */
+  test("no stored id → the auth gate, and NOT a single subject call", async () => {
     const h = harness();
+    localStorage.removeItem("teacher.id.v1");
     const { default: App } = await import("@/App");
     render(<App />);
-    await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBe(JSON.stringify(TID)));
-    expect(h.calls.filter((c) => c.url === "/api/teacher")).toHaveLength(1);
+
+    // no silent identity, and nothing touched
+    await waitFor(() => expect(h.calls.filter((c) => c.url === "/api/teacher")).toHaveLength(0));
+    expect(h.calls.filter((c) => c.url.startsWith("/api/subjects"))).toHaveLength(0);
+    expect(localStorage.getItem("teacher.id.v1")).toBeNull();
   });
 
   test("an existing id → ZERO POST /api/teacher", async () => {

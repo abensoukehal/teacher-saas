@@ -3,11 +3,11 @@ kind: flow
 id: flow-refine-exercise
 title: "Reworking one exercise"
 plane: flow
-realizes: [feat-exercise-refinement]
+realizes: [feat-exercise-refinement, feat-exercise-history]
 steps: [cmp-fe-refine, cmp-be-generate-endpoint, cmp-be-claude-runner, cmp-be-skill-refine-exercise, cmp-fe-exam-view]
 crosses: [svc-teacher-fe, svc-teacher-be]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-08
 tags: []
 ---
 
