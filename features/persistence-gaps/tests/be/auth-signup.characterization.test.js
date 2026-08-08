@@ -264,4 +264,33 @@ describeIfLane(BE, "be-1 — accounts adopt the existing teacher id", () => {
       }
     });
   });
+
+  describe("QA BUG-3 — a body we cannot parse is the caller's fault, in Arabic", () => {
+    test("malformed JSON is 400 invalid_request, Arabic, WITH a correlationId", async () => {
+      const res = await fetch(`${BE}/api/subjects`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-teacher-id": "f".repeat(32) },
+        body: "{bad json",
+      });
+      const body = await res.json();
+      expect(res.status).toBe(400);
+      expect(body.error.type).toBe("invalid_request");
+      expect(body.error.message).toMatch(/[\u0600-\u06FF]/); // Arabic
+      // The one response a caller most needs to trace used to be the one that could not
+      // be traced: correlationId was assigned after the body parser.
+      expect(body.correlationId).toBeTruthy();
+    });
+
+    test("an oversized body is 413, not a bare 500", async () => {
+      const res = await fetch(`${BE}/api/subjects`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-teacher-id": "f".repeat(32) },
+        body: JSON.stringify({ subject: "x".repeat(2_000_000) }),
+      });
+      const body = await res.json();
+      expect(res.status).toBe(413);
+      expect(body.error.type).toBe("payload_too_large");
+      expect(body.correlationId).toBeTruthy();
+    });
+  });
 });

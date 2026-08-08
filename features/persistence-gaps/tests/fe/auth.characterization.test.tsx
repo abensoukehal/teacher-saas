@@ -568,3 +568,73 @@ describe("negative — every word the teacher reads is ours (review F1)", () => 
     );
   });
 });
+
+describe("QA BUG-1 — signing in must not silently orphan this browser's exams", () => {
+  test("the displaced anonymous id is KEPT, and the teacher is told in Arabic", async () => {
+    harness();
+    localStorage.setItem("teacher.id.v1", JSON.stringify(HELD));
+    await mountApp();
+
+    click("الحساب");
+    await signIn();
+
+    // the account's id is now in force …
+    await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBe(JSON.stringify(TID)));
+    // … the displaced one is not thrown away …
+    expect(localStorage.getItem("teacher.previous.v1")).toBe(JSON.stringify(HELD));
+    // … and the loss is not silent.
+    expect(await screen.findByText(/لم تُنقَل إلى هذا الحساب/)).toBeTruthy();
+  });
+
+  test("no notice when there was nothing to displace", async () => {
+    harness();
+    await mountApp();
+    await signIn();
+    await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBe(JSON.stringify(TID)));
+    expect(screen.queryByText(/لم تُنقَل إلى هذا الحساب/)).toBeNull();
+    expect(localStorage.getItem("teacher.previous.v1")).toBeNull();
+  });
+});
+
+describe("QA BUG-2 — a reload must reconcile with the server, not trust the paint cache", () => {
+  test("boot refetches the open subject and prefers the server's version", async () => {
+    const STALE = { ...EXAM, title: "نسخة قديمة من الذاكرة المؤقتة" };
+    const FRESH_EXAM = { ...EXAM, title: "النسخة الحقيقية من الخادم" };
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push(`${init.method ?? "GET"} ${url}`);
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/subjects/s1") {
+          return res(200, {
+            id: "s1",
+            createdAt: "t",
+            updatedAt: "t",
+            subject: FRESH_EXAM,
+            genCorrelationId: null,
+          });
+        }
+        if (url === "/api/subjects") return res(200, { subjects: SUMMARIES });
+        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+      }),
+    );
+
+    // a browser that was mid-exam when it was closed
+    localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
+    localStorage.setItem("teacher.current.v1", JSON.stringify("s1"));
+    localStorage.setItem("teacher.cache.v1", JSON.stringify(STALE));
+
+    await mountApp();
+
+    // it must ASK the server, not just paint the cache …
+    await waitFor(() => expect(calls).toContain("GET /api/subjects/s1"));
+    // … and the server wins. A version refined on another device must not render as
+    // current forever — refining from a stale pane would push an old body through the CAS.
+    expect(await screen.findByText(FRESH_EXAM.title)).toBeTruthy();
+  });
+});
