@@ -29,7 +29,7 @@
           }
         },
         "be-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-3": {
