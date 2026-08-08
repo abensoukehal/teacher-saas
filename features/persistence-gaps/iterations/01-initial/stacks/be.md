@@ -39,16 +39,23 @@ shaped the way they are:
   pure store module and had to be folded into `be-3` mid-implement, because it would
   otherwise have shipped code no gate could verify. **Every sub-issue below therefore
   carries its own route.** Do not re-split them into store-only slices.
-- **Resolve the base URL from the environment, never hardcode the lane:**
+- **Use the engine's lane helpers. Do not hand-roll a guard or a port** (WF-82, shipped
+  2026-08-08 — this supersedes the earlier guidance in this file):
   ```js
-  const BE = process.env.BE_URL ?? "http://localhost:9300";
+  const { describeIfLane } = require("guard");
+  const BE  = process.env.CHAR_BE_URL || "http://localhost:9000";  // tools/ci derives it
+  const LOG = process.env.CHAR_BE_LOG || "/tmp/teacher-backend.log";
+  describeIfLane(BE, "…", () => { … });
   ```
-  The promoted `persistence` suites hardcode `:9200` and consequently skip forever on any
-  other lane. Do not repeat that.
-- **Presence-guard, but say so loudly.** Guard on `BE` being reachable and skip when it is
-  not (a red that only means "server down" trains people to ignore the gate) — and print the
-  skip reason. See the known gate defect: `tools/ci` currently summarises an all-skipped run
-  as PASS.
+  `tools/ci` computes `CHAR_BE_URL` and `CHAR_BE_LOG` from **this checkout's own lane**, so
+  the server you drive is the one `CHAR_ROOTDIR` resolves `dist/` and `run-log.jsonl`
+  against. Hardcoding either pins the suite to one slot, where it skips forever — and a
+  skip that looks like a pass is the failure WF-82 exists to stop.
+- **A hollow gate is now RED in job mode.** If every test in the layer skips because no lane
+  is up, `tools/ci be --slug persistence-gaps` FAILS. So `tools/dev up -d` before gating —
+  a green here means tests actually ran.
+- **`dist/` must be built** for any suite that spawns the server itself (`npm run build` in
+  the checkout). The dead-store suite in the promoted net does this.
 
 ### Run headless
 
