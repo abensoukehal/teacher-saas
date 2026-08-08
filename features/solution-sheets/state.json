@@ -37,11 +37,11 @@
           }
         },
         "fe-1": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "fe-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         }
       }
