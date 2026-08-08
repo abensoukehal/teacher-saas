@@ -9,7 +9,7 @@
         "seed": {
           "status": "locked",
           "derived_from": {
-            "brief": "e64e85cb05b1de98"
+            "brief": "b27c3de898563242"
           }
         },
         "contracts": {
@@ -19,7 +19,24 @@
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        }
+      }
     }
   }
 }
