@@ -24,6 +24,12 @@
             "seed": "ce992b6c0a796e9a",
             "subissues": "bcfcfe6f8412c77d"
           }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "bcfcfe6f8412c77d"
+          }
         }
       },
       "subissues": {
