@@ -25,7 +25,7 @@
           "tag": "happy-path",
           "derived_from": {
             "seed": "b8d00d32f8b875c9",
-            "contracts": "c227d70d376cc664"
+            "contracts": "d5cbc1a2000b8fc0"
           }
         },
         "be-2": {
@@ -33,7 +33,7 @@
           "tag": "happy-path",
           "derived_from": {
             "seed": "b8d00d32f8b875c9",
-            "contracts": "c227d70d376cc664"
+            "contracts": "d5cbc1a2000b8fc0"
           }
         },
         "be-3": {
@@ -41,7 +41,7 @@
           "tag": "happy-path",
           "derived_from": {
             "seed": "b8d00d32f8b875c9",
-            "contracts": "c227d70d376cc664"
+            "contracts": "d5cbc1a2000b8fc0"
           }
         },
         "be-4": {
@@ -49,7 +49,7 @@
           "tag": "happy-path",
           "derived_from": {
             "seed": "b8d00d32f8b875c9",
-            "contracts": "c227d70d376cc664"
+            "contracts": "d5cbc1a2000b8fc0"
           }
         },
         "be-5": {
