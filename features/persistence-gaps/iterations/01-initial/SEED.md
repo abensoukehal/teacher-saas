@@ -69,9 +69,7 @@ the product's central act and there is no undo.
 | be | `teacher-be/src/config.ts:55-56` | `MONGO_URL` / `MONGO_DB` — already env-driven | read-only |
 | be | `teacher-be/src/claude/runner.ts:138` | `spawn(claude.bin, …, {env: process.env})` — the hosting constraint | read-only |
 | be | `teacher-be/package.json` | 9 deps; **no hasher / session / JWT / mail lib** | modify |
-| infra | `teacher-be/Dockerfile` (absent) | image must carry the Claude Code CLI + its credentials | new |
-| infra | `teacher-fe/Dockerfile` or static host (absent) | Vite static build — the easy half | new |
-| infra | `.github/workflows/` (absent in both) | no CI exists to build or deploy from | new |
+| ~~infra~~ | `Dockerfile` / `.github/workflows/` — absent in both repos | **out of scope** — recorded for the split-out #6 job | none |
 
 ### 2 · Baseline recordings (surface → re-run command → recorded shape)
 
@@ -87,7 +85,8 @@ on 127.0.0.1:27017. **No generation was run** — the exam payload is replayed f
 | `POST /api/subjects` | see `journal/probe-gaps.py` | `201`; stored doc fields = `_id, teacherId, subject, controls, createdAt, updatedAt` | 2026-08-08 · dev |
 | `PUT …/exercises/ex1` | see `journal/probe-gaps.py` | `200`; prior statement **unrecoverable**; doc keys unchanged — no `history`/`revisions` | 2026-08-08 · dev |
 | `GET /api/subjects` (unknown id) | `curl -s -H 'x-teacher-id: <fresh 32hex>' localhost:9300/api/subjects` | `200 {subjects:[]}` — unknown id accepted | 2026-08-08 · dev |
-| Mongo shape | `mongosh --quiet --eval 'db.getSiblingDB("teacher_saas").subjects.findOne()'` | no `correlationId`, no `costUsd`, no history; indexes `{_id:1}`, `{teacherId:1,updatedAt:-1}`; **90 docs** | 2026-08-08 · dev |
+| Mongo shape | `mongosh --quiet --eval 'db.getSiblingDB("teacher_saas").subjects.findOne()'` | fields exactly `_id, teacherId, subject, controls, createdAt, updatedAt` — no `correlationId`, no `costUsd`, no history; indexes `{_id:1}`, `{teacherId:1,updatedAt:-1}` | 2026-08-08 · dev |
+| Mongo doc count | `mongosh --quiet --eval 'db.getSiblingDB("teacher_saas").subjects.countDocuments({})'` | **90 at first capture; 92 after lock re-verification** — each `probe-gaps.py` run inserts 2. The purge task must count immediately before it runs, never trust this number. | 2026-08-08 · dev |
 | `run-log.jsonl` | `cat teacher-be/run-log.jsonl` | link lines `{kind:subject, op, subjectId, correlationId}` — **each correlationId is that HTTP request's own** | 2026-08-08 · dev |
 
 ### 3 · Perimeter consumers (recorded)
@@ -141,9 +140,10 @@ different HTTP request, with a third correlationId, which never reaches any of t
 | What is the CI baseline really? | **resolved — RED, honestly** | `no characterization tests resolved` (WF-68). Receipt agrees. `project/CLAUDE.md` still documents the old phantom-green behaviour — **stale, fix in /document**. |
 | Are the 90 existing subjects worth migrating? | **resolved — purge (user, 2026-08-08)** | Orphaned test data. Executed in IMPLEMENT behind a `mongodump`, never at discovery time. |
 | Which identity mechanism? | **resolved — full email+password (user, 2026-08-08)** | Discovery recommended a recovery code; overruled. Dissent recorded in Scope. |
-| **How does a hosted `be` authenticate the Claude Code CLI?** | **PARKED — blocking for #6** (`blocked_on: infra decision`) | No API key exists (verified). Credentials are the CLI's own interactive `/login` store. Needs a persistent home volume or an injected secret, plus a re-auth procedure for expiry. **PLANNING cannot partition #6 until this is answered.** |
-| **Does password reset need mail in this job?** | **PARKED — blocking for #1's completeness** (`blocked_on: product decision`) | Mail is ★ PENDING. Without it accounts ship with no self-serve reset, so a forgotten password loses the account — the same class of loss #1 exists to fix. |
-| Which host, and managed Mongo or self-hosted? | **parked** | Downstream of the CLI-auth answer above; that decision constrains the host. `MONGO_URL`/`MONGO_DB` already env-driven (`config.ts:55-56`), so the store half needs no code change. |
+| How does a hosted `be` authenticate the Claude Code CLI? | **resolved by descoping — #6 split to its own job (user, 2026-08-08)** | Was this job's blocking unknown. No API key exists (verified); credentials are the CLI's own interactive `/login` store. Evidence written up in Solution direction §#6 for the follow-on job. |
+| Does password reset need mail in this job? | **resolved — no (user, 2026-08-08)** | Reset is a one-time recovery code issued at sign-up. Removes the mail dependency; accounts ship complete. |
+| Which host, and managed Mongo or self-hosted? | **out of scope — follow-on job** | `MONGO_URL`/`MONGO_DB` already env-driven (`config.ts:55-56`), so the store half needs no code change whenever it happens. |
+| Recovery-code alphabet, length, single-use policy | **accepted-risk → PLANNING** | Must be hand-transcribable under RTL; a product decision, not a crypto one. |
 | Which password-hashing / session library? | **parked → PLANNING** | `be` has 9 deps and none is a hasher, session or JWT lib. All new dependency decisions. |
 | Will rejecting unknown teacher ids break the regression net? | **accepted-risk → PLANNING** | `requireTeacher` currently accepts any 32-hex id; accounts make rejection possible. The promoted suites pin today's acceptance. Re-baseline consciously. |
 | Revision-history storage shape | **accepted-risk → PLANNING** | Embedded array vs. separate collection; both honour the stated constraints. Decide with the acting-surface map in hand. |
@@ -184,13 +184,19 @@ unknown-id hole (kit §2) — which is a behaviour change the promoted regressio
 - **No auth dependency exists yet.** `be` has 9 dependencies and none of them is a password
   hasher, a session/JWT library, or `helmet`. Every one of those is a new dependency
   decision for PLANNING, not an existing tool to reach for.
-- **Password reset is the open edge.** Self-serve reset needs mail. Until mail is
-  integrated, accounts ship *without* it — meaning a forgotten password is as unrecoverable
-  as a cleared browser is today, which is the very failure this gap exists to fix.
-  **PLANNING must resolve this explicitly** (see unknowns).
-- *Why not a recovery code (discovery's recommendation):* overruled by the user; recorded
-  above.
-- *Why not magic links:* same mail dependency, without the password surface.
+**Reset is a one-time recovery code issued at sign-up, not a mailed link.** This is what
+keeps accounts *complete* without a mail integration: the teacher is shown a code once,
+and presenting it plus a new password re-attaches them to their `teacherId`. It must be
+storable as a hash like the password itself, single-use, and re-issuable after use.
+- *Why not mailed reset links:* mail is ★ PENDING; making it a prerequisite would grow this
+  job by a whole integration, and without it accounts would ship with a forgotten password
+  as unrecoverable as a cleared browser is today — reintroducing the exact loss #1 exists
+  to fix.
+- *Why not magic links as the primary login:* same mail dependency, without the password
+  surface the user asked for.
+- **The recovery code is teacher-facing text under RTL** and must be transcribable by hand —
+  a teacher will write it on paper. That constrains its alphabet and length; it is a product
+  decision, not a crypto one.
 
 **#2 Revision history — keep the current exercise where it is, append the old one elsewhere.**
 The current sheet must stay a single cheap read (stated constraint), and exercise ids
@@ -215,7 +221,11 @@ discipline already in `persist.ts`; the exam is already cached there, so this is
 
 **#5 Controls panel state** — fold into whichever slice touches `persist.ts` (#4). Not its own work.
 
-**#6 Deploy + backups — the hard part is authenticating the CLI, not choosing a host.**
+**#6 Deploy + backups — OUT OF SCOPE. Findings handed to the follow-on job.**
+
+> Not a direction for this job; this is the evidence the split-out job inherits, so it does
+> not re-derive it. Headline: **the hard part is authenticating the CLI, not choosing a host.**
+
 The datastore half is routine: a managed Mongo (Atlas or equivalent) decides backups by
 implication, and `config.ts:55-56` already reads `MONGO_URL`/`MONGO_DB` from the
 environment, so `be` needs no code change to point at one.
@@ -246,28 +256,37 @@ precedent in this repo to follow, and its answer determines the host. It is the 
 ## User value (company-facing framing)
 
 A teacher signs in and their exams are simply there — on any browser, on any machine — and
-refining an exercise is safe, because the previous version is kept. Behind it, the product
-runs somewhere real, gets backed up, and can finally say what each exam cost to produce.
+refining an exercise is safe, because the previous version is kept. If they forget their
+password, a code they were given at sign-up gets them back in.
 
 ## Scope & boundaries
 
-- **In — all six, by explicit user decision (2026-08-08):**
-  - #1 identity, as **full email + password accounts** (not a recovery code).
+- **In — gaps #1–#5, by user decision (2026-08-08):**
+  - **#1 identity, as full email + password accounts**, with a **one-time recovery code
+    issued at sign-up as the reset path** — so reset works from day one and no mail
+    integration is required.
   - #2 revision history · #3 cost attribution · #4 queued save · #5 folded into #4.
-  - **#6 deploy target and backups.** Kept in against the recommendation below; the
-    infra plane was swept as a result (kit §1 infra rows, journal H7).
   - **Purge the orphaned test subjects** from `teacher_saas.subjects` (90 docs today).
     **Behind a `mongodump` first** — there is no delete route, so this is a deliberate
     one-off operation in IMPLEMENT, never a discovery-time action.
-- **Out (non-goals):** billing, credits, sharing between teachers, OCR — all downstream.
-- **Stacks likely touched:** `be` · `fe` · **infra** (new: images, deploy config, CI).
+- **Out (non-goals):**
+  - **#6 deploy target and backups — deferred to its own job** (user, 2026-08-08), after
+    the infra sweep showed *why*: the blocker is not choosing a host but carrying an
+    authenticated Claude Code CLI across redeploys (journal H7). That question has to be
+    answered before #6 can be partitioned at all, and answering it is research, not build.
+    **It should still land before real teachers depend on any of this** — nothing here is
+    backed up. The infra evidence gathered by this discovery (kit §1 infra rows, H7) is
+    written up so the follow-on job starts from it rather than re-deriving it.
+  - Mail integration — no longer needed for #1, since the recovery code is the reset path.
+  - Billing, credits, sharing between teachers, OCR — all downstream.
+- **Stacks likely touched:** `be` · `fe`.
 
-> **Recorded dissent, so the trade-off is inherited knowingly rather than by drift.**
-> Discovery recommended #6 as a separate job and a recovery code over full accounts; the
-> user chose all-six and full accounts. Two costs follow, and PLANNING must budget for them:
-> (a) this SEED now spans a product track and an infra track with different risk profiles;
-> (b) full accounts need a password-reset path, which needs mail, which is not integrated
-> (`project/CLAUDE.md` → Integrations, ★ PENDING). See the two unknowns below.
+> **Scope history, so the reasoning isn't rediscovered.** The job opened as all six gaps in
+> one. Discovery recommended splitting #6 and preferring a recovery code to full accounts;
+> both were initially overruled, then revisited once the evidence was in — #6 split out on
+> its blocking unknown, and the recovery code returned as the *reset path* rather than as a
+> replacement for accounts. The result keeps full accounts (the user's call) while removing
+> the mail dependency that made them incomplete.
 
 ## Risks & backward-compat flags
 
@@ -284,8 +303,11 @@ runs somewhere real, gets backed up, and can finally say what each exam cost to 
   RTL, and it must never surface anything LaTeX-shaped. The component layer is unswept (§7).
 - **The purge is irreversible and there is no delete route.** It must run behind a
   `mongodump`, as a scripted one-off with the document count asserted before and after.
-- **#6 has no precedent to copy in this repo** — first Dockerfile, first CI, first deploy.
-  Estimation confidence there is low until the CLI-auth unknown is resolved.
+- **Nothing shipped by this job is backed up.** #6 is deferred, so the store stays a local
+  Mongo instance shared with another harness clone. This is an accepted risk *for now*, and
+  it grows every time a teacher stores real work — the follow-on job should not drift.
+- **The recovery code is a second bearer credential.** Issued once, hand-written on paper by
+  design. It must be hashed at rest and single-use, or it becomes a permanent skeleton key.
 - **The promoted regression net pins current behaviour** (7 suites). Any shape change to
   the subject document or the subject routes must keep those green or consciously re-baseline.
 - **Additive posture:** as with `persistence`, new fields/routes should be additive so `be`
@@ -369,13 +391,14 @@ runs somewhere real, gets backed up, and can finally say what each exam cost to 
   real behaviour change is `requireTeacher` gaining the ability to reject.
 
 ## Ready-for-PLANNING checklist
-- [x] the brief's framing was tested, not assumed (journal H1–H5)
-- [ ] problem + solution direction agreed and **locked** — *awaiting user*
+- [x] the brief's framing was tested, not assumed (journal H1–H8)
+- [x] problem + solution direction agreed and **locked** (user, 2026-08-08)
 - [x] acting-surface map present (kit §1); scope in/out stated
 - [x] every acting surface has a baseline recording with its re-run command (kit §2)
 - [x] perimeter consumers recorded (kit §3); backward-compat posture flagged
 - [x] one correlated end-to-end trace saved (kit §4)
 - [x] observability baseline stated — blind spots called out (kit §5)
-- [ ] **no undispositioned unknowns** (kit §6) — 3 parked, 2 need a user call at lock
+- [x] **no undispositioned unknowns** (kit §6) — both blockers resolved by user decision;
+      remainder are accepted-risk items routed to PLANNING
 - [x] sweep statement present — the unswept edge named (kit §7)
-- [ ] **lock re-verification: every §2 recording reproduced at seal time**
+- [x] **lock re-verification: every §2 recording reproduced at seal time**
