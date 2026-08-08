@@ -31,6 +31,12 @@
             "seed": "6679db5d6d675335",
             "subissues": "bce16b82677c64f3"
           }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "bce16b82677c64f3"
+          }
         }
       },
       "subissues": {
@@ -88,7 +94,8 @@
           },
           "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
         }
-      }
+      },
+      "summary": "Roles + admin console with per-exam KPIs, a bounded auth surface, and the measured capacity curve"
     }
   }
 }
