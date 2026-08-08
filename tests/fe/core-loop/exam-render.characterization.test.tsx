@@ -43,6 +43,21 @@ describe("ExamView renders real recorded exams", () => {
     expect(visible).not.toContain("\\begin{");
   });
 
+  it.each(exams)("%s: NO markdown markup is visible to the teacher", (_name, exam) => {
+    const { container } = render(<ExamView exam={exam} />);
+    container.querySelectorAll("annotation, .katex-mathml").forEach((n) => n.remove());
+    // Same constraint as the LaTeX one above: the generator writes markdown bold,
+    // and a teacher must read the emphasis, never the asterisks that carry it.
+    expect(container.textContent ?? "").not.toContain("**");
+  });
+
+  it("gen3: `**…**` reaches the teacher as bold, not as asterisks", () => {
+    const { container } = render(<ExamView exam={gen3.data as ExamSubject} />);
+    const bold = [...container.querySelectorAll("strong")].map((n) => n.textContent);
+    expect(bold).toContain("الجزء الأول:"); // a part header
+    expect(bold).toContain("(1.5 ن)"); // a per-question point tag
+  });
+
   it("gen3: the generator's REFUSAL reaches the teacher", () => {
     render(<ExamView exam={gen3.data as ExamSubject} />);
     // meta.assumptions records that الحسابيات was off-programme and substituted.
