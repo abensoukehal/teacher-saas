@@ -234,6 +234,9 @@ describeIfLane(BE, "be-3 — exercise revision history", () => {
           // the optimistic-concurrency counter, added when the millisecond-resolution
           // updatedAt proved unsafe as a version token
           "rev",
+          // per-exam KPIs (accounts-hardening be-1) — WF-65 supersession
+          "costUsd",
+          "durationMs",
           "subject",
           "teacherId",
           "updatedAt",

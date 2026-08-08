@@ -22,15 +22,16 @@ Full reasoning — thesis, business model, roadmap, validation plan — is in
 file is the condensed engineering-facing half; if the two disagree, the brief wins and
 this file is stale.
 
-> **Status: the core loop ships, exams persist, teachers have accounts, and every exam can
-> have its correction.** As of
+> **Status: the core loop ships, exams persist, teachers have accounts, every exam can have
+> its correction, and there is an operator's console.** As of
 > 2026-08-08 the stacks are
 > `be` (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
 > (React + Vite). The core loop is built (`core-loop`), exam subjects are stored in
 > MongoDB with per-teacher ownership (`persistence`), and a teacher now has a real
 > account with a recovery code, keeps every superseded exercise, and can be told what an
 > exam cost to produce (`persistence-gaps`). Roadmap item 1 — solution sheets with the grading
-> scale — now ships (`solution-sheets`). Sections still marked ★ PENDING are stubs on purpose — they
+> scale — now ships (`solution-sheets`), and `accounts-hardening` added roles, an admin
+> console with per-exam KPIs, and bounds on the auth surface. Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -245,7 +246,8 @@ queue depth, **and the datastore**) · `/api` · `/api/skills` · `/api/generate
 `/api/auth/signup` · `/api/auth/signin` · `/api/auth/recover` ·
 `/api/subjects` (create · list · get · replace one exercise ·
 `GET /subjects/:id/exercises/:exerciseId/revisions` ·
-`POST`/`GET /subjects/:id/solutions`).
+`POST`/`GET /subjects/:id/solutions`) ·
+`GET /api/admin/{kpis,teachers,exams}` (admin-only, behind `requireAdmin`).
 
 **The three skills** (`agent/.claude/skills/`) — the product's actual capabilities:
 
@@ -280,6 +282,8 @@ returns it as `data` (`null` when a run returns prose).
 **`503 store_unavailable` (datastore down — RETRYABLE)** · `401 teacher_required` ·
 `401 invalid_credentials` · `401 invalid_recovery` · `409 email_taken` ·
 `409 conflict` (the same exercise is being refined twice at once) ·
+`403 forbidden` (a real teacher who is not an admin — distinct from 401) ·
+`429 rate_limited` (auth routes only, retryable) ·
 `400 invalid_request` (includes a malformed body) · `413 payload_too_large` ·
 `500` for this service's own bugs. Note that `claude_auth` and `store_unavailable` share a
 status and mean opposite things: callers branch on `error.type`, never on the code.
@@ -378,6 +382,7 @@ teachers                                     ← accounts ADOPT the opaque teach
   passwordHash   string | null               ← scrypt$N$r$p$salt$key (node:crypto)
   recoveryHash   string | null               ← scrypt over the recovery code
   recoveryUsedAt Date | null                 ← WHEN one was last consumed (informational)
+  role           "teacher" | "admin"         ← absent reads as teacher; sign-up NEVER sets it
   createdAt · updatedAt  Date
 
 indexes: { email: 1 } unique PARTIAL ($type:"string")  ← partial so many anonymous rows
@@ -449,6 +454,40 @@ an id reads that teacher's exams. There is also **no rate limiting**, and `POST
 /api/auth/signup` returns `409 email_taken`, which is an account-enumeration oracle by
 design of the error contract. Accepted for the two-teacher milestone; recorded so it is
 inherited knowingly.
+
+## Cost is not money, and throughput is the real constraint
+
+**The product runs on a Claude subscription, not credit-based API billing.** So `costUsd` —
+in `run-log.jsonl` and now on the subject — is the CLI's *notional API-equivalent*. It is a
+stable, comparable **usage signal** (two identical runs both measured 0.6454), and it is
+**not** cost of goods sold. Nothing is billed per exam.
+
+> Earlier jobs recorded "~$1.40 per finished exam, ~11 exams to break even". **That framing
+> was wrong** and is corrected here. There is no per-exam COGS to break even against. Never
+> render `costUsd` as currency to a teacher or an admin — a KPI labelled in dollars would be
+> the product lying to its own operator.
+
+A subscription buys a **rate**, not a quantity, so "how many teachers can this serve" is a
+throughput question. Measured on this machine (`accounts-hardening`, real generations):
+
+| concurrent | p50 | p95 | max | under 100 s |
+|---|---|---|---|---|
+| 1 | 73 s | — | 73 s | 1/1 |
+| 3 | 76 s | 76 s | 81 s | 3/3 |
+| 6 | 73 s | 78 s | 91 s | 6/6 |
+| **9** | **68 s** | **87 s** | **93 s** | **9/9** |
+| 12 | 82 s | 110 s | 113 s | 10/12 |
+
+**Nine concurrent teachers hold a 100 s bar; twelve breaks it.** Zero failures and zero
+upstream throttling at every level — the ceiling found is latency, not rate limiting.
+
+**Exam SIZE dominates, not concurrency.** Those numbers are a 2-exercise / 60-minute devoir.
+A 3-exercise / 120-minute composition takes **128 s at concurrency 1** and never meets 100 s
+at any concurrency. What a teacher asks for decides whether the bar is met.
+
+`CLAUDE_MAX_CONCURRENT` still defaults to **3** (`config.ts`). The measured safe ceiling is
+**9** — raising it is a config change with evidence behind it, deliberately not applied
+silently by the job that measured it.
 
 **Not the datastore:** `run-log.jsonl` is an append-only file carrying run cost/duration
 plus `{op, subjectId}` link lines. It holds no teacher content and must not start to.

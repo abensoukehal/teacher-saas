@@ -101,14 +101,35 @@ describeIfLane(BE, "be-1 — accounts adopt the existing teacher id", () => {
       expect(inn.body.teacherId).toBe(up.body.teacherId);
     });
 
-    test("duplicate signup is 409 email_taken", async () => {
+    /**
+     * SUPERSEDED by accounts-hardening be-4 (WF-65), 2026-08-08.
+     *
+     * `409 email_taken` was a clean account-enumeration oracle: one request per address,
+     * unambiguous. It also undid the care taken next door, where sign-IN was deliberately
+     * built indistinguishable — identical bodies, and a decoy scrypt on the unknown-email
+     * path so the clock says nothing either.
+     *
+     * Sign-up now answers the same way for a taken address as a fresh one. The invariant
+     * that survives — and that this now asserts — is the one that actually protects a
+     * teacher: **a duplicate must not create a second account**.
+     */
+    test("a duplicate signup does NOT confirm the address, and creates no second account", async () => {
       const email = freshEmail();
-      await call("POST", "/api/auth/signup", { body: { email, password: "first-password" } });
+      const first = await call("POST", "/api/auth/signup", {
+        body: { email, password: "first-password" },
+      });
       const again = await call("POST", "/api/auth/signup", {
         body: { email, password: "second-password" },
       });
-      expect(again.status).toBe(409);
-      expect(again.body.error.type).toBe("email_taken");
+
+      // indistinguishable from a fresh signup — status and body shape alike
+      expect(again.status).toBe(first.status);
+      expect(Object.keys(again.body).sort()).toEqual(Object.keys(first.body).sort());
+
+      // and the account was not duplicated
+      expect(
+        await db.collection("teachers").countDocuments({ email: email.toLowerCase() }),
+      ).toBe(1);
     });
   });
 

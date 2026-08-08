@@ -1,0 +1,101 @@
+{
+  "slug": "accounts-hardening",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-08",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "e6a0f2b1f3cfb624"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "6679db5d6d675335"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "subissues": "bce16b82677c64f3"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "subissues": "bce16b82677c64f3"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "bce16b82677c64f3"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        },
+        "be-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "6679db5d6d675335",
+            "contracts": "a1a07c5549ae51f4"
+          },
+          "reviewed": "{\"contracts\": \"a1a07c5549ae51f4\", \"seed\": \"6679db5d6d675335\"}"
+        }
+      },
+      "summary": "Roles + admin console with per-exam KPIs, a bounded auth surface, and the measured capacity curve"
+    }
+  }
+}

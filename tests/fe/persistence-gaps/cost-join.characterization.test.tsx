@@ -142,20 +142,43 @@ describe("the join key reaches the store", () => {
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
     const c = h.creates()[0];
-    expect(Object.keys(c.body).sort()).toEqual(["controls", "genCorrelationId", "subject"]);
+    // SUPERSEDED by accounts-hardening fe-1 (WF-65), 2026-08-08.
+    //
+    // This pinned the create body's EXACT key set at a moment when the join key was the
+    // whole deliverable and cost deliberately lived only in the run log. accounts-hardening
+    // moves cost truth ONTO the subject — `be` stores costUsd/durationMs so the operator's
+    // KPIs are a query rather than a file parse — so `fe` now always sends both.
+    //
+    // The invariant worth keeping is not the key list. It is that the join key is still
+    // sent and the request still goes to the right place, which is what it now asserts.
+    expect(Object.keys(c.body)).toEqual(expect.arrayContaining(["subject", "genCorrelationId"]));
     expect(c.url).toBe("/api/subjects");
     expect(c.url).not.toContain("?");
     for (const k of Object.keys(c.headers)) expect(k.toLowerCase()).not.toBe("x-correlation-id");
   });
 
-  test("costUsd is NOT persisted from fe — the join key is the deliverable", async () => {
+  /**
+   * SUPERSEDED by accounts-hardening fe-1 (WF-65), 2026-08-08.
+   *
+   * This asserted that `fe` does NOT persist costUsd — correct when the run log was the
+   * single source of cost truth and the join key was the deliverable. That reasoning was
+   * about avoiding TWO sources of truth; accounts-hardening resolves it the other way,
+   * moving cost onto the subject so per-exam KPIs are queryable, which is what an operator
+   * actually needs.
+   *
+   * Flipped rather than deleted: the behaviour is now the opposite, and it matters that
+   * `null` is sent when there is nothing to record — a zero would corrupt every average.
+   */
+  test("costUsd IS persisted from fe now — and absence is null, never zero", async () => {
     const h = harness();
     await mountApp();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
-
-    expect(JSON.stringify(h.creates()[0].body)).not.toContain("costUsd");
-    expect(JSON.stringify(h.creates()[0].body)).not.toContain(String(REC.costUsd));
+    const body = h.creates()[0].body as Record<string, unknown>;
+    expect(Object.keys(body)).toContain("costUsd");
+    expect(Object.keys(body)).toContain("durationMs");
+    expect(body.costUsd === null || typeof body.costUsd === "number").toBe(true);
+    expect(body.costUsd).not.toBe(0);
   });
 
   test("legacy adoption sends genCorrelationId: null — it has no generation to point at", async () => {
