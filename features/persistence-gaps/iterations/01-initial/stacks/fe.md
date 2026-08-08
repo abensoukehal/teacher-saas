@@ -92,7 +92,7 @@ kind: sub-issue
 id: fe-1
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [be-1, be-2]
 estimate: L
 ---
@@ -160,7 +160,7 @@ kind: sub-issue
 id: fe-2
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [be-4]
 estimate: S
 ---
@@ -222,7 +222,7 @@ kind: sub-issue
 id: fe-3
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [be-3]
 estimate: M
 ---
@@ -278,7 +278,7 @@ kind: sub-issue
 id: fe-4
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: []
 estimate: M
 ---
