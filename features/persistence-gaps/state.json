@@ -21,7 +21,7 @@
       },
       "subissues": {
         "be-1": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-2": {

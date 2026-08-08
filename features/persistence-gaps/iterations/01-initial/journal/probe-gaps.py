@@ -45,7 +45,9 @@ def main(rec_path):
     _, t = call("POST", "/api/teacher")
     tid = t["teacherId"]
     print(f"  201  teacherId={tid}")
-    print("  EXPECT: no `teachers` collection exists — the id is minted and forgotten.")
+    print("  EXPECT (pre-be-1): no `teachers` collection — the id is minted and forgotten.")
+    print("  NOTE: be-1 deliberately ended this. Collections are now subjects+teachers,")
+    print("        and signup/signin issue the id. That is the fix, not drift.")
 
     print("\n### P2  create a subject from the RECORDING (no generation spend)")
     s, sub = call("POST", "/api/subjects", {"subject": exam, "controls": None}, tid)
