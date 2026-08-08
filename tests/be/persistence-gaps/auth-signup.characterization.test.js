@@ -21,13 +21,29 @@ const BE = process.env.CHAR_BE_URL || "http://localhost:9000";
 const MONGO = "mongodb://127.0.0.1:27017";
 const DB = "teacher_saas";
 
+
+/**
+ * RATE-LIMIT BACKOFF. The auth routes are bounded (a 5s fixed window, ~10 per window), and
+ * this suite legitimately exercises recovery far more often than a human would. A 429 here
+ * is the limiter working, not the behaviour under test — so wait the window out and retry.
+ * Bounded, so a genuinely stuck limiter still fails the run instead of hanging it.
+ */
+async function call(method, path, opts) {
+  for (let i = 0; i < 8; i++) {
+    const r = await callOnce(method, path, opts);
+    if (r.status !== 429) return r;
+    await new Promise((res) => setTimeout(res, 1200));
+  }
+  throw new Error(`still 429 after 8 attempts: ${method} ${path}`);
+}
+
 const HEX32 = /^[0-9a-f]{32}$/;
 const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
 
 let mongo;
 let db;
 
-async function call(method, path, { body, teacher } = {}) {
+async function callOnce(method, path, { body, teacher } = {}) {
   const res = await fetch(`${BE}${path}`, {
     method,
     headers: {

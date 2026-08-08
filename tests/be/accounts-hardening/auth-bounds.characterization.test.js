@@ -11,8 +11,8 @@
  * IP + route and every suite in this gate runs from 127.0.0.1, in parallel. So the
  * tests that deliberately EXHAUST a bucket are placed last, after this file's own
  * window-expiry test has already burned more wall-clock than the sibling suites take to
- * finish. The `recover` route is used for the early exhaustion work because no other
- * suite calls it. Reordering these describes can make sibling suites flake.
+ * finish. The `recover` route is used for the early exhaustion work; a sibling suite also
+ * calls it, which is why the limits are configurable and raised for this harness. Reordering these describes can make sibling suites flake.
  *
  * PRECONDITION: the lane is up. A hollow run is RED in job mode — WF-82.
  */
@@ -26,9 +26,17 @@ const LOG = process.env.CHAR_BE_LOG || "";
 const MONGO = "mongodb://127.0.0.1:27017";
 const DB = "teacher_saas";
 
-// These MUST match src/ratelimit.ts. The suite is the characterization: changing a
-// constant there should turn this red and be a decision, not a drift.
-const LIMIT = { signin: 10, signup: 10, recover: 5 };
+// Mirrors the service's defaults. The limits are configurable (src/config.ts reads
+// AUTH_RATE_LIMIT_*), and /health reports what an instance is ACTUALLY enforcing — so if
+// these ever disagree, ask the service, don't edit this blindly. Read at module load, not
+// in beforeAll: jest computes test titles at collection time, so a value fetched later is
+// already too late for anything that names a number.
+const envInt = (k, d) => (process.env[k] ? Number(process.env[k]) : d);
+const LIMIT = {
+  signin: envInt("AUTH_RATE_LIMIT_SIGNIN", 10),
+  signup: envInt("AUTH_RATE_LIMIT_SIGNUP", 10),
+  recover: envInt("AUTH_RATE_LIMIT_RECOVER", 10),
+};
 
 const HEX32 = /^[0-9a-f]{32}$/;
 const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
