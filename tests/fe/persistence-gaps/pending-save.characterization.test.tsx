@@ -94,7 +94,14 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
 
-afterEach(() => cleanup());
+afterEach(() => {
+  // Restored here, not at the end of the tests that install them. Two tests below
+  // spy on Storage.prototype and make it throw; if either failed before reaching
+  // its own restore, broken storage would leak into every test after it and the
+  // real failure would be buried under a cascade.
+  vi.restoreAllMocks();
+  cleanup();
+});
 
 describe("queueing a failed save", () => {
   test("a RETRYABLE failure writes teacher.pending.v1 with the exam", async () => {
@@ -343,7 +350,13 @@ describe("negative — the storage discipline and gap #5", () => {
     await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
 
     expect(localStorage.getItem("teacher.id.v1")).toBe(JSON.stringify(TID));
-    expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s1"));
+    // Waited for, not read once. `teacher.current.v1` is written by an EFFECT on
+    // `subjectId`, and React flushes passive effects after the commit that paints
+    // "تم الحفظ" — so the banner being on screen does not mean the key is written
+    // yet. Reading it straight after that wait failed about one run in six.
+    await waitFor(() =>
+      expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s1")),
+    );
     expect(localStorage.getItem("teacher.draft.v1")).toBeNull();
   });
 });
