@@ -24,6 +24,13 @@
             "seed": "b8d00d32f8b875c9",
             "subissues": "58a53c82864c9c66"
           }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "subissues": "58a53c82864c9c66"
+          }
         }
       },
       "subissues": {
