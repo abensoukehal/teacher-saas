@@ -15,7 +15,7 @@
  *    product to dump a raw statement; the hard constraint forbids it outright, so
  *    previous versions render through KaTeX like every other maths surface.
  */
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const TID = "0123456789abcdef0123456789abcdef";
@@ -272,9 +272,15 @@ describe("restore — the existing PUT, never a new endpoint", () => {
     openRefine();
     await waitFor(() => expect(restoreButtons()).toHaveLength(1));
 
+    // Dispatched inside ONE act so React cannot re-render — and therefore cannot
+    // set `disabled` — between them. Through `fireEvent` this clause passes even
+    // with the in-flight guard deleted, which makes it no oracle at all;
+    // verified by mutation both ways.
     const btn = restoreButtons()[0];
-    fireEvent.click(btn);
-    fireEvent.click(btn);
+    await act(async () => {
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
     await waitFor(() => expect(h.puts().length).toBeGreaterThan(1));
     expect(h.puts()).toHaveLength(2); // the refine + exactly one restore
   });
