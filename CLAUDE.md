@@ -477,9 +477,25 @@ throughput question. Measured on this machine (`accounts-hardening`, real genera
 | 6 | 73 s | 78 s | 91 s | 6/6 |
 | **9** | **68 s** | **87 s** | **93 s** | **9/9** |
 | 12 | 82 s | 110 s | 113 s | 10/12 |
+| 20 | 118 s | 146 s | 146 s | 5/20 |
+| 50 | 201 s | 259 s | 286 s | 0/50 |
 
-**Nine concurrent teachers hold a 100 s bar; twelve breaks it.** Zero failures and zero
-upstream throttling at every level — the ceiling found is latency, not rate limiting.
+**Nine concurrent teachers hold a 100 s bar; twelve breaks it.** Zero upstream throttling at
+*every* level tested, up to 50 — nothing was ever refused, rate-limited or timed out. The
+ceiling is latency, not rate limiting.
+
+**Above ~12 the bottleneck stops being the service and becomes the HOST.** This machine is 8
+cores / 16 GB, and each generation is a full agent loop, not a request. At 20 concurrent free
+memory sat at 14–16 MB for the whole run with 66 k swapins; at 50 it took **1.29 M swapins**
+and load hit 67 on 8 cores. Those runs measure this laptop, not the product — quote them as a
+host-sizing result and never as the product's capacity. The practical reading: concurrency
+capacity is bought with RAM, and the honest per-loop figure here is **~0.75–1 GB**.
+
+**One soft failure in 200-odd generations, and it appeared only at 50**: HTTP 200 with
+`data: null` — the run returned prose instead of JSON, burning a full agent loop for nothing.
+That is the `/api/generate` contract working as designed, but it is the first time the study
+produced one, so treat `data: null` as a real user-facing outcome under load rather than a
+theoretical branch.
 
 **Exam SIZE dominates, not concurrency.** Those numbers are a 2-exercise / 60-minute devoir.
 A 3-exercise / 120-minute composition takes **128 s at concurrency 1** and never meets 100 s
