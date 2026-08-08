@@ -30,6 +30,13 @@
           "derived_from": {
             "subissues": "bcfcfe6f8412c77d"
           }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "subissues": "bcfcfe6f8412c77d"
+          }
         }
       },
       "subissues": {
@@ -69,7 +76,8 @@
           },
           "reviewed": "{\"contracts\": \"ff28764d022becf5\", \"seed\": \"ce992b6c0a796e9a\"}"
         }
-      }
+      },
+      "summary": "Solution sheets: a worked correction and grading scale per exercise, with staleness that is derived and honest"
     }
   }
 }
