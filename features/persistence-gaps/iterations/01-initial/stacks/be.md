@@ -403,7 +403,7 @@ kind: sub-issue
 id: be-5
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-1, be-2]
 estimate: S
 ---

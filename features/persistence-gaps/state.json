@@ -53,7 +53,7 @@
           }
         },
         "be-5": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening"
         },
         "fe-1": {
