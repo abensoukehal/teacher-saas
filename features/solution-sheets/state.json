@@ -1,0 +1,83 @@
+{
+  "slug": "solution-sheets",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-08",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "b27c3de898563242"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "subissues": "bcfcfe6f8412c77d"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "bcfcfe6f8412c77d"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "subissues": "bcfcfe6f8412c77d"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          },
+          "reviewed": "{\"contracts\": \"ff28764d022becf5\", \"seed\": \"ce992b6c0a796e9a\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          },
+          "reviewed": "{\"contracts\": \"ff28764d022becf5\", \"seed\": \"ce992b6c0a796e9a\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          },
+          "reviewed": "{\"contracts\": \"ff28764d022becf5\", \"seed\": \"ce992b6c0a796e9a\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          },
+          "reviewed": "{\"contracts\": \"ff28764d022becf5\", \"seed\": \"ce992b6c0a796e9a\"}"
+        }
+      },
+      "summary": "Solution sheets: a worked correction and grading scale per exercise, with staleness that is derived and honest"
+    }
+  }
+}

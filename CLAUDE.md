@@ -22,13 +22,15 @@ Full reasoning — thesis, business model, roadmap, validation plan — is in
 file is the condensed engineering-facing half; if the two disagree, the brief wins and
 this file is stale.
 
-> **Status: the core loop ships, exams persist, and teachers have accounts.** As of
+> **Status: the core loop ships, exams persist, teachers have accounts, and every exam can
+> have its correction.** As of
 > 2026-08-08 the stacks are
 > `be` (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
 > (React + Vite). The core loop is built (`core-loop`), exam subjects are stored in
 > MongoDB with per-teacher ownership (`persistence`), and a teacher now has a real
 > account with a recovery code, keeps every superseded exercise, and can be told what an
-> exam cost to produce (`persistence-gaps`). Sections still marked ★ PENDING are stubs on purpose — they
+> exam cost to produce (`persistence-gaps`). Roadmap item 1 — solution sheets with the grading
+> scale — now ships (`solution-sheets`). Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -189,7 +191,7 @@ way to tell the products apart. With no `origin`, it falls back to the directory
                                                     ▼
                                       ┌─────────────────────────────┐
                                       │ claude  (Claude Code CLI)   │
-                                      │  .claude/skills/<name>/     │
+                                      │  agent/.claude/skills/<n>/  │
                                       │      SKILL.md  ◀── the      │
                                       │      capabilities           │
                                       └─────────────────────────────┘
@@ -235,21 +237,23 @@ wrapper that does the generating.
 | `src/store/subjects.ts` | the `subjects` collection. **`create` inserts; there is no upsert** |
 | `src/routes/subjects.ts` | the subject surfaces |
 | `src/teacher.ts` | issues + resolves the opaque teacher id |
-| `.claude/skills/<name>/SKILL.md` | **the capabilities themselves** |
+| `agent/.claude/skills/<name>/SKILL.md` | **the capabilities themselves** — under `agent/`, NOT the repo root: `config.ts` points the CLI at `<repo>/agent` and `claude/skills.ts` lists `<cwd>/.claude/skills`. Adding a directory there IS the registration; `/api/skills` is that listing. |
 
 **API surface.** `/health` (reports the CLI's version, whether it authenticates,
 queue depth, **and the datastore**) · `/api` · `/api/skills` · `/api/generate` ·
 `/api/teacher` (mints **and records** an anonymous row) ·
 `/api/auth/signup` · `/api/auth/signin` · `/api/auth/recover` ·
 `/api/subjects` (create · list · get · replace one exercise ·
-`GET /subjects/:id/exercises/:exerciseId/revisions`).
+`GET /subjects/:id/exercises/:exerciseId/revisions` ·
+`POST`/`GET /subjects/:id/solutions`).
 
-**The two skills** (`.claude/skills/`) — the product's actual capabilities:
+**The three skills** (`agent/.claude/skills/`) — the product's actual capabilities:
 
 | skill | in | out |
 |---|---|---|
 | `exam-subject` | controls: topic, difficulty, exercise count, duration, stream | the whole exam — `exercises[]` with stable `ex1…exN` ids |
 | `refine-exercise` | `{instruction, exercise, examContext}`, instruction in plain Arabic | **one** exercise, `id`/`points`/`label` unchanged |
+| `solution-sheet` | the stored exam | the correction — one worked answer + grading scale (السلّم) per exercise, scale summing exactly to that exercise's points |
 
 `refine-exercise` is core-loop step 4. `exam-subject`'s per-exercise output shape
 exists to make it possible — a skill emitting one blob of exam text would leave the
@@ -346,8 +350,8 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-**MongoDB, database `teacher_saas`, three collections: `subjects`, `teachers`,
-`exercise_revisions`.** Chosen because Mongo
+**MongoDB, database `teacher_saas`, four collections: `subjects`, `teachers`,
+`exercise_revisions`, `solutions`.** Chosen because Mongo
 already runs as declared shared infra on this machine and `services.sh` had already
 reserved that db name — and because an exam subject *is* a JSON document, so the stored
 shape and the wire shape are the same object with no mapping layer to drift.
@@ -389,6 +393,18 @@ exercise_revisions                           ← every superseded version, appen
   correlationId  string | null
 
 index: { subjectId: 1, exerciseId: 1, supersededAt: -1 }
+
+solutions                                    ← one CURRENT correction per exercise
+  subjectId      ObjectId
+  teacherId      string · 32 hex             ← denormalised: ownership scoped IN the query
+  exerciseId     string
+  answer         string                      ← Arabic markdown, maths in $…$ — WORKED
+  scale          [ { part, points } ]        ← السلّم; sums exactly to the exercise's points
+  answersHash    string                      ← sha256 of the statement it ANSWERS
+  genCorrelationId string | null
+  createdAt · updatedAt  Date
+
+index: { subjectId: 1, exerciseId: 1 } unique
 ```
 
 **The rules that shape it:**
@@ -411,6 +427,14 @@ index: { subjectId: 1, exerciseId: 1, supersededAt: -1 }
   loser re-reads and retries; five failures yield `409 conflict`.
 - **The recovery code's single-use is enforced by rotating `recoveryHash`**, not by
   `recoveryUsedAt`. Guarding on a field the same update resets guards nothing.
+- **A correction's staleness is DERIVED on read, never stored.** `answersHash` is the hash of
+  the statement the answer was written for, and the caller supplies that statement — the
+  service cannot otherwise know which version was answered, because generating takes ~145 s
+  and a refine can land inside that window. A per-exercise hash and not the subject's `rev`:
+  `rev` advances for the whole document, so one refine would mark every correction stale.
+  Deriving rather than storing also means restoring an exercise heals its correction.
+- **`solutions` upserts** — one current correction per exercise. A history of corrections is
+  deliberately out of scope; the exam's history is not.
 
 **Accounts adopt the opaque id; they did not replace it.** Sign-in returns the *same*
 32-hex `teacherId` the browser already sends as `x-teacher-id`, so no subject document was

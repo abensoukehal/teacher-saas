@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T05:23:05",
+  "generated_at": "2026-08-08T11:49:30",
   "nodes": {
     "cmp-be-auth-api": {
       "kind": "component",
@@ -42,6 +42,16 @@
       "path": "docs/cmp-be-skill-refine-exercise.md",
       "status": "fresh",
       "repos": []
+    },
+    "cmp-be-skill-solution-sheet": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The solution-sheet skill",
+      "path": "docs/cmp-be-skill-solution-sheet.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@40c5abc"
+      ]
     },
     "cmp-be-subjects-api": {
       "kind": "component",
@@ -87,6 +97,16 @@
       "status": "fresh",
       "repos": []
     },
+    "cmp-fe-solution-view": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The correction pane and its printed sheet",
+      "path": "docs/cmp-fe-solution-view.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@a18dd96"
+      ]
+    },
     "cmp-fe-subject-list": {
       "kind": "component",
       "plane": "implementation",
@@ -129,6 +149,14 @@
       "status": "fresh",
       "repos": []
     },
+    "feat-solution-sheets": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "The correction a teacher keeps",
+      "path": "docs/feat-solution-sheets.md",
+      "status": "fresh",
+      "repos": []
+    },
     "feat-subject-library": {
       "kind": "feature",
       "plane": "product",
@@ -142,6 +170,14 @@
       "plane": "product",
       "title": "A teacher's exams follow them",
       "path": "docs/feat-teacher-accounts.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-generate-correction": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Generating a correction, and keeping it honest",
+      "path": "docs/flow-generate-correction.md",
       "status": "fresh",
       "repos": []
     },
@@ -201,6 +237,16 @@
       "status": "fresh",
       "repos": [
         "teacher-be@f6cf955"
+      ]
+    },
+    "mod-be-solution-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Correction store",
+      "path": "docs/mod-be-solution-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@40c5abc"
       ]
     },
     "mod-be-subject-store": {
@@ -297,6 +343,11 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-be-skill-solution-sheet",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-be-subjects-api",
       "to": "mod-be-subject-store",
       "type": "depends_on"
@@ -333,6 +384,16 @@
     },
     {
       "from": "cmp-fe-refine",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-solution-view",
+      "to": "mod-be-solution-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-solution-view",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
     },
@@ -447,6 +508,31 @@
       "type": "part_of"
     },
     {
+      "from": "feat-solution-sheets",
+      "to": "cmp-be-skill-solution-sheet",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "cmp-fe-solution-view",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "flow-generate-correction",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "mod-be-solution-store",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "feat-subject-library",
       "to": "cmp-be-subjects-api",
       "type": "realized_by"
@@ -490,6 +576,31 @@
       "from": "feat-teacher-accounts",
       "to": "prod-exam-builder",
       "type": "part_of"
+    },
+    {
+      "from": "flow-generate-correction",
+      "to": "cmp-be-generate-endpoint",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-correction",
+      "to": "cmp-be-skill-solution-sheet",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-correction",
+      "to": "cmp-be-subjects-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-correction",
+      "to": "cmp-fe-solution-view",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-correction",
+      "to": "mod-be-solution-store",
+      "type": "step"
     },
     {
       "from": "flow-generate-exam",
@@ -598,6 +709,11 @@
     },
     {
       "from": "mod-be-revision-store",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-solution-store",
       "to": "svc-teacher-be",
       "type": "part_of"
     },
