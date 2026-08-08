@@ -4,8 +4,18 @@
  * THE LOAD-BEARING NEGATIVE: the exam's print output must stay byte-identical.
  * The teacher prints the exam for the class and keeps the correction; a sheet
  * carrying both is worse than useless, and the failure mode is a class receiving
- * the answer key. `exam-print-baseline.html` was recorded from the frozen
- * `ExamView` BEFORE this sub-issue touched anything, and is compared verbatim.
+ * the answer key. `exam-print-baseline.html` is recorded from the frozen `ExamView`
+ * and compared verbatim.
+ *
+ * REFRESHED 2026-08-08, and the reason matters. `teacher-fe` merged an unrelated fix
+ * (PR #4) that renders the generator's `**…**` as real bold instead of literal asterisks,
+ * and this job then rebased onto it. The exam's printed HTML legitimately changed —
+ * `<span>**الجزء الأول**</span>` became a bold run — so the baseline was re-dumped.
+ *
+ * That is exactly the move that can hide a regression, so it was earned, not assumed:
+ * `git diff origin/main...HEAD -- src/components/ExamView.tsx src/lib/katex.tsx
+ * src/lib/exam.ts` is EMPTY for this job. The change came from the base, not from here,
+ * and the bold run is the only divergence.
  *
  * Print rules cannot be exercised by jsdom — it applies no `@media print`. So the
  * scoping is pinned on both sides of the seam it actually lives on: the DOM marker
