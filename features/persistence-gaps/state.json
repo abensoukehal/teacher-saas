@@ -54,7 +54,11 @@
         },
         "be-5": {
           "status": "done",
-          "tag": "hardening"
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          }
         },
         "fe-1": {
           "status": "todo",
