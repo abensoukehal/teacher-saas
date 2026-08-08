@@ -38,10 +38,14 @@
         },
         "be-3": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "c227d70d376cc664"
+          }
         },
         "be-4": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-5": {

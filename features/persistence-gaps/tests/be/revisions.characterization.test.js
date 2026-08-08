@@ -202,16 +202,32 @@ describeIfLane(BE, "be-3 — exercise revision history", () => {
       expect(after.body.subject.exercises[1].id).toBe("ex2");
     });
 
-    test("the stored subject document grows no history key", async () => {
+    /**
+     * NARROWED BY be-4 (WF-65), 2026-08-08.
+     *
+     * This asserted the document's EXACT key set, which made it fail on any additive
+     * field — be-4's `genCorrelationId` tripped it. That was over-specification: the
+     * invariant this pin exists for is that HISTORY is never embedded in the subject,
+     * because the subject-open path must stay one cheap read. That is unchanged, and
+     * is what it now asserts. Additive fields are explicitly allowed; a history key is
+     * still forbidden.
+     */
+    test("the stored subject document never grows a history key", async () => {
       const t = await newTeacher();
       const sid = await newSubject(t);
       await replace(t, sid, "ex1", "v2");
+      await replace(t, sid, "ex1", "v3");
       const doc = await db
         .collection("subjects")
         .findOne({ _id: new (require("mongodb").ObjectId)(sid) });
-      expect(Object.keys(doc).sort()).toEqual(
-        ["_id", "controls", "createdAt", "subject", "teacherId", "updatedAt"].sort(),
-      );
+
+      expect(Object.keys(doc).some((k) => /histor|revision|version/i.test(k))).toBe(false);
+      // and the payload itself carries no embedded history either
+      expect(JSON.stringify(doc.subject)).not.toContain("v2");
+      // the fields the sheet is built from are all still present
+      for (const k of ["_id", "teacherId", "subject", "controls", "createdAt", "updatedAt"]) {
+        expect(Object.keys(doc)).toContain(k);
+      }
     });
 
     test("an unknown exercise id is still 409 AND writes no revision", async () => {
