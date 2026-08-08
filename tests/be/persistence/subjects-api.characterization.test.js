@@ -10,7 +10,7 @@
  * Black-box by necessity — see stacks/be.md → "Test harness". Drives the real lane
  * over HTTP and asserts stored state with the mongodb driver.
  *
- * PRECONDITION: `tools/dev up -d` from the job worktree (be on :9200).
+ * PRECONDITION: `tools/dev up -d` from the job worktree (be on the job's lane; see BE_URL below).
  */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -20,27 +20,28 @@ const { MongoClient, ObjectId } = require("mongodb");
  * PROMOTED to the regression net (WF-54).
  *
  * These are black-box: they drive a running backend and assert against a real
- * MongoDB. On a mainline checkout with no lane up there is nothing to verify, so
+ * MongoDB. On a checkout with no lane up there is nothing to verify, so
  * the suite SKIPS rather than fails — a red that only means "the server isn't
  * running" trains people to ignore the gate.
  *
  * To actually run them: tools/dev up -d, then tools/ci be.
  */
-const { execSync } = require("node:child_process");
-const LANE_UP = (() => {
-  try {
-    execSync("nc -z localhost 9200", { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-const gate = LANE_UP ? describe : describe.skip;
-if (!LANE_UP) {
-  console.log("skipping: no backend on :9200 (run tools/dev up -d to exercise these)");
-}
+const { describeIfLane } = require("guard");
 
-const BE = "http://localhost:9200";
+/**
+ * The lane comes from the ENVIRONMENT, never a hardcoded port. :9200 was the
+ * `persistence` job's slot; a suite pinned to it skips forever on every other slot,
+ * which is indistinguishable from passing.
+ *
+ * describeIfLane skips when nothing is listening (a red meaning only "the server
+ * isn't running" trains people to ignore the gate) AND tells tools/ci the layer was
+ * hollow, so an all-skipped run reports INCOMPLETE instead of PASS.
+ */
+// tools/ci derives CHAR_BE_URL from THIS checkout's own lane, so the server we
+// drive is the one CHAR_ROOTDIR resolves dist/ and run-log.jsonl against. BE_URL
+// stays as a manual override; the literal is only a bare-jest fallback.
+const BE = process.env.BE_URL ?? process.env.CHAR_BE_URL ?? "http://localhost:9000";
+const gate = (name, fn) => describeIfLane(BE, name, fn);
 const MONGO = "mongodb://127.0.0.1:27017";
 const DB = "teacher_saas";
 
@@ -437,7 +438,9 @@ gate("observability", () => {
     const t = await newTeacher();
     const { body } = await call("POST", "/api/subjects", { teacher: t, body: { subject: SUBJECT } });
 
-    const log = fs.readFileSync("/tmp/teacher-backend.s2.log", "utf8");
+    // The log path is per-LANE (tools/dev writes ".sN" per slot). tools/ci derives it
+    // for this checkout; the literal is only a bare-jest fallback for slot 0.
+    const log = fs.readFileSync(process.env.CHAR_BE_LOG || "/tmp/teacher-backend.log", "utf8");
     const line = log
       .split("\n")
       .filter(Boolean)
