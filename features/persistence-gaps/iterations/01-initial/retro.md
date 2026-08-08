@@ -94,3 +94,14 @@ on every other lane, which is indistinguishable from passing.
 - The teacherId remains a bearer value, there is no rate limiting, and sign-up's
   `409 email_taken` is an enumeration oracle. All acceptable at two teachers; none should
   survive real scale — and the store now holds credentials, not just exam drafts.
+
+## Closed after the ledger above
+
+- **F3** (a second distinct in-flight save dropped) — fixed with a queue-and-drain and
+  pinned; mutation-verified.
+- **`npm run build` in `fe`** — was failing before this job and now passes. The cause was
+  `erasableSyntaxOnly` rejecting `GenerateError`'s constructor parameter properties; the
+  fields are now declared and assigned, same public shape. Worth noting *why* it went
+  unnoticed for so long: the dev server uses esbuild and never type-checks, so nothing
+  surfaced it until someone asked for a production build. A gate that never runs the
+  production path is the same class of blind spot as WF-82's hollow gate.

@@ -117,15 +117,18 @@
         },
         "qa-1": {
           "status": "done",
-          "tag": "hardening"
+          "tag": "hardening",
+          "reviewed": "null"
         },
         "qa-2": {
           "status": "done",
-          "tag": "hardening"
+          "tag": "hardening",
+          "reviewed": "null"
         },
         "qa-3": {
           "status": "done",
-          "tag": "hardening"
+          "tag": "hardening",
+          "reviewed": "null"
         }
       },
       "summary": "Accounts with a recovery code, exercise revision history, cost attribution, queued saves \u2014 and the orphaned test data purged"

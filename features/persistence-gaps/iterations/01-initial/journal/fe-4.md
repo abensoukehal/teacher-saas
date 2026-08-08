@@ -110,3 +110,22 @@ queue now happens **before** handing over to the gate.
 **F3, remaining debt:** `createOnce` silently drops a *second, different* intent while one is
 in flight (correct for a double-fire, wrong for two distinct saves). Narrow trigger; the next
 hardening pass should queue it rather than return.
+
+---
+
+## F3 closed, 2026-08-08
+
+Review left `createOnce` dropping a second **distinct** in-flight intent as declared debt.
+Closed now.
+
+The bare `return` was right for a double-click — the same intent twice — and wrong for two
+different ones: a generation finishing while a queued replay was running was dropped on the
+floor and never queued, while the banner still read "saving". Silent loss, in the slice
+whose whole purpose is ending silent loss.
+
+`create` is insert-only, so "fire it anyway" would have made two exams from one. The fix
+holds the newest intent (an older one is already superseded by what the teacher just did)
+and drains it when the in-flight save finishes.
+
+Pinned by a clause that blocks the first create open, fires a second, and asserts **two**
+subjects exist. Mutation — restore the bare `return` — **caught**.

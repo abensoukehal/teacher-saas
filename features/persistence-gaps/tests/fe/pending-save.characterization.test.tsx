@@ -347,3 +347,59 @@ describe("negative — the storage discipline and gap #5", () => {
     expect(localStorage.getItem("teacher.draft.v1")).toBeNull();
   });
 });
+
+describe("review F3 — a second DIFFERENT save must not be dropped", () => {
+  test("an intent arriving mid-flight is queued, then created — both exams exist", async () => {
+    // `create` is insert-only, so two intents must become two subjects — but never by
+    // firing concurrently, which would double-insert one of them.
+    let release: (() => void) | null = null;
+    const created: unknown[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/subjects" && init.method === "POST") {
+          const body = JSON.parse(init.body as string);
+          created.push(body.subject);
+          if (created.length === 1) {
+            // hold the FIRST create open so the second arrives mid-flight
+            await new Promise<void>((r) => {
+              release = r;
+            });
+          }
+          return res(201, {
+            id: `s${created.length}`,
+            createdAt: "t",
+            updatedAt: "t",
+            subject: body.subject,
+            genCorrelationId: body.genCorrelationId ?? null,
+          });
+        }
+        if (url === "/api/subjects") return res(200, { subjects: [] });
+        if (url === "/api/generate") return res(200, { data: EXAM, correlationId: "g1" });
+        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+      }),
+    );
+
+    localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
+    const { default: App } = await import("@/App");
+    render(<App />);
+
+    // first save starts and blocks
+    generate();
+    await waitFor(() => expect(created).toHaveLength(1));
+
+    // a second, DIFFERENT save arrives while the first is still open
+    generate();
+
+    // let the first finish; the queued one must then run — not be dropped
+    await waitFor(() => expect(release).toBeTruthy());
+    release!();
+
+    await waitFor(() => expect(created).toHaveLength(2));
+  });
+});
