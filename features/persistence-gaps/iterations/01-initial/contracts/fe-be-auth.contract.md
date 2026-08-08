@@ -72,7 +72,8 @@ teachers
   email         string | null       ← null = ANONYMOUS row (see amendment above)
   passwordHash  string | null       ← scrypt, see below; null while anonymous
   recoveryHash  string | null       ← scrypt over the recovery code; null while anonymous
-  recoveryUsedAt Date | null        ← single-use marker; null = unused
+  recoveryUsedAt Date | null        ← WHEN the last code was consumed (informational).
+                                    The rotating recoveryHash is what enforces single use.
   createdAt     Date
   updatedAt     Date
 
@@ -106,8 +107,18 @@ Both `passwordHash` and `recoveryHash` use this exact format so one helper serve
 
 - Issued **once**, at sign-up, in the sign-up response. Never retrievable afterwards.
 - Stored only as `recoveryHash`. The plaintext exists in exactly one response body, once.
-- **Single-use.** Consuming it sets `recoveryUsedAt` and issues a *new* code in the same
-  response — so a teacher who recovers is never left without a future recovery path.
+- **Single-use, enforced by a COMPARE-AND-SET on `recoveryHash`.** Consuming it rotates
+  the hash and issues a *new* code in the same response, so a teacher who recovers is
+  never left without a future recovery path.
+  - The rotating hash is the version token: only the writer whose read is still current
+    can land, so exactly one of N concurrent recoveries succeeds and the rest get
+    `401 invalid_recovery`.
+  - **`recoveryUsedAt` records WHEN the last code was consumed. It is not the guard.**
+    The first implementation filtered on `recoveryUsedAt: null` while setting that same
+    field to `null` in the same update — the guard guarded nothing, four concurrent
+    recoveries all succeeded, and three teachers were handed a code that was already
+    dead. Found by an adversarial probe, not by the oracle, because the oracle only
+    replayed a consumed code sequentially.
 - **Hand-transcribable, under RTL.** A teacher writes this on paper.
   - alphabet: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` — **Latin uppercase + digits, no
     `I O 0 1`** (transcription confusables).

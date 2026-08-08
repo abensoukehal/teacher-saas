@@ -221,13 +221,24 @@ describeIfLane(BE, "be-3 — exercise revision history", () => {
         .collection("subjects")
         .findOne({ _id: new (require("mongodb").ObjectId)(sid) });
 
-      expect(Object.keys(doc).some((k) => /histor|revision|version/i.test(k))).toBe(false);
-      // and the payload itself carries no embedded history either
+      // EXACT key set, restored 2026-08-08 after an audit showed the name-regex version
+      // let `costUsd` through — which be-4's own Boundaries call a stop condition, and
+      // which this pin was the only mechanical guard against. A one-token edit (adding
+      // genCorrelationId) preserves the coverage; a regex does not.
+      expect(Object.keys(doc).sort()).toEqual(
+        [
+          "_id",
+          "controls",
+          "createdAt",
+          "genCorrelationId",
+          "subject",
+          "teacherId",
+          "updatedAt",
+        ].sort(),
+      );
+      // and the payload itself carries no embedded history either (kept — a real
+      // improvement over the original pin, which never looked below the top level)
       expect(JSON.stringify(doc.subject)).not.toContain("v2");
-      // the fields the sheet is built from are all still present
-      for (const k of ["_id", "teacherId", "subject", "controls", "createdAt", "updatedAt"]) {
-        expect(Object.keys(doc)).toContain(k);
-      }
     });
 
     test("an unknown exercise id is still 409 AND writes no revision", async () => {
@@ -242,6 +253,55 @@ describeIfLane(BE, "be-3 — exercise revision history", () => {
       expect(await db.collection("exercise_revisions").countDocuments({ exerciseId: "ex99" })).toBe(
         0,
       );
+    });
+  });
+
+  describe("negative — concurrency must not silently lose a version", () => {
+    test("two simultaneous refines: BOTH versions survive, one current one archived", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+
+      // A teacher double-tapping refine. Before the compare-and-set both writes returned
+      // 200 and one version vanished from the sheet AND from history — the exact failure
+      // "everything generated is worth keeping" exists to prevent.
+      const results = await Promise.all([
+        replace(t, sid, "ex1", "CONCURRENT-A"),
+        replace(t, sid, "ex1", "CONCURRENT-B"),
+      ]);
+      // A loser may legitimately be told 409; it must never be a silent success.
+      for (const r of results) expect([200, 409]).toContain(r.status);
+
+      const sheet = await call("GET", `/api/subjects/${sid}`, { teacher: t });
+      const current = sheet.body.subject.exercises.find((e) => e.id === "ex1").statement;
+      const { body } = await revisions(t, sid, "ex1");
+      const archived = body.revisions.map((r) => r.exercise.statement);
+
+      const landed = results.filter((r) => r.status === 200).length;
+      // Every version that was accepted is still reachable: either on the sheet or in
+      // history. Nothing accepted may disappear.
+      const accepted = ["CONCURRENT-A", "CONCURRENT-B"].filter(
+        (v) => current === v || archived.includes(v),
+      );
+      expect(accepted.length).toBe(landed);
+      // The generated original is always kept.
+      expect(archived).toContain(SUBJECT.exercises[0].statement);
+    });
+
+    test("ten simultaneous refines lose nothing", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const tags = Array.from({ length: 10 }, (_, i) => `RACE-${i}`);
+      const results = await Promise.all(tags.map((v) => replace(t, sid, "ex1", v)));
+
+      const sheet = await call("GET", `/api/subjects/${sid}`, { teacher: t });
+      const current = sheet.body.subject.exercises.find((e) => e.id === "ex1").statement;
+      const { body } = await revisions(t, sid, "ex1");
+      const archived = body.revisions.map((r) => r.exercise.statement);
+
+      const accepted = tags.filter((_, i) => results[i].status === 200);
+      for (const v of accepted) {
+        expect(current === v || archived.includes(v)).toBe(true);
+      }
     });
   });
 

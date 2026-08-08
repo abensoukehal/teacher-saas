@@ -48,3 +48,29 @@ Nothing is ever destroyed, which is the whole point.
 | mutation — append AFTER the `$set` | **caught**, 3 clauses (it stores the new version, not the superseded one) |
 | subject read path | keys, array length, ids and positions all unchanged; stored doc grows no history key |
 | run log | still exactly one `replaceExercise` link line per replace, and no Arabic/statement text in it |
+
+---
+
+## Correction, 2026-08-08 — concurrent refines lost versions
+
+An adversarial verification pass broke the central promise of this sub-issue.
+
+**Two simultaneous `PUT`s to the same exercise silently destroyed a version.** Both
+returned `200`, both archived the *same* pre-image, and the loser's content disappeared
+from the sheet and from history. Reproduced 5/5 at ordinary double-click timing, and 10
+of 12 versions lost under heavier parallelism. Read-then-write with no compare-and-set.
+
+This is worse than an ordinary race: "everything generated is worth keeping" is the exact
+promise this sub-issue exists to make, and a teacher double-tapping refine is not an
+exotic input.
+
+Why the oracle missed it: every clause refined **sequentially**.
+
+**Fixed** with optimistic concurrency — the update now claims the exact `updatedAt` it
+read, and a loser re-reads and retries (5 attempts, then `409 conflict` with an Arabic
+message). The revision is appended **after** winning the CAS, using the pre-image in hand,
+so history contains each superseded version exactly once.
+
+**Now covered** by two clauses: two simultaneous refines, and ten. Every version that was
+accepted (`200`) must still be reachable, on the sheet or in history. Verified to have
+teeth — removing the CAS fails both.

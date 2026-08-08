@@ -91,3 +91,32 @@ amendment):
 - **`fe-1` must send `x-teacher-id` on sign-up** when the browser already has one, or
   adoption never fires and existing anonymous teachers lose their exams at sign-up.
 - `dist/` is now built in this worktree; keep it fresh if a suite spawns the server.
+
+---
+
+## Correction, 2026-08-08 — the atomicity claim above was WRONG
+
+An independent verification pass refuted it. This section supersedes the "one atomic
+update" wording earlier in this file.
+
+**`consumeRecovery` was not atomic and the code was not single-use.** It filtered on
+`{recoveryUsedAt: null}` while setting that same field to `null` in the same update, so
+the guard guarded nothing. Four concurrent recoveries with one code all returned `200`;
+three teachers were handed a fresh code that was already dead. `recoveryUsedAt` had never
+been written in 1214 rows, and the branch reading it was unreachable.
+
+Why the oracle missed it: it only replayed a consumed code **sequentially**. Single-use is
+a concurrency property and was never tested as one.
+
+**Fixed** with a real compare-and-set on `recoveryHash` — the hash rotates on every
+successful consume, so exactly one concurrent writer can match it. `recoveryUsedAt` now
+records *when* the last code was consumed and is explicitly not the guard. The contract
+was corrected to say so.
+
+**Now covered** by three clauses in `auth-recover.characterization.test.js`: four
+simultaneous recoveries yield exactly one `200`; the winner's code actually works; and
+`recoveryUsedAt` is written. Verified to have teeth — restoring the old guard fails 2 of
+them.
+
+Also fixed from the same pass: `findByTeacherId` was a dead export (removed), and
+`GET /api` advertised signup and signin but not recover.

@@ -79,18 +79,56 @@ describeIfLane(BE, "be-4 — cost attribution", () => {
       expect(doc.genCorrelationId).toBe(GEN_CORR);
     });
 
-    test("THE GAP CLOSED — the subject's key finds its run line, and its cost", async () => {
+    test("THE GAP CLOSED — the subject's key actually finds a run line, and its cost", async () => {
+      // Rewritten 2026-08-08. The first version asserted that a literal in a checked-in
+      // fixture was a positive number and never opened the run log — the join it claimed
+      // to prove was never executed. It now performs the join for real.
+      //
+      // /api/generate is NOT called (~$0.65, ~128 s — see stacks/be.md). Instead the run
+      // line the generator would have written is appended from the recorded envelope,
+      // which is exactly the shape runlog.ts emits.
+      const runlog = path.join(process.env.CHAR_ROOTDIR ?? ".", "run-log.jsonl");
+      const unique = `verify-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      fs.appendFileSync(
+        runlog,
+        `${JSON.stringify({
+          ts: new Date().toISOString(),
+          skill: "exam-subject",
+          correlationId: unique,
+          durationMs: RECORDING.durationMs,
+          costUsd: RECORDING.costUsd,
+          exerciseCount: SUBJECT.exercises.length,
+          ok: true,
+        })}\n`,
+      );
+
       const t = await newTeacher();
       const created = await call("POST", "/api/subjects", {
         teacher: t,
-        body: { subject: SUBJECT, controls: null, genCorrelationId: GEN_CORR },
+        body: { subject: SUBJECT, controls: null, genCorrelationId: unique },
       });
+      expect(created.status).toBe(201);
 
-      // This is the join that was impossible before: subject → generation → cost.
-      // The recorded envelope is the run line's source of truth for this fixture.
-      expect(created.body.genCorrelationId).toBe(RECORDING.correlationId);
-      expect(GEN_COST).toBeGreaterThan(0);
-      expect(typeof GEN_COST).toBe("number");
+      // THE JOIN: subject → its generation's correlationId → the run line → the cost.
+      const key = created.body.genCorrelationId;
+      const runLine = fs
+        .readFileSync(runlog, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return null;
+          }
+        })
+        .find((o) => o && o.correlationId === key && typeof o.costUsd === "number");
+
+      expect(runLine).toBeDefined();
+      expect(runLine.costUsd).toBe(RECORDING.costUsd);
+      expect(runLine.durationMs).toBe(RECORDING.durationMs);
+      // Answerable at last: what did THIS exam cost to produce?
+      expect(runLine.costUsd).toBeGreaterThan(0);
     });
 
     test("the two ids stay DISTINCT — the request's own vs the generation's", async () => {

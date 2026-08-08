@@ -56,3 +56,22 @@ history key is still forbidden.
 `fe` must send `genCorrelationId` in the **request body** (not a header), taking it from
 `/api/generate`'s envelope — which `generateExam` currently discards at `api.ts:93`. The
 legacy-draft path (`App.tsx:95`) must send `null`, never invent one.
+
+---
+
+## Correction, 2026-08-08 — the headline clause proved nothing
+
+The clause the spec calls *"the clause that proves the gap closed"* never opened
+`run-log.jsonl`. Its body asserted that a literal in a checked-in fixture was a positive
+number. The subject→generation→cost join was never executed, in a test or by hand.
+
+**Rewritten to perform the join for real**: it appends the run line the generator would
+have written (from the recorded envelope — `/api/generate` is still never called, ~$0.65
+and ~128 s), creates a subject carrying that `genCorrelationId`, then looks the run line
+up **by the key read back off the subject** and asserts the cost and duration match.
+
+**The narrowing of be-3's pin was also over-broad and has been reverted.** Replacing an
+exact key set with a name-regex let `costUsd` through — which be-4's own Boundaries call a
+stop condition, and which that pin was the only mechanical guard against. The exact set is
+restored with `genCorrelationId` added (the one-token edit that should have been made),
+keeping the nested `JSON.stringify(doc.subject)` check, which was a genuine improvement.

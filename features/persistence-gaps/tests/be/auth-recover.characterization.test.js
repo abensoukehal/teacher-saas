@@ -126,6 +126,58 @@ describeIfLane(BE, "be-2 — recovery + rejection", () => {
     });
   });
 
+  describe("negative — single-use must hold under CONCURRENCY, not just replay", () => {
+    test("four simultaneous recoveries with one code: exactly ONE succeeds", async () => {
+      const t = await signup();
+      const attempts = await Promise.all(
+        Array.from({ length: 4 }, (_, i) =>
+          call("POST", "/api/auth/recover", {
+            body: { email: t.email, recoveryCode: t.recoveryCode, password: `race-pw-${i}` },
+          }),
+        ),
+      );
+      const ok = attempts.filter((r) => r.status === 200);
+      // Before the compare-and-set all four returned 200 and three teachers walked away
+      // with a recovery code that was already dead — a code they had written on paper.
+      expect(ok).toHaveLength(1);
+      for (const r of attempts.filter((x) => x.status !== 200)) {
+        expect(r.status).toBe(401);
+        expect(r.body.error.type).toBe("invalid_recovery");
+      }
+    });
+
+    test("the code handed to the winner actually works", async () => {
+      const t = await signup();
+      const attempts = await Promise.all(
+        Array.from({ length: 4 }, (_, i) =>
+          call("POST", "/api/auth/recover", {
+            body: { email: t.email, recoveryCode: t.recoveryCode, password: `race2-pw-${i}` },
+          }),
+        ),
+      );
+      const winner = attempts.find((r) => r.status === 200);
+      expect(winner).toBeDefined();
+      // The whole point of re-issuing: the next code must be live.
+      const again = await call("POST", "/api/auth/recover", {
+        body: {
+          email: t.email,
+          recoveryCode: winner.body.recoveryCode,
+          password: "after-the-race-password",
+        },
+      });
+      expect(again.status).toBe(200);
+    });
+
+    test("recoveryUsedAt is actually written — it is not a dead field", async () => {
+      const t = await signup();
+      await call("POST", "/api/auth/recover", {
+        body: { email: t.email, recoveryCode: t.recoveryCode, password: "records-usage-pw" },
+      });
+      const row = await db.collection("teachers").findOne({ teacherId: t.teacherId });
+      expect(row.recoveryUsedAt).not.toBeNull();
+    });
+  });
+
   describe("positive — requireTeacher now rejects (declared supersession, WF-65)", () => {
     test("an id the server never recorded is 401 teacher_required", async () => {
       const { status, body } = await call("GET", "/api/subjects", { teacher: randomId() });

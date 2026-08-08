@@ -77,8 +77,22 @@ serves it directly.
 
 ### `PUT /api/subjects/:id/exercises/:exerciseId` — modified, additively
 
-Request and response shapes are **unchanged**. The only change is the side effect: the
-superseded version is appended to `exercise_revisions` first.
+Request and response shapes are **unchanged**. The side effect is that the superseded
+version is appended to `exercise_revisions`.
+
+**Concurrency: the write is a compare-and-set on the document's `updatedAt`.** Only the
+writer whose read is still current may land; a loser re-reads and retries, and after five
+failed attempts the caller gets `409 conflict` (Arabic message, retryable by the teacher).
+
+Without it, two simultaneous refines of the same exercise both returned `200` and one
+version vanished from the sheet *and* from history — reproduced 5/5 at ordinary
+double-click timing. "Everything generated is worth keeping" cannot survive a silently
+dropped write, so a visible conflict is the correct answer where a silent overwrite is not.
+
+| Status | `type` | When |
+|---|---|---|
+| 409 | `conflict` | five compare-and-set attempts all lost — the exercise is being edited concurrently |
+| 409 | `exercise_not_found` | the exercise id is not in this subject (unchanged) |
 
 **Restoring a previous version is not a new surface.** `fe` restores by calling the existing
 `PUT` with the old exercise body — which itself appends the now-superseded current version.
