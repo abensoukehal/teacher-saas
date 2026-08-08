@@ -27,14 +27,12 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
  * that is not a file: URL, and rather than a bare import, because the fixture
  * sits outside the suite's `server.fs.allow` root.
  */
+// The fixture sits BESIDE this suite. It used to be reached for at
+// `CHAR_TESTDIR/../be/fixtures/…`, which resolved while the suite lived in the job
+// workspace and broke the moment it was promoted — the same fault 94106ed fixed once
+// already. A promoted suite must not walk out of its own directory.
 const REC = JSON.parse(
-  readFileSync(
-    path.join(
-      process.env.CHAR_TESTDIR as string,
-      "../be/fixtures/rec-exam-subject.2026-08-07.json",
-    ),
-    "utf8",
-  ),
+  readFileSync(path.join(__dirname, "fixtures/rec-exam-subject.2026-08-07.json"), "utf8"),
 ) as {
   data: { title: string; exercises: Array<{ id: string; label: string }> };
   costUsd: number;
