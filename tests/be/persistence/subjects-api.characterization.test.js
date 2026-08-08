@@ -351,9 +351,23 @@ gate("negative — the frozen perimeter", () => {
     expect(body.error.type).toBe("invalid_request");
   });
 
-  test("/api/skills is unchanged", async () => {
+  /**
+   * SUPERSEDED by solution-sheets be-1 (WF-65), 2026-08-08.
+   *
+   * These pinned the catalogue at EXACTLY the two capabilities that existed when they
+   * were written. Adding a capability is the product growing, and the catalogue is a
+   * directory listing — so any new skill changes this response by design.
+   *
+   * The invariant worth keeping is not the count. It is that the EXISTING capabilities are
+   * still advertised and still named the same: a skill name is interpolated into the CLI
+   * prompt, so renaming or dropping one silently breaks a caller. That is what it now
+   * asserts, and it will not need touching again the next time a skill is added.
+   */
+  test("/api/skills still advertises the existing capabilities", async () => {
     const { body } = await call("GET", "/api/skills");
-    expect(body.skills.map((s) => s.name).sort()).toEqual(["exam-subject", "refine-exercise"]);
+    const names = body.skills.map((s) => s.name);
+    expect(names).toEqual(expect.arrayContaining(["exam-subject", "refine-exercise"]));
+    for (const s of body.skills) expect(s.description).toBeTruthy();
   });
 
   test("no delete route exists — everything generated is kept", async () => {
