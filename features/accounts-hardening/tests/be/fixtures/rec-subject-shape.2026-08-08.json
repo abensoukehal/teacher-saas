@@ -1,0 +1,37 @@
+{
+  "_recorded": "2026-08-08, lane slot 5 (be :9500), BEFORE be-1 — POST /api/subjects then GET /api/subjects/:id",
+  "_why": "be-1 is additive. This is the shape the response had before the two KPI fields existed; the oracle asserts the new response is a SUPERSET of it, key for key, type for type.",
+  "record": {
+    "id": "6a777bb1c276b42149ecf882",
+    "createdAt": "2026-08-08T18:55:45.637Z",
+    "updatedAt": "2026-08-08T18:55:45.637Z",
+    "subject": {
+      "title": "شكل مسجَّل",
+      "meta": { "totalPoints": 20, "topic": "الدوال" },
+      "exercises": [
+        { "id": "ex1", "label": "التمرين الأول", "points": 20, "statement": "$f(x)=x^2$" }
+      ]
+    },
+    "genCorrelationId": "rec-shape",
+    "correlationId": "8395080c-9b95-4c52-b83b-363bf6eebae6"
+  },
+  "summaryKeys": [
+    "id",
+    "title",
+    "topic",
+    "exerciseCount",
+    "totalPoints",
+    "createdAt",
+    "updatedAt",
+    "genCorrelationId"
+  ],
+  "documentKeys": [
+    "_id",
+    "teacherId",
+    "subject",
+    "controls",
+    "genCorrelationId",
+    "createdAt",
+    "updatedAt"
+  ]
+}

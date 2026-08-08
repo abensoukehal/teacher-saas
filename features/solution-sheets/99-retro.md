@@ -49,3 +49,10 @@ regression, so the provenance was proven and recorded rather than assumed.
 - The skill's oracle pins **one** recording. It proves that generation was well-shaped, not
   that the skill reliably is. Variance across runs is unmeasured and would cost a run each.
 - Still nothing deployed and nothing backed up (teacher-saas#4).
+
+> **CORRECTED 2026-08-08 (`accounts-hardening`).** The cost framing above is wrong. The
+> product runs on a **subscription**, not credit-based API billing, so `costUsd` is the
+> CLI's notional API-equivalent — a usage signal, not money. There is no per-exam COGS and
+> nothing to "break even" against. The real constraint is throughput: **9 concurrent
+> teachers hold a 100 s bar, 12 breaks it**, and exam *size* dominates (a 2-exercise devoir
+> is 73 s; a 3-exercise composition is 128 s). See `project/CLAUDE.md` → "Cost is not money".

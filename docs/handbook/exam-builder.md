@@ -27,6 +27,44 @@ were made in, and there is no search, no folders and no deleting.
 
 ## Features
 
+## Seeing the system you are running
+
+### Product behavior (what the operator gets)
+
+An **admin** account sees what no teacher can: every teacher, every exam, and four numbers
+about the whole system — total exams, average generation time per exam, average exams per
+teacher, and average **usage** per exam.
+
+An admin reaches the console at `#/admin`. There is deliberately no link: any link a teacher
+can see is an invitation to a request they will be refused, and the refusal is the only thing
+they would learn.
+
+### Every number says what it was computed over
+
+This is the console's central discipline, learned the hard way.
+
+- **`examsWithKpis`** — the averages for usage and duration cover only exams that carry those
+  numbers. Everything generated before this shipped carries none, so an average without its
+  denominator would be a number an operator acts on wrongly.
+- **Teachers vs anonymous sessions** — the teacher count is **accounts**. Counting anonymous
+  sessions too made *exams per teacher* read about three times low, because most rows in the
+  store are sessions rather than people. Both figures are shown.
+- **The teacher list is capped at 200 and says so**, reporting the true total. A truncated
+  list that does not admit it is truncated is a lie.
+
+### Usage is not money
+
+The product runs on a subscription, so the per-exam figure is a **usage signal**, never a
+price. It is labelled as consumption and never rendered with a currency symbol. Presenting
+it as money would mislead the one person the console exists to inform.
+
+### What an admin is not
+
+An admin is **not a super-teacher.** On the ordinary teacher routes they see exactly their
+own work — another teacher's exam is as invisible to them as it is to anyone. Privilege
+lives on separate routes behind a separate guard, so there is no path where an ownership
+check is "relaxed" for a role.
+
 ## Generate a draft exam
 
 ### Product behavior (what the user gets)
@@ -359,14 +397,15 @@ password does not, because pressing the button again would be a lie.
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Agent workspace, Claude Code CLI wrapper, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity, The solution-sheet skill |
-| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, The correction pane and its printed sheet, The sign-in gate |
+| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Claude Code CLI wrapper, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity, The solution-sheet skill |
+| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, The correction pane and its printed sheet, The operator's console, The sign-in gate |
 
 
 ## Map
 
 ```mermaid
 flowchart TD
+  cmp_be_admin_api["cmp-be-admin-api"]
   cmp_be_auth_api["cmp-be-auth-api"]
   cmp_be_claude_runner["cmp-be-claude-runner"]
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
@@ -374,12 +413,14 @@ flowchart TD
   cmp_be_skill_refine_exercise["cmp-be-skill-refine-exercise"]
   cmp_be_skill_solution_sheet["cmp-be-skill-solution-sheet"]
   cmp_be_subjects_api["cmp-be-subjects-api"]
+  cmp_fe_admin_console["cmp-fe-admin-console"]
   cmp_fe_auth_panel["cmp-fe-auth-panel"]
   cmp_fe_controls["cmp-fe-controls"]
   cmp_fe_exam_view["cmp-fe-exam-view"]
   cmp_fe_refine["cmp-fe-refine"]
   cmp_fe_solution_view["cmp-fe-solution-view"]
   cmp_fe_subject_list["cmp-fe-subject-list"]
+  feat_admin_console["feat-admin-console"]
   feat_exam_generation["feat-exam-generation"]
   feat_exam_print["feat-exam-print"]
   feat_exercise_history["feat-exercise-history"]
@@ -392,6 +433,7 @@ flowchart TD
   flow_refine_exercise["flow-refine-exercise"]
   flow_save_and_reopen["flow-save-and-reopen"]
   flow_sign_in_and_recover["flow-sign-in-and-recover"]
+  mod_be_admin["mod-be-admin"]
   mod_be_agent_workspace["mod-be-agent-workspace"]
   mod_be_claude_wrapper["mod-be-claude-wrapper"]
   mod_be_revision_store["mod-be-revision-store"]
@@ -402,6 +444,8 @@ flowchart TD
   prod_exam_builder["prod-exam-builder"]
   svc_teacher_be["svc-teacher-be"]
   svc_teacher_fe["svc-teacher-fe"]
+  cmp_be_admin_api -.-> mod_be_admin
+  cmp_be_admin_api -->|depends_on| mod_be_teacher_store
   cmp_be_auth_api -->|depends_on| mod_be_teacher_store
   cmp_be_auth_api -.-> mod_be_teacher_store
   cmp_be_claude_runner -.-> mod_be_claude_wrapper
@@ -412,6 +456,8 @@ flowchart TD
   cmp_be_skill_solution_sheet -.-> mod_be_agent_workspace
   cmp_be_subjects_api -->|depends_on| mod_be_subject_store
   cmp_be_subjects_api -.-> mod_be_subject_store
+  cmp_fe_admin_console -->|depends_on| cmp_be_admin_api
+  cmp_fe_admin_console -.-> mod_fe_exam_builder
   cmp_fe_auth_panel -->|depends_on| cmp_be_auth_api
   cmp_fe_auth_panel -.-> mod_fe_exam_builder
   cmp_fe_controls -.-> mod_fe_exam_builder
@@ -421,6 +467,10 @@ flowchart TD
   cmp_fe_solution_view -->|depends_on| mod_be_solution_store
   cmp_fe_solution_view -.-> mod_fe_exam_builder
   cmp_fe_subject_list -.-> mod_fe_exam_builder
+  feat_admin_console -->|realized_by| cmp_be_admin_api
+  feat_admin_console -->|realized_by| cmp_fe_admin_console
+  feat_admin_console -->|realized_by| mod_be_teacher_store
+  feat_admin_console -.-> prod_exam_builder
   feat_exam_generation -->|realized_by| cmp_be_claude_runner
   feat_exam_generation -->|realized_by| cmp_be_generate_endpoint
   feat_exam_generation -->|realized_by| cmp_be_skill_exam_subject
@@ -480,6 +530,7 @@ flowchart TD
   flow_sign_in_and_recover -->|step| cmp_be_subjects_api
   flow_sign_in_and_recover -->|step| cmp_fe_auth_panel
   flow_sign_in_and_recover -->|step| mod_be_teacher_store
+  mod_be_admin -.-> svc_teacher_be
   mod_be_agent_workspace -.-> svc_teacher_be
   mod_be_claude_wrapper -.-> svc_teacher_be
   mod_be_revision_store -.-> svc_teacher_be
@@ -493,6 +544,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_auth_api,cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_solution_view,cmp_fe_subject_list,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 

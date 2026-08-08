@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-08-08T11:49:30",
+  "generated_at": "2026-08-08T21:39:45",
   "nodes": {
+    "cmp-be-admin-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Admin surfaces and the privilege guard",
+      "path": "docs/cmp-be-admin-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@a3691dd"
+      ]
+    },
     "cmp-be-auth-api": {
       "kind": "component",
       "plane": "implementation",
@@ -63,6 +73,16 @@
         "teacher-be@f6cf955"
       ]
     },
+    "cmp-fe-admin-console": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The operator's console",
+      "path": "docs/cmp-fe-admin-console.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@04014dc"
+      ]
+    },
     "cmp-fe-auth-panel": {
       "kind": "component",
       "plane": "implementation",
@@ -116,6 +136,14 @@
       "repos": [
         "teacher-fe@8e190e0"
       ]
+    },
+    "feat-admin-console": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Seeing the system you are running",
+      "path": "docs/feat-admin-console.md",
+      "status": "fresh",
+      "repos": []
     },
     "feat-exam-generation": {
       "kind": "feature",
@@ -213,6 +241,16 @@
       "status": "fresh",
       "repos": []
     },
+    "mod-be-admin": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Admin and the auth boundary",
+      "path": "docs/mod-be-admin.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@a3691dd"
+      ]
+    },
     "mod-be-agent-workspace": {
       "kind": "module",
       "plane": "implementation",
@@ -308,6 +346,16 @@
   },
   "edges": [
     {
+      "from": "cmp-be-admin-api",
+      "to": "mod-be-admin",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-admin-api",
+      "to": "mod-be-teacher-store",
+      "type": "depends_on"
+    },
+    {
       "from": "cmp-be-auth-api",
       "to": "mod-be-teacher-store",
       "type": "depends_on"
@@ -358,6 +406,16 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-fe-admin-console",
+      "to": "cmp-be-admin-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-admin-console",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-fe-auth-panel",
       "to": "cmp-be-auth-api",
       "type": "depends_on"
@@ -400,6 +458,26 @@
     {
       "from": "cmp-fe-subject-list",
       "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-admin-console",
+      "to": "cmp-be-admin-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-admin-console",
+      "to": "cmp-fe-admin-console",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-admin-console",
+      "to": "mod-be-teacher-store",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-admin-console",
+      "to": "prod-exam-builder",
       "type": "part_of"
     },
     {
@@ -696,6 +774,11 @@
       "from": "flow-sign-in-and-recover",
       "to": "mod-be-teacher-store",
       "type": "step"
+    },
+    {
+      "from": "mod-be-admin",
+      "to": "svc-teacher-be",
+      "type": "part_of"
     },
     {
       "from": "mod-be-agent-workspace",

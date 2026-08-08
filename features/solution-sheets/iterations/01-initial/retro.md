@@ -69,3 +69,10 @@ exam-plus-correction is ~$1.40 against a price point under consideration of ~$15
 **~11 exams to break even, down from ~23.** Recorded per correction and deliberately not
 metered, per the decision taken at DISCOVERY. It is the largest single change to unit
 economics the product has made, and pricing has not accounted for it.
+
+> **CORRECTED 2026-08-08 (`accounts-hardening`).** The cost framing above is wrong. The
+> product runs on a **subscription**, not credit-based API billing, so `costUsd` is the
+> CLI's notional API-equivalent — a usage signal, not money. There is no per-exam COGS and
+> nothing to "break even" against. The real constraint is throughput: **9 concurrent
+> teachers hold a 100 s bar, 12 breaks it**, and exam *size* dominates (a 2-exercise devoir
+> is 73 s; a 3-exercise composition is 128 s). See `project/CLAUDE.md` → "Cost is not money".

@@ -288,7 +288,10 @@ describeIfLane(BE, "be-2 — recovery + rejection", () => {
       if (legacy) {
         // A pre-existing document: untouched by the backfill, and still exactly as it was.
         expect(Object.keys(legacy).sort()).toEqual(
-          ["_id", "controls", "createdAt", "subject", "teacherId", "updatedAt"].sort(),
+          // WF-65: legacy rows keep the original six; newer ones also carry
+        // genCorrelationId/rev/costUsd/durationMs. Assert the originals are all PRESENT
+        // rather than pinning an exact set that every additive field falsifies.
+        expect.arrayContaining(["_id", "controls", "createdAt", "subject", "teacherId", "updatedAt"]),
         );
       }
 
@@ -305,7 +308,9 @@ describeIfLane(BE, "be-2 — recovery + rejection", () => {
         [
           "_id",
           "controls",
+          "costUsd",
           "createdAt",
+          "durationMs",
           "genCorrelationId",
           "subject",
           "teacherId",

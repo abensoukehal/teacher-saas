@@ -62,7 +62,16 @@ describe("positive — relative URLs and identity on the wire", () => {
     const [url, init] = f.mock.calls[0];
     expect(url).toBe("/api/subjects");
     expect(init.headers["x-teacher-id"]).toBe(TID);
-    expect(JSON.parse(init.body)).toEqual({ subject: SUBJECT, controls: { topic: "x" } });
+    // SUPERSEDED, 2026-08-08. This pinned the body's EXACT shape when a create carried only
+    // the subject and its controls. Two later jobs added fields to that body —
+    // `genCorrelationId` (the join to the generation) and now `costUsd`/`durationMs` (so the
+    // operator's KPIs are a query, not a file parse). An exact-equality assertion turns every
+    // additive field into a false failure.
+    //
+    // What is worth pinning is that the two ORIGINAL fields are still sent, unchanged.
+    const sent = JSON.parse(init.body);
+    expect(sent.subject).toEqual(SUBJECT);
+    expect(sent.controls).toEqual({ topic: "x" });
   });
 
   test("listSubjects unwraps the envelope and sends no body on GET", async () => {
