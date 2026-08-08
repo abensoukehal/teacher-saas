@@ -75,3 +75,12 @@ Both matched. Proceeded.
 - **`dist/` in this worktree is not built.** The gate drives the running lane, so it
   didn't matter here, but any suite that spawns the server itself needs `npm run build`
   first.
+
+## review
+**approve-with-debt** (Fable 5, cross-model, 2026-08-08). Prosecuted by execution on the
+lane. Blind-first expectations found no divergence on the enumeration oracle (burnVerify
+spends decoy work), the adopt-race (CAS on `email: null`), or dead-store classification.
+Mutation kill rate across the be slice: **7/7**.
+**Debt found and FIXED during review:** `auth.signup/signin/recover` logged the **whole
+teacherId** — a bearer credential — contradicting `requireTeacher`'s own rule that it must
+be truncated. Now an 8-char prefix, pinned by a new clause.

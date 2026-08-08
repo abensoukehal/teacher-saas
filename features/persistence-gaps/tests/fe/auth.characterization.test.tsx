@@ -540,3 +540,31 @@ describe("negative — the core loop is untouched for a signed-in teacher", () =
     vi.restoreAllMocks();
   });
 });
+
+describe("negative — every word the teacher reads is ours (review F1)", () => {
+  /**
+   * Added after review. The form used native constraint validation, so a malformed
+   * email was blocked by the BROWSER and the only feedback was its own bubble —
+   * "Please include an '@' in the email address." — in the browser's locale, on the
+   * auth mainline of an Arabic-only product. jsdom renders no bubble, which is exactly
+   * why no oracle saw it; this pins the mechanism instead of the message.
+   */
+  test("the auth form is noValidate, so be's Arabic error is what speaks", async () => {
+    harness();
+    await mountApp();
+    click("حساب جديد");
+    const form = emailBox().closest("form");
+    expect(form).toBeTruthy();
+    expect(form?.hasAttribute("novalidate")).toBe(true);
+  });
+
+  test("a malformed email REACHES the backend rather than being blocked locally", async () => {
+    const h = harness();
+    await mountApp();
+    await signUp("not-an-email", "a-good-password");
+    // be owns email validation and answers in Arabic; the browser must not pre-empt it.
+    await waitFor(() =>
+      expect(h.calls.filter((c) => c.url === "/api/auth/signup").length).toBeGreaterThan(0),
+    );
+  });
+});

@@ -118,3 +118,17 @@ Reverted; 26/26.
   auth surface is ever restyled, that is its own change.
 - `AuthPanel` holds the recovery code in component state and nothing else ever sees it. Any
   future "show me my code again" feature is a contract violation, not a missing feature.
+
+## review
+**reopen-implement → FIXED and re-verified.** Adoption proven against the REAL backend
+(sign-up while holding an anonymous id keeps the id and the exams). Mutation kill rate on
+the fe slice: **6/6**, including the two race clauses the implementer admitted were
+initially toothless — they now bite.
+**The conviction (F1):** the auth form used native `type="email"` validation, so a malformed
+address was blocked by the BROWSER and the only feedback was its own bubble — *"Please
+include an '@' in the email address."* — in the browser's locale, on the auth mainline of an
+**Arabic-only** product. jsdom renders no bubble, which is structurally why no oracle could
+see it. Fixed with `noValidate` (be already validates and answers in Arabic) and pinned by
+two new clauses, mutation-verified.
+**Debt carried to QA:** signing IN while holding an anonymous id that owns exams silently
+orphans them. The contract forbids adoption on sign-in; it does not forbid a warning.

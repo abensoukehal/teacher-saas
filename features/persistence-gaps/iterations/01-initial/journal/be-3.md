@@ -89,3 +89,12 @@ Now a monotonic `rev` counter, `$inc`-ed on each successful replace, with legacy
 (no `rev`) matched on its absence. Six consecutive green runs including the ten-way case.
 The exact-key pin caught the new field immediately and was updated to expect it —
 which is the pin doing precisely the job it was restored for.
+
+## review
+**approve.** 12 concurrent PUTs to one exercise: 8×200 + 4×409, **every accepted version
+reachable, zero lost, zero duplicate revisions.** Cross-tenant probe on the new revisions
+route returns the identical 404 as a nonexistent subject.
+**Doc drift found:** `flows.md` Flow 4 and the subjects-v2 contract still say "append
+BEFORE the `$set`". The code correctly appends **after winning the CAS** — that ordering is
+what the concurrency fix requires, so only the winner writes a revision. Corrected in
+`/document`.

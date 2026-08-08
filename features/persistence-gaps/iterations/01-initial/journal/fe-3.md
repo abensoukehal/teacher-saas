@@ -90,3 +90,11 @@ green, which is the check that history never leaked into the sheet.
   will silently lose the save-state banner and the retry.
 - `be` returns `409 conflict` on a genuine concurrent replace. It is mapped retryable and
   surfaces the Arabic message `be` sends — do not add a second message for it in `fe`.
+
+## review
+**approve-with-debt.** Restore proven live: exactly one PUT to the existing endpoint, no
+`/restore` URL in traffic, history grew, nothing lost. History renders through KaTeX with no
+LaTeX leak. Debt: the new UI is unstyled (`App.css` is in no Delta — declared), and
+`App.tsx` was edited outside this Delta. The reviewer verified the `applyExercise` extraction
+is **verbatim and behaviour-identical**; the Delta should have named `App.tsx`, so this is a
+planning defect rather than an implementation offence.

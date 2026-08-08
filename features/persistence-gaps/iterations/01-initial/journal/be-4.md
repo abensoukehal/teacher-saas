@@ -75,3 +75,9 @@ exact key set with a name-regex let `costUsd` through — which be-4's own Bound
 stop condition, and which that pin was the only mechanical guard against. The exact set is
 restored with `genCorrelationId` added (the one-token edit that should have been made),
 keeping the nested `JSON.stringify(doc.subject)` check, which was a genuine improvement.
+
+## review
+**approve.** The previously tautological join clause is confirmed fixed and mutation-killed;
+the reviewer searched for other fixture-literal-instead-of-join clauses and found none. The
+"pre-existing docs not rewritten" clause is confirmed non-vacuous (322 subjects still lack
+the field).

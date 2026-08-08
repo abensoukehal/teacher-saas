@@ -98,3 +98,15 @@ supersession, **none added by `fe-2`, `fe-3` or `fe-4`**.
   still works. Pinned, so the trade is visible rather than assumed.
 - There is deliberately **no discard affordance** on the pending banner. Throwing away a
   teacher's generated exam on a click is the opposite of this job.
+
+## review
+**approve-with-debt.** Triple-clicked replay against the real insert-only backend created
+**exactly one** subject. Queue/replay/clear/never-silent all hold, and the previously
+toothless race clauses are mutation-verified.
+**F2, found by review and FIXED:** a `teacher_required` failure dropped the pending intent
+before queueing it, so a teacher whose identity was rejected mid-session lost an exam that
+had already cost real money — the exact silent-loss class this slice exists to end. The
+queue now happens **before** handing over to the gate.
+**F3, remaining debt:** `createOnce` silently drops a *second, different* intent while one is
+in flight (correct for a double-fire, wrong for two distinct saves). Narrow trigger; the next
+hardening pass should queue it rather than return.

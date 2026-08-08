@@ -62,19 +62,35 @@
         },
         "fe-1": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          }
         },
         "fe-2": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          }
         },
         "fe-3": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          }
         },
         "fe-4": {
           "status": "done",
-          "tag": "hardening"
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "d5cbc1a2000b8fc0"
+          }
         }
       }
     }

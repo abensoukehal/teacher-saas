@@ -78,3 +78,7 @@ which is the check that C3's omit-when-undefined choice actually held.
 - `generateExam` no longer resolves an `ExamSubject`. Any new caller must destructure
   `.subject` — TypeScript will say so, once the pre-existing `tsc` break (see `fe-1`'s
   journal) is fixed and the build runs again.
+
+## review
+**approve.** No status-code branching anywhere (all `error.type`), no absolute URLs, the
+envelope change is invisible to the UI, and the join key survives a retry. Mutation-killed.

@@ -223,4 +223,45 @@ describeIfLane(BE, "be-1 — accounts adopt the existing teacher id", () => {
       expect(res.body.error.type).toBe("invalid_credentials");
     });
   });
+
+  describe("obs — a bearer credential is never logged whole (review finding)", () => {
+    test("auth log lines carry a PREFIX, never the full teacherId", async () => {
+      const fs = require("node:fs");
+      const LOG = process.env.CHAR_BE_LOG || "/tmp/teacher-backend.log";
+      const { body: t } = await call("POST", "/api/auth/signup", {
+        body: { email: freshEmail(), password: "logging-discipline-pw" },
+      });
+
+      const lines = fs
+        .readFileSync(LOG, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return null;
+          }
+        })
+        .filter((o) => o && typeof o.msg === "string" && o.msg.startsWith("auth."));
+
+      expect(lines.length).toBeGreaterThan(0);
+
+      // Scoped to THIS teacher. The log is append-only and long-lived, so it still holds
+      // lines written before this was fixed — asserting over all history could never pass
+      // and would say nothing about the code as it stands.
+      const prefix = t.teacherId.slice(0, 8);
+      const mine = lines.filter((l) => l.teacherIdPrefix === prefix);
+      expect(mine.length).toBeGreaterThan(0); // the signup was logged at all
+
+      // requireTeacher already truncates the id for exactly this reason; logging it whole
+      // on the auth side would undo that discipline from the other direction.
+      for (const l of lines) {
+        expect(JSON.stringify(l)).not.toContain(t.teacherId);
+      }
+      for (const l of mine) {
+        expect(l.teacherId).toBeUndefined();
+      }
+    });
+  });
 });

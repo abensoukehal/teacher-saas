@@ -120,3 +120,12 @@ them.
 
 Also fixed from the same pass: `findByTeacherId` was a dead export (removed), and
 `GET /api` advertised signup and signin but not recover.
+
+## review
+**approve-with-debt** → debt fixed. The reviewer independently reproduced both late
+concurrency fixes under load: 8 concurrent recoveries → exactly 1×200 and 7×401; 2
+concurrent signups on one anonymous id → exactly 1 adopts. Same bearer-id logging debt as
+be-1, fixed. Outstanding, not blocking: a malformed JSON body yields `500 internal_error`
+with an English message from the `express.json` layer — pre-existing and product-wide, but
+the auth contract's table says malformed body → `400 invalid_request`. Tracked for a
+follow-up, not a reopen.

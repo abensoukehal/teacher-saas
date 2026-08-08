@@ -61,3 +61,8 @@ teacher content and must never be committed.
 | dry run is the default | reports, deletes nothing |
 | account-owned subjects | asserted by identity across 200 watched documents — all survived |
 | idempotent | second `--yes` finds 0 |
+
+## review
+**approve.** Every guard mutation-tested: removing the required `--before`, and dropping the
+anonymous-only scope (which would have deleted account-owned subjects), were both caught.
+Dump-verified-before-delete and the `deletedCount === matched` post-condition hold.
