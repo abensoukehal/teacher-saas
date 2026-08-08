@@ -30,3 +30,8 @@ features/*/dev-up.md
 
 # Node
 node_modules/
+
+# tools/ci creates a transient node_modules symlink beside fe suites (absolute path,
+# machine-specific). node_modules/ with a trailing slash does not match a symlink.
+tests/**/node_modules
+features/**/tests/**/node_modules
