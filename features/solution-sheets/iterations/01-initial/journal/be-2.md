@@ -49,3 +49,28 @@ next time a skill is added.
 | mutation — staleness not per-exercise | **caught**, 4 clauses |
 | subject read path | no new key; the stored document carries nothing solution-shaped |
 | concurrency (written from the start) | two simultaneous saves for one exercise leave exactly one row |
+
+## review
+**reopen-implement → FIXED and re-verified.** Storage, ownership, atomicity, per-exercise
+staleness and concurrency all held under attack. One real hole:
+
+**Finding 1 — a save could launder a stale correction.** `be` hashed the **live** exercise at
+store time; it never saw what the solution was generated against. A generation takes ~145 s,
+so refining inside that window — or from a second device, which accounts make ordinary —
+stored the NEW statement's hash against an OLD answer, and it was then served as **current**.
+Reproduced at the API by the reviewer. That is the exact harm the mechanism exists to prevent,
+and it defeated the sub-issue's own stated intent.
+
+Fixed: each entry carries the statement it was generated against and `be` hashes that. The
+failure mode is now fail-safe — a statement matching nothing yields a permanent `stale: true`,
+visible and recoverable, never a false current. The contract's `answersHash` definition already
+said "as it was when the solution was generated"; the wire shape simply never delivered it, so
+it was amended to. Reverting the fix fails 2 clauses.
+
+**Finding 2 — the scale rule was sum-only.** `[8, -2]` sums to 6 and is nonsense to mark
+against; empty labels and zero-point padding also passed. Parts now need a non-empty label and
+points > 0. Three clauses added.
+
+**Finding 3 — "worked answer" is not machine-enforceable** (a one-word answer passes every
+check). Inside the SEED's accepted risk: checkable properties catch shape, not correctness, and
+the teacher is the reviewer. Noted, no action.

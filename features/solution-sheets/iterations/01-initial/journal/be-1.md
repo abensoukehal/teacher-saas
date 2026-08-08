@@ -62,3 +62,11 @@ worse one.
 ## Exit
 
 Delta held: `git status` in the be repo shows only `agent/.claude/skills/solution-sheet/`.
+
+## review
+**approve** (Fable 5, cross-model). The reviewer independently re-verified the recording with
+its own checker — 240 spans, 0 Latin prose, 0 Arabic-in-math, balanced `$`, scales 6/6/8 —
+and confirmed that a naive `$`-split checker misfires exactly as this journal describes.
+Judged the property set itself: the right properties, none vacuous, with one honest limit —
+they pin **one** recording, so they prove that generation was well-shaped, not that the skill
+reliably is.

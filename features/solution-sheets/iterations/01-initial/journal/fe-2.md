@@ -99,3 +99,9 @@ sheet in black, the dimming of a stale answer is lifted for paper, 3 blocks, 22 
 | mutation — print before the marker commits | **caught, 2 clauses** |
 | exam print output | byte-identical to the recorded baseline, screen render too |
 | real browser, print rules materialised | exam-mode hides the correction; solutions-mode hides the exam |
+
+## review
+**approve.** The two sheets provably never merge; the exam's print output is byte-identical
+against a baseline the reviewer confirmed is legitimate (nothing in `ExamView` changed, so
+there is nothing a re-dump could hide). The print-scoping mutation is caught. The three
+follow-ups reported here were judged genuinely out of scope, not dodged.

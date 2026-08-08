@@ -93,3 +93,9 @@ parts, exactly 1 regenerate control on exactly the stale exercise.
 | mutation — ref guard removed | **caught, 3 clauses** (only after the clause was repaired) |
 | real browser | RTL, KaTeX, no LaTeX, stale marked on exactly one exercise |
 | `/api/generate` | untouched — request is `{skill, input}` and nothing else |
+
+## review
+**approve.** States, KaTeX/RTL/no-LaTeX, relative URLs and the retry path verified on the real
+UI. The reviewer re-executed the repaired money clause against the same mutant and confirmed it
+now bites (3 clauses) — the journal's admission that the first version did not catch it is
+accurate and the repair is real.

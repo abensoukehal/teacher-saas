@@ -38,11 +38,19 @@
         },
         "fe-1": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          }
         },
         "fe-2": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "ce992b6c0a796e9a",
+            "contracts": "ff28764d022becf5"
+          }
         }
       }
     }

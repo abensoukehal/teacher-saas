@@ -56,10 +56,30 @@ async function newSubject(teacher) {
   return body.id;
 }
 
+/**
+ * Every entry carries the statement it was generated against. `be` hashes THAT, not the
+ * live exercise — see the contract's 2026-08-08 amendment and the bypass clause below.
+ */
+const withStatement = (sols, override = {}) =>
+  sols.map((s) => ({
+    ...s,
+    statement:
+      override[s.exerciseId] ??
+      EXAM.exercises.find((e) => e.id === s.exerciseId)?.statement ??
+      "",
+  }));
+
 const save = (teacher, sid, solutions, genCorrelationId = GEN_CORR) =>
   call("POST", `/api/subjects/${sid}/solutions`, {
     teacher,
-    body: { solutions, genCorrelationId },
+    body: { solutions: withStatement(solutions), genCorrelationId },
+  });
+
+/** Save carrying an explicit statement — models "generated against THIS version". */
+const saveAgainst = (teacher, sid, solutions, statementById) =>
+  call("POST", `/api/subjects/${sid}/solutions`, {
+    teacher,
+    body: { solutions: withStatement(solutions, statementById), genCorrelationId: GEN_CORR },
   });
 
 const read = (teacher, sid) => call("GET", `/api/subjects/${sid}/solutions`, { teacher });
@@ -163,9 +183,11 @@ describeIfLane(BE, "be-2 — solutions storage + staleness", () => {
       await refine(t, sid, "ex2", "نص جديد");
       expect(staleMap((await read(t, sid)).body).ex2).toBe(true);
 
-      // regenerate just that one — a partial submission is valid
+      // Regenerate just that one — a partial submission is valid. A real regeneration
+      // answers the NEW statement, so that is what it carries; saving the old statement
+      // again would (correctly) stay stale, which the Finding 1 clause below pins.
       const one = SOLUTIONS.filter((s) => s.exerciseId === "ex2");
-      const again = await save(t, sid, one);
+      const again = await saveAgainst(t, sid, one, { ex2: "نص جديد" });
       expect(again.status).toBe(201);
 
       const got = await read(t, sid);
@@ -291,6 +313,89 @@ describeIfLane(BE, "be-2 — solutions storage + staleness", () => {
           .collection("solutions")
           .countDocuments({ subjectId: new ObjectId(sid), exerciseId: "ex1" }),
       ).toBe(1);
+    });
+  });
+
+  describe("negative — review Finding 1: a save cannot launder a stale correction", () => {
+    test("saving an OLD answer after the exercise was refined reports it STALE", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const originalEx2 = EXAM.exercises.find((e) => e.id === "ex2").statement;
+
+      // The teacher refines ex2 while a ~145 s generation is in flight (or from a second
+      // device). The generation finishes and is saved — but it answers the OLD statement.
+      await refine(t, sid, "ex2", "نص التمرين الثاني بعد التعديل");
+      const res = await saveAgainst(t, sid, SOLUTIONS, { ex2: originalEx2 });
+      expect(res.status).toBe(201);
+
+      const got = await read(t, sid);
+      // Before the fix this read `false`: be hashed the LIVE exercise at store time, so the
+      // stale answer was served as current — the exact harm the mechanism exists to stop.
+      expect(staleMap(got.body).ex2).toBe(true);
+      expect(staleMap(got.body).ex1).toBe(false);
+    });
+
+    test("the reference statement is REQUIRED — it cannot be inferred", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const res = await call("POST", `/api/subjects/${sid}/solutions`, {
+        teacher: t,
+        body: { solutions: SOLUTIONS.map(({ statement, ...rest }) => rest) },
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error.type).toBe("invalid_request");
+    });
+
+    test("a statement matching nothing is fail-safe — permanently stale, never current", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      await saveAgainst(t, sid, SOLUTIONS, { ex1: "نص لا يطابق أي تمرين" });
+      expect(staleMap((await read(t, sid)).body).ex1).toBe(true);
+    });
+  });
+
+  describe("negative — review Finding 2: summing correctly is not enough", () => {
+    test("a negative part is rejected even when the total is right", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const bad = [
+        {
+          exerciseId: "ex1",
+          answer: "جواب",
+          scale: [
+            { part: "الجزء الأول", points: 8 },
+            { part: "خصم", points: -2 },
+          ],
+        },
+      ];
+      const res = await save(t, sid, bad);
+      expect(res.status).toBe(400);
+      expect(
+        await db.collection("solutions").countDocuments({ subjectId: new ObjectId(sid) }),
+      ).toBe(0);
+    });
+
+    test("an unlabelled part is rejected — it tells a teacher nothing", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const bad = [{ exerciseId: "ex1", answer: "جواب", scale: [{ part: "  ", points: 6 }] }];
+      expect((await save(t, sid, bad)).status).toBe(400);
+    });
+
+    test("a zero-point padding part is rejected", async () => {
+      const t = await newTeacher();
+      const sid = await newSubject(t);
+      const bad = [
+        {
+          exerciseId: "ex1",
+          answer: "جواب",
+          scale: [
+            { part: "الكل", points: 6 },
+            { part: "حشو", points: 0 },
+          ],
+        },
+      ];
+      expect((await save(t, sid, bad)).status).toBe(400);
     });
   });
 });

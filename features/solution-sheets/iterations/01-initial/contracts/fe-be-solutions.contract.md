@@ -47,9 +47,21 @@ index: { subjectId: 1, exerciseId: 1 } unique   ← one current solution per exe
 ```
 
 **`answersHash` is the whole staleness mechanism.** It is a hash of the exercise
-`statement` as it was when the solution was generated. On read, `be` recomputes the hash of
-the exercise as it is *now* and reports `stale: true` when they differ. Nothing is deleted
+`statement` **as it was when the solution was generated**. On read, `be` recomputes the hash
+of the exercise as it is *now* and reports `stale: true` when they differ. Nothing is deleted
 and nothing is silently served.
+
+> **AMENDMENT 2026-08-08 (review Finding 1).** "As it was when the solution was generated"
+> has to be *delivered*, not inferred. The first implementation hashed the **live** exercise
+> at store time — `be` never sees what the solution was generated against. A generation takes
+> ~145 s, so refining an exercise during that window (or from a second device, which accounts
+> now make ordinary) stored a hash of the NEW statement against an answer written for the OLD
+> one, and the correction was then served as **current**. That is exactly the "stale
+> correction reaches a class" harm this mechanism exists to prevent.
+>
+> So each entry in the POST body **carries the statement it was generated against**, and `be`
+> hashes *that*. The failure mode is now fail-safe: a statement that matches nothing yields a
+> permanent `stale: true`, which is visible and recoverable, rather than a false `current`.
 
 Why a content hash and not the subject's `rev`: `rev` advances when **any** exercise is
 replaced, so it would mark every solution in the exam stale after a single refine. The hash
@@ -63,7 +75,14 @@ is per-exercise and marks exactly the one that changed.
 // request — the whole exam's solutions, from ONE generate run
 {
   "solutions": [
-    { "exerciseId": "ex1", "answer": "…", "scale": [ { "part": "…", "points": 2 } ] }
+    {
+      "exerciseId": "ex1",
+      "answer": "…",
+      "scale": [ { "part": "…", "points": 2 } ],
+      // REQUIRED — the exercise statement this answer was generated against.
+      // be hashes THIS, not the live exercise. See the amendment above.
+      "statement": "…"
+    }
   ],
   "genCorrelationId": "43e41235-…" | null
 }
@@ -79,7 +98,8 @@ is per-exercise and marks exactly the one that changed.
 - **An `exerciseId` not present in the exam is rejected** — `400 invalid_request`. A skill
   that invents an id would otherwise silently store an answer to nothing.
 - **The grading scale must sum to that exercise's `points`** — `400 invalid_request` when it
-  does not. This is the one *checkable* property a correction has, and the SEED makes it the
+  does not. Each part must additionally have a **non-empty label** and **points > 0**: a scale
+  of `[8, -2]` sums correctly and is nonsense to mark against (review Finding 2). This is the one *checkable* property a correction has, and the SEED makes it the
   standard the skill's output is judged on. Rejecting here is what stops a mis-scaled
   correction reaching a class.
 - Partial submission is allowed: solutions for a subset of exercises is valid.

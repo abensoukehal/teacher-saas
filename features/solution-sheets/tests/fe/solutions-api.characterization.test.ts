@@ -68,9 +68,31 @@ describe("generateSolutions — the ONE spawn point, unchanged", () => {
     const { generateSolutions } = await import("@/lib/api");
     const out = await generateSolutions(EXAM, new AbortController().signal);
 
-    expect(out.solutions).toEqual(DRAFTS);
+    // The answer and scale come back untouched …
+    expect(out.solutions.map(({ statement, ...rest }) => rest)).toEqual(DRAFTS);
     expect(out.correlationId).toBe(GEN_CID);
     expect(out.costUsd).toBe(REC_SOLUTIONS.costUsd);
+
+    // … and each draft is STAMPED with the statement it was generated against, taken from
+    // the exam that was sent. Without this, a refine landing during the ~145 s generation
+    // lets a stale correction be stored as current (review Finding 1).
+    for (const d of out.solutions) {
+      expect(d.statement).toBe(EXAM.exercises.find((e) => e.id === d.exerciseId)!.statement);
+    }
+  });
+
+  test("the stamp is the statement SENT, not whatever the exam becomes later", async () => {
+    net(ok({ data: REC_SOLUTIONS.data, correlationId: GEN_CID }));
+    const { generateSolutions } = await import("@/lib/api");
+    const sent = {
+      ...EXAM,
+      exercises: EXAM.exercises.map((e) =>
+        e.id === "ex2" ? { ...e, statement: "النسخة التي وُلّد عنها الحل" } : e,
+      ),
+    };
+    const out = await generateSolutions(sent, new AbortController().signal);
+    const ex2 = out.solutions.find((s) => s.exerciseId === "ex2")!;
+    expect(ex2.statement).toBe("النسخة التي وُلّد عنها الحل");
   });
 
   test("a single-exercise regeneration sends ONLY that exercise", async () => {
