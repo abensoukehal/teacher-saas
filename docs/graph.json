@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-08-08T00:25:56",
+  "generated_at": "2026-08-08T05:23:05",
   "nodes": {
+    "cmp-be-auth-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Account endpoints",
+      "path": "docs/cmp-be-auth-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@f6cf955"
+      ]
+    },
     "cmp-be-claude-runner": {
       "kind": "component",
       "plane": "implementation",
@@ -40,7 +50,17 @@
       "path": "docs/cmp-be-subjects-api.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@2c56bef"
+        "teacher-be@f6cf955"
+      ]
+    },
+    "cmp-fe-auth-panel": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The sign-in gate",
+      "path": "docs/cmp-fe-auth-panel.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@8e190e0"
       ]
     },
     "cmp-fe-controls": {
@@ -74,7 +94,7 @@
       "path": "docs/cmp-fe-subject-list.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@132202c"
+        "teacher-fe@8e190e0"
       ]
     },
     "feat-exam-generation": {
@@ -93,6 +113,14 @@
       "status": "fresh",
       "repos": []
     },
+    "feat-exercise-history": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "Going back to an earlier version of an exercise",
+      "path": "docs/feat-exercise-history.md",
+      "status": "fresh",
+      "repos": []
+    },
     "feat-exercise-refinement": {
       "kind": "feature",
       "plane": "product",
@@ -106,6 +134,14 @@
       "plane": "product",
       "title": "Keep every exam",
       "path": "docs/feat-subject-library.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "feat-teacher-accounts": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "A teacher's exams follow them",
+      "path": "docs/feat-teacher-accounts.md",
       "status": "fresh",
       "repos": []
     },
@@ -133,6 +169,14 @@
       "status": "fresh",
       "repos": []
     },
+    "flow-sign-in-and-recover": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Signing up, signing in, and getting back in",
+      "path": "docs/flow-sign-in-and-recover.md",
+      "status": "fresh",
+      "repos": []
+    },
     "mod-be-agent-workspace": {
       "kind": "module",
       "plane": "implementation",
@@ -149,6 +193,16 @@
       "status": "fresh",
       "repos": []
     },
+    "mod-be-revision-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Exercise revision store",
+      "path": "docs/mod-be-revision-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@f6cf955"
+      ]
+    },
     "mod-be-subject-store": {
       "kind": "module",
       "plane": "implementation",
@@ -156,7 +210,17 @@
       "path": "docs/mod-be-subject-store.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@2c56bef"
+        "teacher-be@f6cf955"
+      ]
+    },
+    "mod-be-teacher-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Teacher accounts store",
+      "path": "docs/mod-be-teacher-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@f6cf955"
       ]
     },
     "mod-fe-exam-builder": {
@@ -182,7 +246,7 @@
       "path": "docs/svc-teacher-be.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@db7332c"
+        "teacher-be@f6cf955"
       ]
     },
     "svc-teacher-fe": {
@@ -192,11 +256,21 @@
       "path": "docs/svc-teacher-fe.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@2e1dc9f"
+        "teacher-fe@8e190e0"
       ]
     }
   },
   "edges": [
+    {
+      "from": "cmp-be-auth-api",
+      "to": "mod-be-teacher-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-auth-api",
+      "to": "mod-be-teacher-store",
+      "type": "part_of"
+    },
     {
       "from": "cmp-be-claude-runner",
       "to": "mod-be-claude-wrapper",
@@ -230,6 +304,16 @@
     {
       "from": "cmp-be-subjects-api",
       "to": "mod-be-subject-store",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-auth-panel",
+      "to": "cmp-be-auth-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-auth-panel",
+      "to": "mod-fe-exam-builder",
       "type": "part_of"
     },
     {
@@ -303,6 +387,31 @@
       "type": "part_of"
     },
     {
+      "from": "feat-exercise-history",
+      "to": "cmp-be-subjects-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-history",
+      "to": "cmp-fe-refine",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-history",
+      "to": "flow-refine-exercise",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-history",
+      "to": "mod-be-revision-store",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exercise-history",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "feat-exercise-refinement",
       "to": "cmp-be-claude-runner",
       "type": "realized_by"
@@ -354,6 +463,31 @@
     },
     {
       "from": "feat-subject-library",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-teacher-accounts",
+      "to": "cmp-be-auth-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-teacher-accounts",
+      "to": "cmp-fe-auth-panel",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-teacher-accounts",
+      "to": "flow-sign-in-and-recover",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-teacher-accounts",
+      "to": "mod-be-teacher-store",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-teacher-accounts",
       "to": "prod-exam-builder",
       "type": "part_of"
     },
@@ -433,6 +567,26 @@
       "type": "step"
     },
     {
+      "from": "flow-sign-in-and-recover",
+      "to": "cmp-be-auth-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-sign-in-and-recover",
+      "to": "cmp-be-subjects-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-sign-in-and-recover",
+      "to": "cmp-fe-auth-panel",
+      "type": "step"
+    },
+    {
+      "from": "flow-sign-in-and-recover",
+      "to": "mod-be-teacher-store",
+      "type": "step"
+    },
+    {
       "from": "mod-be-agent-workspace",
       "to": "svc-teacher-be",
       "type": "part_of"
@@ -443,7 +597,17 @@
       "type": "part_of"
     },
     {
+      "from": "mod-be-revision-store",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
       "from": "mod-be-subject-store",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-teacher-store",
       "to": "svc-teacher-be",
       "type": "part_of"
     },

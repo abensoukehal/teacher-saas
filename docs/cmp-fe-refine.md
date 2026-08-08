@@ -4,11 +4,11 @@ id: cmp-fe-refine
 title: "Refinement panel"
 plane: implementation
 part_of: mod-fe-exam-builder
-realizes: [feat-exercise-refinement]
+realizes: [feat-exercise-refinement, feat-exercise-history]
 depends_on: [cmp-fe-exam-view]
 source: [teacher-fe/src/components/RefinePanel.tsx, teacher-fe/src/lib/api.ts, teacher-fe/src/lib/exam.ts]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-08
 tags: [arabic]
 ---
 

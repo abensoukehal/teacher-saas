@@ -10,6 +10,6 @@ The human-readable projection of the [docs knowledge graph](../README.md): one p
 
 ## What's documented
 
-component: 9  ·  feature: 4  ·  flow: 3  ·  module: 4  ·  product: 1  ·  service: 2
+component: 11  ·  feature: 6  ·  flow: 4  ·  module: 6  ·  product: 1  ·  service: 2
 
 _Gaps are measured, not guessed — run `tools/docs-graph coverage`._

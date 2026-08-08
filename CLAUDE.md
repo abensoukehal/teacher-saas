@@ -22,10 +22,13 @@ Full reasoning — thesis, business model, roadmap, validation plan — is in
 file is the condensed engineering-facing half; if the two disagree, the brief wins and
 this file is stale.
 
-> **Status: the core loop ships, and exams persist.** As of 2026-08-08 the stacks are
+> **Status: the core loop ships, exams persist, and teachers have accounts.** As of
+> 2026-08-08 the stacks are
 > `be` (Express + TypeScript, which also hosts the Claude Code CLI wrapper) and `fe`
-> (React + Vite). The core loop is built (`core-loop`), and exam subjects are stored in
-> MongoDB with per-teacher ownership (`persistence`). Sections still marked ★ PENDING are stubs on purpose — they
+> (React + Vite). The core loop is built (`core-loop`), exam subjects are stored in
+> MongoDB with per-teacher ownership (`persistence`), and a teacher now has a real
+> account with a recovery code, keeps every superseded exercise, and can be told what an
+> exam cost to produce (`persistence-gaps`). Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -236,7 +239,10 @@ wrapper that does the generating.
 
 **API surface.** `/health` (reports the CLI's version, whether it authenticates,
 queue depth, **and the datastore**) · `/api` · `/api/skills` · `/api/generate` ·
-`/api/teacher` · `/api/subjects` (create · list · get · replace one exercise).
+`/api/teacher` (mints **and records** an anonymous row) ·
+`/api/auth/signup` · `/api/auth/signin` · `/api/auth/recover` ·
+`/api/subjects` (create · list · get · replace one exercise ·
+`GET /subjects/:id/exercises/:exerciseId/revisions`).
 
 **The two skills** (`.claude/skills/`) — the product's actual capabilities:
 
@@ -267,9 +273,16 @@ returns it as `data` (`null` when a run returns prose).
 
 **Failure classification:** `503 claude_auth` (a human must re-login — not retryable) ·
 `503 claude_not_installed` · `504 claude_timeout` · `502 claude_exit` ·
-**`503 store_unavailable` (datastore down — RETRYABLE)** · `500` for this service's own
-bugs. Note that `claude_auth` and `store_unavailable` share a status and mean opposite
-things: callers branch on `error.type`, never on the code.
+**`503 store_unavailable` (datastore down — RETRYABLE)** · `401 teacher_required` ·
+`401 invalid_credentials` · `401 invalid_recovery` · `409 email_taken` ·
+`409 conflict` (the same exercise is being refined twice at once) ·
+`400 invalid_request` (includes a malformed body) · `413 payload_too_large` ·
+`500` for this service's own bugs. Note that `claude_auth` and `store_unavailable` share a
+status and mean opposite things: callers branch on `error.type`, never on the code.
+
+**The correlation-id middleware runs BEFORE the body parser.** It used to run after, so a
+malformed body short-circuited into the error handler with no `correlationId` — the one
+response a caller most needs to trace was the one that could not be traced.
 
 ### `fe` — the teacher-facing UI
 
@@ -299,9 +312,18 @@ and reports "repo not attached", which is harmless. Tests belong in
 
 > Run it from the worktree **and** pass `--slug`. From the clone root, `tools/ci <key>`
 > resolves to the *main* checkout and gates the promoted regression net
-> (`project/tests/<key>`) instead of the job — and passes on zero tests. That is also
-> why a fresh job's provision receipt reads `ci baseline: green` when the job in fact
-> has no gate at all; see `features/<slug>/build.md` → "CI baseline".
+> (`project/tests/<key>`) instead of the job.
+>
+> **A gate that verified nothing is no longer a pass (WF-82).** Zero tests resolved is red
+> in job mode; and a run that resolves tests and *executes none of them* — every one
+> skipped, which is what black-box suites do when no lane is up — reports
+> `gate FAIL` in job mode and `gate INCOMPLETE` on a mainline. It never reads as PASS.
+> The old note here claimed a fresh job's receipt reads `ci baseline: green` with no gate
+> at all; that is no longer true, and the receipt now reports RED honestly.
+>
+> Black-box suites take their lane from `CHAR_BE_URL` / `CHAR_BE_LOG`, which `tools/ci`
+> derives from the checkout's own slot. **Never hardcode a port in a suite** — it will skip
+> forever on every other lane, which is indistinguishable from passing.
 
 ## Ports and log stems (reserved)
 
@@ -321,21 +343,49 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-**MongoDB, database `teacher_saas`, one collection: `subjects`.** Chosen because Mongo
+**MongoDB, database `teacher_saas`, three collections: `subjects`, `teachers`,
+`exercise_revisions`.** Chosen because Mongo
 already runs as declared shared infra on this machine and `services.sh` had already
 reserved that db name — and because an exam subject *is* a JSON document, so the stored
 shape and the wire shape are the same object with no mapping layer to drift.
 
 ```
 subjects
-  _id        ObjectId
-  teacherId  string · 32 hex          ← the owner
-  subject    { title, meta, exercises[] }   ← the generated payload, VERBATIM
-  controls   object | null
-  createdAt  Date
-  updatedAt  Date
+  _id               ObjectId
+  teacherId         string · 32 hex          ← the owner
+  subject           { title, meta, exercises[] }   ← the generated payload, VERBATIM
+  controls          object | null
+  genCorrelationId  string | null            ← the /api/generate run that produced it;
+                                               the join key into run-log.jsonl's costUsd
+  rev               int (optional)           ← optimistic-concurrency counter, $inc-ed on
+                                               each replaceExercise. NOT updatedAt: a
+                                               millisecond timestamp is not a version token
+  createdAt         Date
+  updatedAt         Date
 
 index: { teacherId: 1, updatedAt: -1 }      ← the only query the product makes
+
+teachers                                     ← accounts ADOPT the opaque teacherId
+  teacherId      string · 32 hex             ← THE JOIN KEY. Same value subjects hold.
+  email          string | null               ← null = an ANONYMOUS row
+  passwordHash   string | null               ← scrypt$N$r$p$salt$key (node:crypto)
+  recoveryHash   string | null               ← scrypt over the recovery code
+  recoveryUsedAt Date | null                 ← WHEN one was last consumed (informational)
+  createdAt · updatedAt  Date
+
+indexes: { email: 1 } unique PARTIAL ($type:"string")  ← partial so many anonymous rows
+                                                         (email null) can coexist
+         { teacherId: 1 } unique
+
+exercise_revisions                           ← every superseded version, append-only
+  subjectId      ObjectId
+  teacherId      string · 32 hex             ← denormalised: ownership scoped IN the query
+  exerciseId     string                      ← "ex1" … "exN"
+  exercise       object                      ← the SUPERSEDED version, verbatim
+  supersededAt   Date
+  correlationId  string | null
+
+index: { subjectId: 1, exerciseId: 1, supersededAt: -1 }
 ```
 
 **The rules that shape it:**
@@ -350,26 +400,43 @@ index: { teacherId: 1, updatedAt: -1 }      ← the only query the product makes
 - **Ownership is scoped inside the query.** Another teacher's subject returns the same
   not-found as one that never existed; existence is not probeable.
 - **`subject` nests the payload verbatim** — never spread into columns.
+- **History lives in its own collection, never inside the subject.** The subject-open path
+  must stay one cheap read; embedding revisions would put every discarded variant on the
+  hottest read and grow the document without bound.
+- **`replaceExercise` is a compare-and-set on `rev`.** Two simultaneous refines used to
+  both return 200 with one version silently lost — from the sheet *and* from history. A
+  loser re-reads and retries; five failures yield `409 conflict`.
+- **The recovery code's single-use is enforced by rotating `recoveryHash`**, not by
+  `recoveryUsedAt`. Guarding on a field the same update resets guards nothing.
 
-**There is no `teachers` collection.** The id is generated, handed to the client, and
-never written down; a well-formed unknown id is accepted and owns nothing. It is a
-**bearer value** — whoever holds it reads that teacher's exams — and a deliberate
-placeholder a real accounts layer can adopt without moving data. It must not silently
-become the auth model.
+**Accounts adopt the opaque id; they did not replace it.** Sign-in returns the *same*
+32-hex `teacherId` the browser already sends as `x-teacher-id`, so no subject document was
+moved or rewritten and the `{teacherId:1, updatedAt:-1}` index stayed valid. `requireTeacher`
+now **rejects** an id the server never recorded — "issued" means minted AND recorded, which
+includes anonymous rows from `POST /api/teacher` and a one-time backfill of the 159 ids that
+predated the registry.
+
+⚠ **The teacherId is still a BEARER value.** Accounts made it *recoverable*, not secret.
+Turning it into a rotating, expiring session is a separate job, and until then whoever holds
+an id reads that teacher's exams. There is also **no rate limiting**, and `POST
+/api/auth/signup` returns `409 email_taken`, which is an account-enumeration oracle by
+design of the error contract. Accepted for the two-teacher milestone; recorded so it is
+inherited knowingly.
 
 **Not the datastore:** `run-log.jsonl` is an append-only file carrying run cost/duration
 plus `{op, subjectId}` link lines. It holds no teacher content and must not start to.
 
 ### Still not persisted (the honest gaps)
 
-| Gap | Consequence |
+| Gap | Status |
 |---|---|
-| **The teacher id itself** | Clearing site data orphans every exam — they exist server-side but nothing can find them again. Same reason there is no cross-device access. This is what the accounts job fixes. |
-| **Exercise revision history** | `replaceExercise` overwrites in place, so earlier versions of a reworked exercise are gone. "Everything generated is worth keeping" is only half-honoured: subjects accumulate, revisions do not. |
-| **Generation cost per subject** | `sessionId` and the run's `correlationId` are not tied to the stored subject, so cost-per-exam is still unanswerable. Revisions-per-exam *is* answerable. |
-| **Failed saves** | Retry is offered in-session only; a failed save is not queued across a reload. |
-| **Accounts, billing, credits** | Nothing. The store makes them possible; none is built. |
-| **Backups / a deploy target** | Mongo is local-only. See Deployments. |
+| ~~The teacher id itself~~ | **CLOSED.** `teachers` collection + email/password accounts, with a one-time recovery code as the reset path (no mail integration needed). Sign-in returns the same id, so exams survive a cleared browser and reach a second machine. |
+| ~~Exercise revision history~~ | **CLOSED.** `exercise_revisions`, append-only. Restore reuses `PUT`, so it is itself a supersession — history grows, nothing is destroyed. |
+| ~~Generation cost per subject~~ | **CLOSED.** `subjects.genCorrelationId` joins to `run-log.jsonl`'s `costUsd`. `/api/generate` needed no change: it already returned the envelope. |
+| ~~Failed saves~~ | **CLOSED.** A retryable failure queues to `teacher.pending.v1` and is **offered** on next load, never replayed silently — `create` is insert-only, so a silent double replay would make two exams. |
+| **Signing IN does not merge an anonymous session** | Open by design: adopting on sign-in would re-point subject documents. The displaced id is kept in `teacher.previous.v1` and the teacher is told in Arabic — the loss is visible and recoverable, not silent. |
+| **Accounts, billing, credits** | Accounts exist; billing and credits do not. |
+| **Backups / a deploy target** | Still nothing. See Deployments — and note the store now holds **credentials**, not just exam drafts. |
 
 ## Deployments
 

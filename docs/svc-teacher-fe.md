@@ -3,10 +3,10 @@ kind: service
 id: svc-teacher-fe
 title: "teacher-fe"
 plane: implementation
-repos: [teacher-fe@2e1dc9f]
+repos: [teacher-fe@8e190e0]
 source: [teacher-fe/]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-08
 tags: [frontend, react, vite, rtl]
 ---
 

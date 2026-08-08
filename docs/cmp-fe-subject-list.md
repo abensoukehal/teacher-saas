@@ -5,7 +5,7 @@ title: "Saved exams list"
 plane: implementation
 part_of: mod-fe-exam-builder
 realizes: [feat-subject-library]
-repos: [teacher-fe@132202c]
+repos: [teacher-fe@8e190e0]
 source: [teacher-fe/src/components/SubjectList.tsx, teacher-fe/src/lib/persist.ts]
 status: fresh
 last_verified: 2026-08-08

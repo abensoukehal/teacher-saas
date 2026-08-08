@@ -83,6 +83,46 @@ for the teacher, not the class. Exercises are kept off page breaks. A4.
 |---|---|---|
 | [Exam view](../cmp-fe-exam-view.md) | fe | the same view, under a print stylesheet |
 
+## Going back to an earlier version of an exercise
+
+### Product behavior (what the user gets)
+
+Refining an exercise no longer throws the old one away. Every version a teacher moves
+past is kept, newest first, and any of them can be put back on the sheet with one
+action. The previous versions render like the exam does — through KaTeX, with the
+maths set properly and never a line of LaTeX showing.
+
+Restoring is not an undo that rewinds. It puts the chosen version back as the current
+one and files the version it displaced alongside the rest, so the history only ever
+grows. There is no sequence of actions that loses a version.
+
+This matters more than it sounds. Refining until an exercise is right *is* the product,
+and it is repeated several times per paper — so before this, the single most-used action
+was also the only destructive one. Each discarded version is a complete, on-syllabus
+exercise that cost real money to generate; they are also the raw material for the
+personal exercise library on the roadmap.
+
+### Behaviour under a double-tap
+
+Two refinements of the same exercise arriving at once cannot lose one. The second is
+either applied after the first or told plainly that the exercise is being edited — never
+silently dropped. An exam with a single exercise behaves the same as one with many.
+
+## Reworking one exercise
+
+### Sequence
+1. [Refinement panel](../cmp-fe-refine.md) — the instruction, the exercise, and a summary of the others
+2. [Generation endpoint](../cmp-be-generate-endpoint.md) — receives it
+3. [CLI runner](../cmp-be-claude-runner.md) — runs it, about a minute
+4. [Exercise refinement capability](../cmp-be-skill-refine-exercise.md) — rewrites the exercise, keeps id/marks/label
+5. [Exam view](../cmp-fe-exam-view.md) — the exercise is replaced by id and the paper re-renders
+
+### Notes
+The frontend assembles the whole request; the backend does not know what an exam
+is: each refinement carries the current exercise with it, which is why refinements
+compose naturally. The reworked exercise is then written back to the stored exam by
+id — see [Saving an exam and reopening it later](../flow-save-and-reopen.md).
+
 ## Rework one exercise
 
 ### Product behavior (what the user gets)
@@ -181,42 +221,121 @@ have to change, and why frontend and backend could ship in either order.
 The list is ordered by when an exam was last *touched*, not created, so reworking an
 old paper brings it back to the top.
 
+## A teacher's exams follow them
+
+### Product behavior (what the user gets)
+
+A teacher signs up with an email and a password, and from then on their exams are
+theirs. Clearing the browser no longer matters. Working from a second machine no
+longer matters. They sign in and everything is there.
+
+At sign-up they are shown a **recovery code** once — twelve characters in three
+groups, `XXXX-XXXX-XXXX`, drawn from an alphabet with no `I`, `O`, `0` or `1` in it
+because a teacher writes it on paper. It is the way back in if the password is
+forgotten, and it is why the product needs no email delivery to be complete. Using it
+sets a new password and hands out a **fresh** code in the same breath, so nobody is
+ever left holding a code they have already spent.
+
+Typing it back is forgiving: case does not matter and neither do the dashes, so
+`abcd efgh ijkl` works as well as `ABCD-EFGH-IJKL`.
+
+Before this, identity was invisible — the product minted a hidden id and kept it in
+the browser. It worked until the browser was cleared, and then every exam that teacher
+had ever made became unreachable. The documents survived; nothing could find them.
+That is the failure this closes.
+
+### What it deliberately does not do
+
+- **Signing in does not merge an anonymous session.** If a browser was used without an
+  account and then someone signs in, those earlier exams stay where they are — they are
+  not moved into the account. The teacher is told so, in Arabic, and the previous
+  identity is kept rather than discarded. Signing **up** from that browser *does* carry
+  the exams across.
+- **There is no sign-out**, and no "signed in as" indicator. Nobody has asked for one yet.
+
+### Honest limits
+
+The id behind an account is still a **bearer value**: whoever holds it can read that
+teacher's exams. Accounts made it recoverable, not secret. There is no rate limiting,
+and sign-up answers differently for a taken address, so it is possible to test whether
+an address has an account. All three are accepted at the current milestone — two teacher
+friends trying the product — and none should survive contact with real users at scale.
+
+## Signing up, signing in, and getting back in
+
+### Sequence
+
+1. **A browser with no identity** shows the gate. Nothing is minted silently and no
+   request touches any teacher's data.
+2. **Sign-up** sends the email and password — and, if this browser was already being
+   used without an account, the id it holds. The server attaches the account to *that*
+   id when it is unclaimed, so the exams already made here follow the teacher in.
+   It answers with the teacher id and the recovery code, which is shown once.
+3. **Sign-in** returns the *same* teacher id the account has always had. The browser
+   stores it and asks for the teacher's subjects exactly as before — the subject
+   routes never learned that accounts exist.
+4. **Recovery** takes the email, the code and a new password. The code is spent and a
+   fresh one is issued in the same response. Spending it twice fails; so does racing
+   it, because the check and the write are one atomic step.
+
+### Why it is shaped this way
+
+The account **adopts** the opaque id rather than replacing it. That is what let the whole
+feature ship without moving a single exam document, and it is why the sidebar, the
+refine panel and the print sheet needed no change at all.
+
+### What a teacher sees when it goes wrong
+
+Every message is Arabic. A wrong password and an unknown address are answered
+identically — the product will not tell a stranger which of their colleagues has an
+account. A database outage is told apart from a bad password and offers a retry; a bad
+password does not, because pressing the button again would be a lie.
+
 
 ## Under the hood
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Agent workspace, Claude Code CLI wrapper, Subject store | CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity |
-| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list |
+| [teacher-be](../svc-teacher-be.md) | Agent workspace, Claude Code CLI wrapper, Exercise revision store, Subject store, Teacher accounts store | Account endpoints, CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity |
+| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, The sign-in gate |
 
 
 ## Map
 
 ```mermaid
 flowchart TD
+  cmp_be_auth_api["cmp-be-auth-api"]
   cmp_be_claude_runner["cmp-be-claude-runner"]
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
   cmp_be_skill_exam_subject["cmp-be-skill-exam-subject"]
   cmp_be_skill_refine_exercise["cmp-be-skill-refine-exercise"]
   cmp_be_subjects_api["cmp-be-subjects-api"]
+  cmp_fe_auth_panel["cmp-fe-auth-panel"]
   cmp_fe_controls["cmp-fe-controls"]
   cmp_fe_exam_view["cmp-fe-exam-view"]
   cmp_fe_refine["cmp-fe-refine"]
   cmp_fe_subject_list["cmp-fe-subject-list"]
   feat_exam_generation["feat-exam-generation"]
   feat_exam_print["feat-exam-print"]
+  feat_exercise_history["feat-exercise-history"]
   feat_exercise_refinement["feat-exercise-refinement"]
   feat_subject_library["feat-subject-library"]
+  feat_teacher_accounts["feat-teacher-accounts"]
   flow_generate_exam["flow-generate-exam"]
   flow_refine_exercise["flow-refine-exercise"]
   flow_save_and_reopen["flow-save-and-reopen"]
+  flow_sign_in_and_recover["flow-sign-in-and-recover"]
   mod_be_agent_workspace["mod-be-agent-workspace"]
   mod_be_claude_wrapper["mod-be-claude-wrapper"]
+  mod_be_revision_store["mod-be-revision-store"]
   mod_be_subject_store["mod-be-subject-store"]
+  mod_be_teacher_store["mod-be-teacher-store"]
   mod_fe_exam_builder["mod-fe-exam-builder"]
   prod_exam_builder["prod-exam-builder"]
   svc_teacher_be["svc-teacher-be"]
   svc_teacher_fe["svc-teacher-fe"]
+  cmp_be_auth_api -->|depends_on| mod_be_teacher_store
+  cmp_be_auth_api -.-> mod_be_teacher_store
   cmp_be_claude_runner -.-> mod_be_claude_wrapper
   cmp_be_generate_endpoint -->|depends_on| cmp_be_claude_runner
   cmp_be_generate_endpoint -.-> mod_be_claude_wrapper
@@ -224,6 +343,8 @@ flowchart TD
   cmp_be_skill_refine_exercise -.-> mod_be_agent_workspace
   cmp_be_subjects_api -->|depends_on| mod_be_subject_store
   cmp_be_subjects_api -.-> mod_be_subject_store
+  cmp_fe_auth_panel -->|depends_on| cmp_be_auth_api
+  cmp_fe_auth_panel -.-> mod_fe_exam_builder
   cmp_fe_controls -.-> mod_fe_exam_builder
   cmp_fe_exam_view -.-> mod_fe_exam_builder
   cmp_fe_refine -->|depends_on| cmp_fe_exam_view
@@ -238,6 +359,11 @@ flowchart TD
   feat_exam_generation -.-> prod_exam_builder
   feat_exam_print -->|realized_by| cmp_fe_exam_view
   feat_exam_print -.-> prod_exam_builder
+  feat_exercise_history -->|realized_by| cmp_be_subjects_api
+  feat_exercise_history -->|realized_by| cmp_fe_refine
+  feat_exercise_history -->|realized_by| flow_refine_exercise
+  feat_exercise_history -->|realized_by| mod_be_revision_store
+  feat_exercise_history -.-> prod_exam_builder
   feat_exercise_refinement -->|realized_by| cmp_be_claude_runner
   feat_exercise_refinement -->|realized_by| cmp_be_generate_endpoint
   feat_exercise_refinement -->|realized_by| cmp_be_skill_refine_exercise
@@ -249,6 +375,11 @@ flowchart TD
   feat_subject_library -->|realized_by| cmp_fe_subject_list
   feat_subject_library -->|realized_by| flow_save_and_reopen
   feat_subject_library -.-> prod_exam_builder
+  feat_teacher_accounts -->|realized_by| cmp_be_auth_api
+  feat_teacher_accounts -->|realized_by| cmp_fe_auth_panel
+  feat_teacher_accounts -->|realized_by| flow_sign_in_and_recover
+  feat_teacher_accounts -->|realized_by| mod_be_teacher_store
+  feat_teacher_accounts -.-> prod_exam_builder
   flow_generate_exam -->|step| cmp_be_claude_runner
   flow_generate_exam -->|step| cmp_be_generate_endpoint
   flow_generate_exam -->|step| cmp_be_skill_exam_subject
@@ -264,9 +395,15 @@ flowchart TD
   flow_save_and_reopen -->|step| cmp_fe_controls
   flow_save_and_reopen -->|step| cmp_fe_subject_list
   flow_save_and_reopen -->|step| mod_be_subject_store
+  flow_sign_in_and_recover -->|step| cmp_be_auth_api
+  flow_sign_in_and_recover -->|step| cmp_be_subjects_api
+  flow_sign_in_and_recover -->|step| cmp_fe_auth_panel
+  flow_sign_in_and_recover -->|step| mod_be_teacher_store
   mod_be_agent_workspace -.-> svc_teacher_be
   mod_be_claude_wrapper -.-> svc_teacher_be
+  mod_be_revision_store -.-> svc_teacher_be
   mod_be_subject_store -.-> svc_teacher_be
+  mod_be_teacher_store -.-> svc_teacher_be
   mod_fe_exam_builder -.-> svc_teacher_fe
   prod_exam_builder -->|composed_of| svc_teacher_be
   prod_exam_builder -->|composed_of| svc_teacher_fe
@@ -274,6 +411,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_subjects_api,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_subject_list,feat_exam_generation,feat_exam_print,feat_exercise_refinement,feat_subject_library,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_subject_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_auth_api,cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_subjects_api,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_subject_list,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_subject_library,feat_teacher_accounts,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 
