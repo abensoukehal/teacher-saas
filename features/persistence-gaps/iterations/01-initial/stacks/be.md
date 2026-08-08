@@ -218,13 +218,20 @@ estimate: M
    ```
    Pre-flight must reproduce this `200`. It is the behaviour this sub-issue supersedes.
 
-3. **Delta:**
-   - `teacher-be/src/routes/auth.ts` — add `POST /api/auth/recover`.
+3. **Delta** (widened 2026-08-08 by the anonymous-teachers amendment — see the contract):
+   - `teacher-be/src/routes/auth.ts` — add `POST /api/auth/recover`; sign-up **adopts** an
+     unclaimed `x-teacher-id` when one is presented.
    - `teacher-be/src/store/teachers.ts` — add `consumeRecovery` (verify → set
-     `recoveryUsedAt` → set new `passwordHash` + new `recoveryHash`, **one atomic update**).
+     `recoveryUsedAt` → set new `passwordHash` + new `recoveryHash`, **one atomic update**);
+     `ensureAnonymous`; partial unique index on `email`.
+   - `teacher-be/src/routes/subjects.ts:60-62` — `POST /api/teacher` **records** the row it
+     already mints. Response shape unchanged.
    - `teacher-be/src/teacher.ts:41-52` — `requireTeacher` looks the id up and rejects unknown.
+   - `teacher-be/scripts/backfill-teachers.mjs` — **new.** One anonymous row per distinct
+     `subjects.teacherId` that has none. Without it, rejection locks out all 159 existing
+     teacherIds. Inserts into `teachers` ONLY — no subject document is touched.
    **Everything else frozen.**
-   Freeze check: `git status --short -- src/routes/auth.ts src/store/teachers.ts src/teacher.ts`
+   Freeze check: `git status --short -- src/routes/auth.ts src/store/teachers.ts src/teacher.ts src/routes/subjects.ts scripts/backfill-teachers.mjs`
 
 4. **Oracle (two-sided, executable)** — `features/persistence-gaps/tests/be/auth-recover.characterization.test.js`:
    - *positive:* recover with the signup code + a new password → `200`, returns the **same
@@ -397,7 +404,7 @@ id: be-5
 parent: i1
 stack: be
 status: todo
-depends_on: [be-1]
+depends_on: [be-1, be-2]
 estimate: S
 ---
 ```
@@ -427,9 +434,14 @@ estimate: S
      path is unwritable.
    - *positive:* `--dry-run` (the default) prints the count it *would* delete and deletes
      **zero**. Deleting requires an explicit `--yes`.
-   - *positive:* an orphan is defined as a subject whose `teacherId` has **no `teachers`
-     row** — seed one registered teacher with a subject and one unregistered, run with
-     `--yes`, assert the registered teacher's subject **survives** and the orphan is gone.
+   - *positive:* **the orphan definition changed** — `be-2`'s backfill gives every existing
+     `teacherId` a row, so "no `teachers` row" now matches nothing. An orphan is a subject
+     owned by an **anonymous (never-claimed, `email: null`) row** and created **before a
+     `--before <ISO>` cutoff** the operator passes explicitly. Seed one signed-up teacher
+     with a subject and one anonymous teacher with an old subject, run with `--yes`, assert
+     the signed-up teacher's subject **survives** and the anonymous one is gone.
+   - *positive:* omitting `--before` deletes **nothing** and exits non-zero. There is no
+     implicit cutoff — a purge with an unstated boundary is how live data dies.
    - *positive:* counts are asserted before and after, and the script fails loudly if the
      before-count does not match what it re-measured at start (no stale-count deletes).
    - *negative:* **a registered teacher never loses a subject** — this is the clause that
@@ -438,8 +450,9 @@ estimate: S
    - *negative:* `exercise_revisions` rows for surviving subjects are untouched.
    - *obs assertion:* the script prints dump path, before-count, matched-count, after-count.
 
-5. **Boundaries:** depends on `be-1` — "orphan" is undefinable before a `teachers` collection
-   exists. **Irreversible**: no delete route exists in the product, and this script must not
+5. **Boundaries:** depends on `be-1` **and `be-2`** — before the backfill "orphan" means one
+   thing, after it another, and running this against the pre-backfill definition would delete
+   every real teacher's work. **Irreversible**: no delete route exists in the product, and this script must not
    become one. Budget: 10 iterations.
 
 6. **Exit:** done-when = oracle green + a real `mongodump` artifact exists + `tools/ci be

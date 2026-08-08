@@ -22,7 +22,11 @@
       "subissues": {
         "be-1": {
           "status": "done",
-          "tag": "happy-path"
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "b8d00d32f8b875c9",
+            "contracts": "389455d88795affe"
+          }
         },
         "be-2": {
           "status": "todo",

@@ -197,11 +197,22 @@ describeIfLane(BE, "be-1 — accounts adopt the existing teacher id", () => {
       expect(Object.keys(body).sort()).toEqual(["correlationId", "teacherId"]);
     });
 
-    test("an unknown well-formed id is STILL accepted here — rejection arrives in be-2", async () => {
+    /**
+     * SUPERSEDED BY be-2 (WF-65), 2026-08-08.
+     *
+     * This pinned "an unknown well-formed id is STILL accepted — rejection arrives in
+     * be-2". Its job was to stop be-1 quietly changing requireTeacher, and it did:
+     * be-1's diff never touched src/teacher.ts. be-2's declared scope IS that change,
+     * so the expectation flips here rather than the pin being deleted.
+     *
+     * The invariant underneath is unchanged and stronger: a caller reaches only the
+     * subjects it owns. Before, an unknown id owned nothing; now it is turned away.
+     */
+    test("an unknown well-formed id is REJECTED (be-2 superseded the old acceptance)", async () => {
       const ghost = "f".repeat(32);
       const { status, body } = await call("GET", "/api/subjects", { teacher: ghost });
-      expect(status).toBe(200);
-      expect(body.subjects).toEqual([]);
+      expect(status).toBe(401);
+      expect(body.error.type).toBe("teacher_required");
     });
 
     test("auth routes need no x-teacher-id header — that is how you get one", async () => {

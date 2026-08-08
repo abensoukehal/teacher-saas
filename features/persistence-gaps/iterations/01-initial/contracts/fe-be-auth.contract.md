@@ -22,21 +22,64 @@ Consequences, and why this shape was chosen:
   SEED → Risks. Making it a rotating, expiring session is explicitly *not* in this job; a
   future job replaces the header without touching the store.
 
+## Amendment — anonymous teachers (2026-08-08, decided during `be-2`)
+
+The contract as first written said an id "that was never issued is rejected". `be-2`
+exposed the ambiguity: **`POST /api/teacher` issues ids without recording them.** Taking
+the strict reading would have locked out all 159 teacherIds that already own subjects,
+broken the promoted regression net (its `newTeacher()` calls `POST /api/teacher`), and
+broken `fe`, which still calls `issueTeacher()` until `fe-1` ships.
+
+So "issued" means **"minted AND recorded"**, and there are two kinds of teacher row:
+
+| kind | `email` | how it is created |
+|---|---|---|
+| anonymous | `null` | `POST /api/teacher` — records the row it already minted |
+| account | a string | `POST /api/auth/signup` |
+
+Three consequences, all binding:
+
+1. **`POST /api/teacher` now writes a row.** Its response shape is unchanged.
+2. **A one-time backfill** creates an anonymous row for every distinct
+   `subjects.teacherId` that has none. Without it, rejection is a data-loss event for
+   every existing teacher. It inserts into `teachers` only — **no subject document is
+   touched**, preserving the zero-rewrite property.
+3. **The unique index on `email` must be PARTIAL** —
+   `{ unique: true, partialFilterExpression: { email: { $type: "string" } } }`. A plain
+   unique index permits only one null, so the second anonymous teacher would collide.
+
+### Sign-up adopts the caller's anonymous id
+
+If the sign-up request carries `x-teacher-id` and that row exists **and has no email**,
+sign-up attaches the email and password to **that** row instead of minting a new id.
+
+Without this, a teacher who used the app anonymously and then signed up would get a new
+id and silently lose every exam they had made — gap #1 again, caused by its own fix.
+
+- Row is anonymous → adopt it, keep the id, exams follow.
+- Header absent, or malformed, or the row already has an email → mint a fresh id.
+  (Already claimed means someone is signing up a second account from the same browser.)
+- **Sign-IN never adopts or re-points anything.** Merging an anonymous id into an account
+  on sign-in would rewrite `subjects` documents, which the SEED's zero-rewrite property
+  rules out.
+
 ## Storage — the `teachers` collection
 
 ```
 teachers
   _id           ObjectId
   teacherId     string · 32 hex     ← THE JOIN KEY. Same value subjects.teacherId holds.
-  email         string · lowercased, trimmed
-  passwordHash  string              ← scrypt, see below
-  recoveryHash  string              ← scrypt over the recovery code, same format
+  email         string | null       ← null = ANONYMOUS row (see amendment above)
+  passwordHash  string | null       ← scrypt, see below; null while anonymous
+  recoveryHash  string | null       ← scrypt over the recovery code; null while anonymous
   recoveryUsedAt Date | null        ← single-use marker; null = unused
   createdAt     Date
   updatedAt     Date
 
 indexes:
-  { email: 1 }      unique          ← one account per address
+  { email: 1 }      unique, PARTIAL ({email: {$type: "string"}})  ← one account per
+                                    address; partial so many anonymous rows (email null)
+                                    can coexist — a plain unique index allows one null
   { teacherId: 1 }  unique          ← the join back to subjects
 ```
 
@@ -126,7 +169,7 @@ machine key that `fe` branches on.
 | Status | `type` | When | Retryable |
 |---|---|---|---|
 | 400 | `invalid_request` | malformed body, password < 8 chars, bad email shape | no |
-| 401 | `invalid_credentials` | wrong email **or** wrong password | no |
+| 401 | `invalid_credentials` | wrong email **or** wrong password, **or** the row is anonymous (no password set) | no |
 | 401 | `invalid_recovery` | wrong/used recovery code | no |
 | 409 | `email_taken` | sign-up on an existing email | no |
 | 503 | `store_unavailable` | Mongo down | **yes** |
