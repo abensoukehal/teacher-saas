@@ -83,6 +83,9 @@ because the agent flagged it rather than declaring done.
   analogue *was* reached organically (by killing the service mid-batch) and held.
 - **Criterion 1's "70–80 s" is a median, not a promise** — three real samples: 74 / 68.5 / 91 s,
   against a measured 2.7× spread on identical work.
-- **`exam-subject` still instructs the model to read a curriculum file that does not exist.**
-  Flagged in the SEED, deliberately untouched here. Generation has been running from memory
-  against a hard constraint that says it must not.
+- **The "missing curriculum file" was my error, not a defect.** `agent/curriculum/3as-mathematiques.md`
+  exists and always has. I searched for `*program*`, which cannot match `curriculum/`, and looked
+  in the skill's directory rather than the agent root — then carried the false claim into the
+  SEED, this retro and the close-out summary before the user corrected it.
+  **Lesson: a negative finding ("X does not exist") needs the same proof as a positive one.**
+  I never ran a plain `ls` on the directory the skill actually names.

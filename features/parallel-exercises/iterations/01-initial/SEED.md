@@ -133,11 +133,18 @@ Token usage also rises 71% per exam; that is a subscription rate question, not m
   needs a real repeat count before any retry budget is sized.
 - Does the plan step hold up on `مواضيع مختلطة من البرنامج`, where it must spread across
   topics rather than within one? Only the single-topic case was exercised.
-- `exam-subject` still instructs the model to read `curriculum/3as-mathematiques.md`, which
-  **does not exist** — no `curriculum/` directory is present. No stored exam's
-  `meta.assumptions` reports it missing, so generation has been running from memory against
-  the "inside the official Algerian curriculum" hard constraint. Out of scope here, but it
-  should not be inherited silently.
+- ~~`exam-subject` instructs the model to read a curriculum file that does not exist.~~
+  **THIS WAS WRONG — corrected 2026-08-09.** `agent/curriculum/3as-mathematiques.md` exists and
+  always has (it is in the repo's initial commit), and the skill's relative path resolves
+  correctly because `config.ts` sets the CLI's cwd to `<repo>/agent`. The claim came from a
+  search using `-path "*program*"`, which cannot match `curriculum/`, plus looking inside the
+  skill's own directory rather than the agent root. No stored exam reported the file missing
+  because it was never missing.
+
+  **The real, narrower gap** — which that file documents about itself: only شعبة الرياضيات has
+  a curriculum file. `علوم تجريبية`, which nearly every measurement in this job used, has none,
+  and the file says so. Its topic *names* are authoritative (they are the UI's own list); the
+  per-topic notes are marked ✎ as inference, not transcription of the official programme.
 
 ## 8 · Re-run commands
 
