@@ -84,8 +84,12 @@
           "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
         },
         "be-6": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          }
         },
         "fe-3": {
           "status": "todo",
