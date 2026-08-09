@@ -236,31 +236,62 @@ wrapper that does the generating.
 | `src/claude/skills.ts` | reads the skill catalogue; validates a requested skill |
 | `src/store/client.ts` | the Mongo connection — lazy, single-flight, never caches a failure |
 | `src/store/subjects.ts` | the `subjects` collection. **`create` inserts; there is no upsert** |
-| `src/routes/subjects.ts` | the subject surfaces |
+| `src/routes/subjects.ts` | the subject surfaces, incl. regenerating ONE exercise |
+| `src/routes/exams.ts` | `POST /api/exams` — plan, insert the skeleton, fan out, fill in place |
+| `src/routes/corrections.ts` | per-exercise corrections; stores each as it lands |
+| `src/inflight.ts` | **one writer per slot / exam / correction batch**, shared by all three |
 | `src/teacher.ts` | issues + resolves the opaque teacher id |
 | `agent/.claude/skills/<name>/SKILL.md` | **the capabilities themselves** — under `agent/`, NOT the repo root: `config.ts` points the CLI at `<repo>/agent` and `claude/skills.ts` lists `<cwd>/.claude/skills`. Adding a directory there IS the registration; `/api/skills` is that listing. |
 
 **API surface.** `/health` (reports the CLI's version, whether it authenticates,
-queue depth, **and the datastore**) · `/api` · `/api/skills` · `/api/generate` ·
+queue depth, the datastore, **and the fan-out budget**) · `/api` · `/api/skills` ·
+`/api/generate` · **`/api/exams`** (progressive generation — plans, stores the skeleton,
+answers, then fills each exercise concurrently) ·
 `/api/teacher` (mints **and records** an anonymous row) ·
 `/api/auth/signup` · `/api/auth/signin` · `/api/auth/recover` ·
 `/api/subjects` (create · list · get · replace one exercise ·
 `GET /subjects/:id/exercises/:exerciseId/revisions` ·
-`POST`/`GET /subjects/:id/solutions`) ·
+**`POST /subjects/:id/exercises/:exerciseId/regenerate`** (rebuild ONE exercise in place) ·
+`POST`/`GET /subjects/:id/solutions` ·
+**`POST /subjects/:id/solutions/generate`** (202 — corrects each exercise separately)) ·
 `GET /api/admin/{kpis,teachers,exams}` (admin-only, behind `requireAdmin`).
 
-**The three skills** (`agent/.claude/skills/`) — the product's actual capabilities:
+**The six skills** (`agent/.claude/skills/`) — the product's actual capabilities. Three are
+whole-artifact; three are the per-exercise splits that make progressive generation possible:
 
 | skill | in | out |
 |---|---|---|
 | `exam-subject` | controls: topic, difficulty, exercise count, duration, stream | the whole exam — `exercises[]` with stable `ex1…exN` ids |
 | `refine-exercise` | `{instruction, exercise, examContext}`, instruction in plain Arabic | **one** exercise, `id`/`points`/`label` unchanged |
 | `solution-sheet` | the stored exam | the correction — one worked answer + grading scale (السلّم) per exercise, scale summing exactly to that exercise's points |
+| `exam-plan` | the same controls | the SKELETON only — `assignments[]` with id, label, points, difficulty and an `avoid` list. Writes no exercise content |
+| `exercise-one` | one assignment | **one** exercise, reasoning only about its own mathematics |
+| `solution-one` | one exercise | **one** correction + its scale |
+
+**The splits exist because a fan-out costs `max`, not `mean`.** `exercise-one` was measured at
+3,376–6,492 output tokens against `exam-subject`'s 6,606-token floor *for a single exercise* —
+the envelope reasoning (topic spread, points arithmetic, duration budget) moves to `exam-plan`
+and is paid once. `solution-one` is the same split for corrections.
 
 `refine-exercise` is core-loop step 4. `exam-subject`'s per-exercise output shape
 exists to make it possible — a skill emitting one blob of exam text would leave the
 product's central interaction unbuildable. Both return JSON only; `/api/generate`
 returns it as `data` (`null` when a run returns prose).
+
+**Generation is progressive, and that is a shape, not an optimisation.** `POST /api/exams`
+plans once, inserts the whole exam with `status:"pending"` placeholders, answers, then fills
+each slot concurrently through `replaceExercise`'s existing compare-and-set. `fe` polls
+`GET /api/subjects/:id` and renders what has arrived. **It is not faster** — an exam is
+finished when its slowest exercise is, and measured wall clock was ~114 s against the
+monolith's ~110 s. What it buys is that the first exercise is readable at ~68–91 s, and that
+one unusable exercise (~8% of the time) costs one exercise instead of the whole exam.
+
+**One writer per slot, per exam, per correction batch** — `src/inflight.ts`, shared by all
+three generation surfaces. A second writer is refused (`409 conflict`) rather than allowed to
+duplicate a ~110 s run whose result nobody would keep. This is also what makes an abandoned
+`pending` slot recoverable after a restart: there is no live writer, so the regenerate is
+simply allowed. Deliberately **no field and no timer** — "does this slot have a live writer"
+is process-local, and any field a restart could outlive would be a lie.
 
 **What must not be undone here:**
 
@@ -365,6 +396,10 @@ subjects
   _id               ObjectId
   teacherId         string · 32 hex          ← the owner
   subject           { title, meta, exercises[] }   ← the generated payload, VERBATIM
+                      exercises[].status  "pending" | "ready" | "failed"  (OPTIONAL)
+                      ← ABSENT MEANS READY. Every monolith-era exam predates the field, so
+                        absent must never read as pending or they all become half-finished.
+                        Both stacks read it through an allow-list, never `?? "ready"`.
   controls          object | null
   genCorrelationId  string | null            ← the /api/generate run that produced it;
                                                the join key into run-log.jsonl's costUsd
@@ -438,6 +473,13 @@ index: { subjectId: 1, exerciseId: 1 } unique
   and a refine can land inside that window. A per-exercise hash and not the subject's `rev`:
   `rev` advances for the whole document, so one refine would mark every correction stale.
   Deriving rather than storing also means restoring an exercise heals its correction.
+- **A placeholder fill is NOT a revision.** `exercise_revisions` records superseded
+  *teacher-visible* work; an empty slot is not that. Recording it would put a blank statement
+  in history and let "restore" restore nothing. A regenerate over a **ready** exercise DOES
+  write one — that is a real supersession.
+- **Nothing is stored for a correction that could not be produced.** Absent, not a blank row:
+  `solutions` holds the *current* correction, and an empty one is indistinguishable from a
+  real answer that says nothing. Presence is therefore the only signal `fe` has.
 - **`solutions` upserts** — one current correction per exercise. A history of corrections is
   deliberately out of scope; the exam's history is not.
 

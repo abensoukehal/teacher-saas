@@ -17,6 +17,19 @@
           "derived_from": {
             "seed": "62cf6e9df9eca3ac"
           }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
         }
       },
       "subissues": {
@@ -92,8 +105,12 @@
           }
         },
         "fe-3": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          }
         }
       }
     }

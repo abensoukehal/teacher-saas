@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T21:39:45",
+  "generated_at": "2026-08-09T11:23:37",
   "nodes": {
     "cmp-be-admin-api": {
       "kind": "component",
@@ -29,11 +29,43 @@
       "status": "fresh",
       "repos": []
     },
+    "cmp-be-corrections-endpoint": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Per-exercise corrections",
+      "path": "docs/cmp-be-corrections-endpoint.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-exams-endpoint": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Progressive exam endpoint",
+      "path": "docs/cmp-be-exams-endpoint.md",
+      "status": "fresh",
+      "repos": []
+    },
     "cmp-be-generate-endpoint": {
       "kind": "component",
       "plane": "implementation",
       "title": "Generation endpoint",
       "path": "docs/cmp-be-generate-endpoint.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-inflight": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "One writer at a time",
+      "path": "docs/cmp-be-inflight.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-skill-exam-plan": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Exam plan skill",
+      "path": "docs/cmp-be-skill-exam-plan.md",
       "status": "fresh",
       "repos": []
     },
@@ -45,11 +77,27 @@
       "status": "fresh",
       "repos": []
     },
+    "cmp-be-skill-exercise-one": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "One-exercise skill",
+      "path": "docs/cmp-be-skill-exercise-one.md",
+      "status": "fresh",
+      "repos": []
+    },
     "cmp-be-skill-refine-exercise": {
       "kind": "component",
       "plane": "implementation",
       "title": "Exercise refinement capability",
       "path": "docs/cmp-be-skill-refine-exercise.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "cmp-be-skill-solution-one": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "One-correction skill",
+      "path": "docs/cmp-be-skill-solution-one.md",
       "status": "fresh",
       "repos": []
     },
@@ -371,6 +419,61 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-be-corrections-endpoint",
+      "to": "cmp-be-claude-runner",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-corrections-endpoint",
+      "to": "cmp-be-inflight",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-corrections-endpoint",
+      "to": "cmp-be-skill-solution-one",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-corrections-endpoint",
+      "to": "mod-be-claude-wrapper",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-corrections-endpoint",
+      "to": "mod-be-solution-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "cmp-be-claude-runner",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "cmp-be-inflight",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "cmp-be-skill-exam-plan",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "cmp-be-skill-exercise-one",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "mod-be-claude-wrapper",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-exams-endpoint",
+      "to": "mod-be-subject-store",
+      "type": "depends_on"
+    },
+    {
       "from": "cmp-be-generate-endpoint",
       "to": "cmp-be-claude-runner",
       "type": "depends_on"
@@ -381,12 +484,32 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-be-inflight",
+      "to": "mod-be-claude-wrapper",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-skill-exam-plan",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-be-skill-exam-subject",
       "to": "mod-be-agent-workspace",
       "type": "part_of"
     },
     {
+      "from": "cmp-be-skill-exercise-one",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-be-skill-refine-exercise",
+      "to": "mod-be-agent-workspace",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-skill-solution-one",
       "to": "mod-be-agent-workspace",
       "type": "part_of"
     },
@@ -487,12 +610,32 @@
     },
     {
       "from": "feat-exam-generation",
+      "to": "cmp-be-exams-endpoint",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
       "to": "cmp-be-generate-endpoint",
       "type": "realized_by"
     },
     {
       "from": "feat-exam-generation",
+      "to": "cmp-be-inflight",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-be-skill-exam-plan",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
       "to": "cmp-be-skill-exam-subject",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-exam-generation",
+      "to": "cmp-be-skill-exercise-one",
       "type": "realized_by"
     },
     {
@@ -587,6 +730,21 @@
     },
     {
       "from": "feat-solution-sheets",
+      "to": "cmp-be-corrections-endpoint",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "cmp-be-inflight",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
+      "to": "cmp-be-skill-solution-one",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-solution-sheets",
       "to": "cmp-be-skill-solution-sheet",
       "type": "realized_by"
     },
@@ -657,17 +815,17 @@
     },
     {
       "from": "flow-generate-correction",
-      "to": "cmp-be-generate-endpoint",
+      "to": "cmp-be-corrections-endpoint",
       "type": "step"
     },
     {
       "from": "flow-generate-correction",
-      "to": "cmp-be-skill-solution-sheet",
+      "to": "cmp-be-inflight",
       "type": "step"
     },
     {
       "from": "flow-generate-correction",
-      "to": "cmp-be-subjects-api",
+      "to": "cmp-be-skill-solution-one",
       "type": "step"
     },
     {
@@ -687,12 +845,22 @@
     },
     {
       "from": "flow-generate-exam",
-      "to": "cmp-be-generate-endpoint",
+      "to": "cmp-be-exams-endpoint",
       "type": "step"
     },
     {
       "from": "flow-generate-exam",
-      "to": "cmp-be-skill-exam-subject",
+      "to": "cmp-be-inflight",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-be-skill-exam-plan",
+      "type": "step"
+    },
+    {
+      "from": "flow-generate-exam",
+      "to": "cmp-be-skill-exercise-one",
       "type": "step"
     },
     {

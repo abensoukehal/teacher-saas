@@ -5,10 +5,9 @@
 > progressive contract, and the journals' `## review` sections (started where the
 > prosecution stopped). Store watched throughout for the `teacherId: null` orphan mode.
 >
-> **Verdict: `bugs-filed`** — four of five exit criteria hold under real attack, one
-> (criterion 3, corrections streaming) is not implemented; one secondary bug (no in-flight
-> guard on solutions generation). Both below, with repros. Rung: lane only — no staging
-> branch exists for either repo, so there is no staging rung to climb.
+> **Verdict: `validated`** (first pass returned `bugs-filed`; both bugs were fixed in
+> be-6/fe-3 and re-verified below — see "Re-run after the fixes". Rung: lane only — no
+> staging branch exists for either repo, so the lane is the only rung there is.)
 >
 > Real spend, chosen deliberately: 3 full exams (one of them from an empty body), 2
 > solution-sheet runs (one of them the duplicate-tab race), 2 orphan regenerations, 1
@@ -100,3 +99,41 @@ open the same settled exam in two tabs, click توليد التصحيح النم
 | 3 · corrections stream per exercise | **not implemented — bug A** |
 | 4 · sum 20, ids ordered, downstream indistinguishable | **confirmed** (solution-sheet, refine+history, admin KPI join) |
 | 5 · no speed claim anywhere | **confirmed** |
+
+## Re-run after the fixes (be-6 / fe-3, same day, lane 6)
+
+Scope: only the two filed bugs and what they touch, per the coordinator. Both fixed.
+Both re-driven live with real generations, including the two paths the implementers
+recorded as unverifiable.
+
+| # | case | how | observed | verdict |
+|---|---|---|---|---|
+| A1 | New surface mounted | curl, no spawn | `POST /subjects/:id/solutions/generate`: 401 without header (Arabic), 404 on ghost — route live, refusals pre-spawn | held |
+| A2 | **Corrections stream per exercise** | clicked توليد التصحيح النموذجي on a 3-exercise fan-out exam; 1.5 s poller on `GET /solutions` | `202 Accepted`; run-log shows per-exercise `solution-one` spawns (63–112 s each) under the group budget (`active` 2, `groups` 1); poller saw `[]` → `[ex1]` @140.7 s → `[ex1,ex2]` @155.8 s — **two intermediate states with strictly fewer corrections than exercises**, the exact absence measured in case 13. fe renders each as it lands, with per-exercise Arabic placeholders for the rest | **fixed** |
+| B1 | **Two tabs, driven simultaneously in a real browser** (implementers' gap) | batch running from tab A; tab B opened the same exam and clicked its (enabled) button | tab B: `409 Conflict` on the wire, **no error banner** — it joined the wait: same busy header, same per-exercise placeholders, corrections painting as they arrive. `claude.active` stayed at the one batch's 2; run-log shows **no duplicate spawns** | **fixed** |
+| B2 | Burst window | — | the originating tab's button is now disabled for the whole batch («جارٍ تحضير التصحيح…»), not just the HTTP request | held |
+| C1 | **A correction that never arrives** (implementers' gap — fixture-only until now) | caused organically: restarted `be` mid-batch after ex1+ex2's corrections landed, killing ex3's writer | store: ex1+ex2 rows present, ex3 **absent — no blank row** (`{answer:""}` count 0 store-wide). fe kept the honest placeholder while polling, then the `maxPolls` backstop fired (between ~5.5 and ~10.5 min): waiting note replaced by «لا يوجد تصحيح لهذا التمرين بعد.» + per-exercise «إعادة توليد تصحيح هذا التمرين», whole-sheet regenerate also offered, **no spinner left, no empty correction box** | held — the deliberate presence-only reading works, and the teacher lands on "ask again", not a promise |
+| C2 | Recovery of the missing correction | pressed the per-exercise regenerate | landed in ~97 s (`solution-sheet` per-exercise path); all three corrections present; scale sums 6/7/7 = each exercise's points; 0 KaTeX errors, 0 LaTeX/`$` leaks, no speed claims | held |
+| D1 | Orphan watch | mongo | `teacherId` orphans **0** after all re-run journeys | held |
+
+Residuals that stand from the first pass: note ② (criterion 1's 70–80 s band is a
+median, not a guarantee), note ③ (human print-to-PDF pass), note ⑥ (organic
+*exercise* truncation still never observed rendering — the correction analogue was
+reached organically above via the kill, the malformed-output variant remains
+replay-only), notes ①/④/⑤ unchanged. One new small observation: the `maxPolls`
+backstop for corrections takes on the order of 5–10 minutes to fire after a dead batch
+— bounded and honest, but a teacher may stare at «جارٍ تحضير…» for several minutes
+before being offered the retry; acceptable at this milestone, worth remembering if the
+window ever bothers a real teacher.
+
+## Final scorecard
+
+| criterion | status |
+|---|---|
+| 1 · first exercise ~70–80 s, others as they land | confirmed as mechanism (68.5 s / 91 s samples) |
+| 2 · one failure costs one exercise, retryable alone | confirmed with an induced real failure |
+| 3 · corrections stream per exercise | **confirmed after be-6/fe-3** (was bug A) |
+| 4 · sum 20, ids ordered, downstream indistinguishable | confirmed |
+| 5 · no speed claim anywhere | confirmed (re-swept after fe-3) |
+
+**Final verdict: `validated`** — lane rung; no staging rung exists for these repos.

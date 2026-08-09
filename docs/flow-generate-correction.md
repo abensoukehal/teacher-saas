@@ -4,10 +4,10 @@ id: flow-generate-correction
 title: "Generating a correction, and keeping it honest"
 plane: flow
 realizes: [feat-solution-sheets]
-steps: [cmp-fe-solution-view, cmp-be-generate-endpoint, cmp-be-skill-solution-sheet, cmp-be-subjects-api, mod-be-solution-store]
+steps: [cmp-fe-solution-view, cmp-be-corrections-endpoint, cmp-be-skill-solution-one, cmp-be-inflight, mod-be-solution-store]
 crosses: [svc-teacher-fe, svc-teacher-be]
 status: fresh
-last_verified: 2026-08-08
+last_verified: 2026-08-09
 tags: []
 ---
 

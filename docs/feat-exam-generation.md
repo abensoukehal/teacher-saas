@@ -4,10 +4,10 @@ id: feat-exam-generation
 title: "Generate a draft exam"
 plane: product
 part_of: prod-exam-builder
-realized_by: [cmp-fe-controls, cmp-be-generate-endpoint, cmp-be-claude-runner, cmp-be-skill-exam-subject, cmp-fe-exam-view, flow-generate-exam]
+realized_by: [cmp-fe-controls, cmp-be-generate-endpoint, cmp-be-exams-endpoint, cmp-be-claude-runner, cmp-be-inflight, cmp-be-skill-exam-subject, cmp-be-skill-exam-plan, cmp-be-skill-exercise-one, cmp-fe-exam-view, flow-generate-exam]
 demonstrated_by: [features/core-loop/iterations/01-initial/qa.md]
 status: fresh
-last_verified: 2026-08-07
+last_verified: 2026-08-09
 tags: [arabic, mathematics]
 ---
 

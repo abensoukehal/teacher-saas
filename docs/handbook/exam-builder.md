@@ -96,14 +96,28 @@ Marks always add up to the stated total.
 
 ### Sequence
 1. [Exam controls](../cmp-fe-controls.md) — the teacher's choices become a request
-2. [Generation endpoint](../cmp-be-generate-endpoint.md) — receives it, checks the capability exists
-3. [CLI runner](../cmp-be-claude-runner.md) — queues if busy, runs the CLI, bounds it
-4. [Exam generation capability](../cmp-be-skill-exam-subject.md) — reads the programme if needed, writes the exam
-5. [Exam view](../cmp-fe-exam-view.md) — typesets and displays it, assumptions included
+2. [Progressive exam endpoint](../cmp-be-exams-endpoint.md) — receives it, checks the controls before spending anything
+3. [Exam plan skill](../cmp-be-skill-exam-plan.md) — decides the skeleton: how many exercises, and each one's
+   topic, points and difficulty. Roughly half a minute
+4. The exam is **stored and answered here**, every slot waiting, points already summing to 20
+5. [CLI runner](../cmp-be-claude-runner.md) — bounds how many exercises one exam may write at once
+6. [One-exercise skill](../cmp-be-skill-exercise-one.md) — writes each exercise independently; each is stored the
+   moment it is finished, guarded by [One writer at a time](../cmp-be-inflight.md)
+7. [Exam view](../cmp-fe-exam-view.md) — re-reads the exam and typesets each exercise as it appears
 
 ### Notes
-There is no streaming: the backend answers once, after roughly two minutes, so
-the wait is shown as elapsed time rather than as progress the server reports.
+The teacher reads the exam while it is still being written. The first exercise has been
+observed at roughly 68–91 seconds, against a complete exam at around two minutes — but that
+range is a median, not a promise: identical work has been measured varying by a factor of 2.7,
+so a given exercise may land anywhere in that spread.
+
+**This is not faster.** The exam is finished when its slowest exercise is finished, so the
+total is unchanged and can be slightly worse. What changed is when reading can start, and
+what one bad exercise costs.
+
+An exercise that cannot be produced is retried once, then marked as failed; the rest of the
+exam stands and that one can be asked for again. Roughly one generation in twelve returns
+something unusable, which under a single-run exam meant losing the whole thing.
 Cancelling abandons the result; work already running server-side continues.
 
 ## Print the paper
@@ -397,7 +411,7 @@ password does not, because pressing the button again would be a lie.
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Claude Code CLI wrapper, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Exam generation capability, Exercise refinement capability, Generation endpoint, Subject endpoints and teacher identity, The solution-sheet skill |
+| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Claude Code CLI wrapper, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Exam generation capability, Exam plan skill, Exercise refinement capability, Generation endpoint, One writer at a time, One-correction skill, One-exercise skill, Per-exercise corrections, Progressive exam endpoint, Subject endpoints and teacher identity, The solution-sheet skill |
 | [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, The correction pane and its printed sheet, The operator's console, The sign-in gate |
 
 
@@ -408,9 +422,15 @@ flowchart TD
   cmp_be_admin_api["cmp-be-admin-api"]
   cmp_be_auth_api["cmp-be-auth-api"]
   cmp_be_claude_runner["cmp-be-claude-runner"]
+  cmp_be_corrections_endpoint["cmp-be-corrections-endpoint"]
+  cmp_be_exams_endpoint["cmp-be-exams-endpoint"]
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
+  cmp_be_inflight["cmp-be-inflight"]
+  cmp_be_skill_exam_plan["cmp-be-skill-exam-plan"]
   cmp_be_skill_exam_subject["cmp-be-skill-exam-subject"]
+  cmp_be_skill_exercise_one["cmp-be-skill-exercise-one"]
   cmp_be_skill_refine_exercise["cmp-be-skill-refine-exercise"]
+  cmp_be_skill_solution_one["cmp-be-skill-solution-one"]
   cmp_be_skill_solution_sheet["cmp-be-skill-solution-sheet"]
   cmp_be_subjects_api["cmp-be-subjects-api"]
   cmp_fe_admin_console["cmp-fe-admin-console"]
@@ -449,10 +469,25 @@ flowchart TD
   cmp_be_auth_api -->|depends_on| mod_be_teacher_store
   cmp_be_auth_api -.-> mod_be_teacher_store
   cmp_be_claude_runner -.-> mod_be_claude_wrapper
+  cmp_be_corrections_endpoint -->|depends_on| cmp_be_claude_runner
+  cmp_be_corrections_endpoint -->|depends_on| cmp_be_inflight
+  cmp_be_corrections_endpoint -->|depends_on| cmp_be_skill_solution_one
+  cmp_be_corrections_endpoint -.-> mod_be_claude_wrapper
+  cmp_be_corrections_endpoint -->|depends_on| mod_be_solution_store
+  cmp_be_exams_endpoint -->|depends_on| cmp_be_claude_runner
+  cmp_be_exams_endpoint -->|depends_on| cmp_be_inflight
+  cmp_be_exams_endpoint -->|depends_on| cmp_be_skill_exam_plan
+  cmp_be_exams_endpoint -->|depends_on| cmp_be_skill_exercise_one
+  cmp_be_exams_endpoint -.-> mod_be_claude_wrapper
+  cmp_be_exams_endpoint -->|depends_on| mod_be_subject_store
   cmp_be_generate_endpoint -->|depends_on| cmp_be_claude_runner
   cmp_be_generate_endpoint -.-> mod_be_claude_wrapper
+  cmp_be_inflight -.-> mod_be_claude_wrapper
+  cmp_be_skill_exam_plan -.-> mod_be_agent_workspace
   cmp_be_skill_exam_subject -.-> mod_be_agent_workspace
+  cmp_be_skill_exercise_one -.-> mod_be_agent_workspace
   cmp_be_skill_refine_exercise -.-> mod_be_agent_workspace
+  cmp_be_skill_solution_one -.-> mod_be_agent_workspace
   cmp_be_skill_solution_sheet -.-> mod_be_agent_workspace
   cmp_be_subjects_api -->|depends_on| mod_be_subject_store
   cmp_be_subjects_api -.-> mod_be_subject_store
@@ -472,8 +507,12 @@ flowchart TD
   feat_admin_console -->|realized_by| mod_be_teacher_store
   feat_admin_console -.-> prod_exam_builder
   feat_exam_generation -->|realized_by| cmp_be_claude_runner
+  feat_exam_generation -->|realized_by| cmp_be_exams_endpoint
   feat_exam_generation -->|realized_by| cmp_be_generate_endpoint
+  feat_exam_generation -->|realized_by| cmp_be_inflight
+  feat_exam_generation -->|realized_by| cmp_be_skill_exam_plan
   feat_exam_generation -->|realized_by| cmp_be_skill_exam_subject
+  feat_exam_generation -->|realized_by| cmp_be_skill_exercise_one
   feat_exam_generation -->|realized_by| cmp_fe_controls
   feat_exam_generation -->|realized_by| cmp_fe_exam_view
   feat_exam_generation -->|realized_by| flow_generate_exam
@@ -492,6 +531,9 @@ flowchart TD
   feat_exercise_refinement -->|realized_by| cmp_fe_refine
   feat_exercise_refinement -->|realized_by| flow_refine_exercise
   feat_exercise_refinement -.-> prod_exam_builder
+  feat_solution_sheets -->|realized_by| cmp_be_corrections_endpoint
+  feat_solution_sheets -->|realized_by| cmp_be_inflight
+  feat_solution_sheets -->|realized_by| cmp_be_skill_solution_one
   feat_solution_sheets -->|realized_by| cmp_be_skill_solution_sheet
   feat_solution_sheets -->|realized_by| cmp_fe_solution_view
   feat_solution_sheets -->|realized_by| flow_generate_correction
@@ -506,14 +548,16 @@ flowchart TD
   feat_teacher_accounts -->|realized_by| flow_sign_in_and_recover
   feat_teacher_accounts -->|realized_by| mod_be_teacher_store
   feat_teacher_accounts -.-> prod_exam_builder
-  flow_generate_correction -->|step| cmp_be_generate_endpoint
-  flow_generate_correction -->|step| cmp_be_skill_solution_sheet
-  flow_generate_correction -->|step| cmp_be_subjects_api
+  flow_generate_correction -->|step| cmp_be_corrections_endpoint
+  flow_generate_correction -->|step| cmp_be_inflight
+  flow_generate_correction -->|step| cmp_be_skill_solution_one
   flow_generate_correction -->|step| cmp_fe_solution_view
   flow_generate_correction -->|step| mod_be_solution_store
   flow_generate_exam -->|step| cmp_be_claude_runner
-  flow_generate_exam -->|step| cmp_be_generate_endpoint
-  flow_generate_exam -->|step| cmp_be_skill_exam_subject
+  flow_generate_exam -->|step| cmp_be_exams_endpoint
+  flow_generate_exam -->|step| cmp_be_inflight
+  flow_generate_exam -->|step| cmp_be_skill_exam_plan
+  flow_generate_exam -->|step| cmp_be_skill_exercise_one
   flow_generate_exam -->|step| cmp_fe_controls
   flow_generate_exam -->|step| cmp_fe_exam_view
   flow_refine_exercise -->|step| cmp_be_claude_runner
@@ -544,6 +588,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_claude_runner,cmp_be_generate_endpoint,cmp_be_skill_exam_subject,cmp_be_skill_refine_exercise,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_claude_runner,cmp_be_corrections_endpoint,cmp_be_exams_endpoint,cmp_be_generate_endpoint,cmp_be_inflight,cmp_be_skill_exam_plan,cmp_be_skill_exam_subject,cmp_be_skill_exercise_one,cmp_be_skill_refine_exercise,cmp_be_skill_solution_one,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 
