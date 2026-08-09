@@ -172,8 +172,68 @@ function planResult() {
   return { ...envelope, result: JSON.stringify({ ...plan, assignments }) };
 }
 
+/**
+ * A `solution-one` result, built from the recorded `solution-sheet` run.
+ *
+ * `rec-solution-sheet.2026-08-08.json` is a real correction for a real 3-exercise exam —
+ * worked Arabic answers with grading scales summing to 6 / 6 / 8. The ANSWER text is used
+ * verbatim; only the scale's last part is adjusted so the total matches the points this
+ * exercise is actually worth, because the replayed exam is 5 / 7 / 8. That mirrors what
+ * the real skill is required to do (`scale` sums to the `points` it was given) rather than
+ * inventing a correction.
+ */
+function solutionResult() {
+  const attempt = attemptNumber(`solution-one-${input.id}`);
+  const envelope = rec("rec-fan-ex2.json");
+
+  if (input.id === "ex1" && MODE === "sol-malformed-ex1") {
+    return rec("rec-fan-ex1.json"); // the real truncated capture — never parses
+  }
+
+  const sheet = rec("rec-solution-sheet.2026-08-08.json").data.solutions;
+  const n = Number(String(input.id ?? "ex1").replace(/\D/g, "")) || 1;
+  const source = sheet[(n - 1) % sheet.length];
+
+  const points = Number(input.points ?? 0);
+  const recorded = source.scale.reduce((t, p) => t + p.points, 0);
+
+  // Rescale PROPORTIONALLY, then land the exact remainder on the last part.
+  //
+  // The first version just overwrote the last part with `points - head`, which for a
+  // 6-point recording replayed against a 5-point exercise drove that part negative, got
+  // clamped, and produced a scale summing to 5.5. `readCorrection` refused it — correctly,
+  // that is the invariant it exists to enforce — and the fixture, not the service, was
+  // wrong. Proportional first keeps every part positive; the remainder (unrounded, so the
+  // sum is exact to the last bit) keeps the total honest.
+  const scale = source.scale.map((p) => ({
+    ...p,
+    points: Math.round(((p.points * points) / recorded) * 100) / 100,
+  }));
+  const head = scale.slice(0, -1).reduce((t, p) => t + p.points, 0);
+  scale[scale.length - 1].points = points - head;
+  // Safety net: if rounding ever left nothing for the last part, drop parts until it fits.
+  while (scale.length > 1 && scale[scale.length - 1].points <= 0) {
+    scale.pop();
+    const h = scale.slice(0, -1).reduce((t, p) => t + p.points, 0);
+    scale[scale.length - 1].points = points - h;
+  }
+
+  // `sol-bad-scale-ex2` breaks that promise on purpose: the one checkable property a
+  // correction has is that the marks add up, and the CLI reports such a run as a success.
+  if (input.id === "ex2" && MODE === "sol-bad-scale-ex2") {
+    scale[scale.length - 1].points += 1;
+  }
+
+  return {
+    ...envelope,
+    result: JSON.stringify({ exerciseId: input.id, answer: source.answer, scale }),
+    _attempt: attempt,
+  };
+}
+
 let out;
 if (skill === "exam-plan") out = planResult();
+else if (skill === "solution-one") out = solutionResult();
 else if (skill === "exercise-one") out = exerciseResult();
 else if (skill === "exam-subject") out = rec("rec-run-ex3.json");
 else {
@@ -187,7 +247,12 @@ else {
 // `timeout`. The attempt is already tallied — attemptNumber runs at spawn, not at exit —
 // so a killed run still counts, which is what makes "a timeout is not retried" checkable.
 const hang = MODE === "timeout-ex1" && input.id === "ex1";
-const delay = hang ? 60_000 : skill === "exam-plan" ? Math.min(DELAY, 100) : DELAY;
+// `stagger` makes exN take N times as long, so a fan-out lands one result at a time —
+// which is the only way to observe "the first correction is readable while the rest are
+// still generating", the criterion QA measured absent.
+const rank = Number(String(input.id ?? "ex1").replace(/\D/g, "")) || 1;
+const stagger = MODE === "stagger" ? rank : 1;
+const delay = hang ? 60_000 : skill === "exam-plan" ? Math.min(DELAY, 100) : DELAY * stagger;
 
 setTimeout(() => {
   process.stdout.write(JSON.stringify(out));

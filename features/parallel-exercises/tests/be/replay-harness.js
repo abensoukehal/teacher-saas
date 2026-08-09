@@ -94,11 +94,17 @@ async function startReplayServer(opts = {}) {
   return {
     url,
     logs: () => buffer,
-    /** How many times the CLI was spawned for one exercise — i.e. attempts, not outcomes. */
-    attempts: (exerciseId) => {
+    /**
+     * How many times the CLI was spawned for one exercise — attempts, not outcomes.
+     *
+     * The skill is explicit rather than assumed: the tally is per (skill, exercise), and a
+     * helper that silently prefixed `exercise-one-` would answer 0 for every correction
+     * clause instead of failing — a test that cannot see what it is measuring.
+     */
+    attempts: (exerciseId, skill = "exercise-one") => {
       try {
         return fs
-          .readFileSync(path.join(state, `exercise-one-${exerciseId}.log`), "utf8")
+          .readFileSync(path.join(state, `${skill}-${exerciseId}.log`), "utf8")
           .split("\n")
           .filter(Boolean).length;
       } catch {
@@ -107,8 +113,18 @@ async function startReplayServer(opts = {}) {
     },
     stop: () =>
       new Promise((resolve) => {
-        if (child.exitCode !== null) return resolve();
-        child.once("exit", () => resolve());
+        const done = () => {
+          // Take the attempt-tally dir with it. One mkdtemp per server times a few dozen
+          // servers per gate run times a day of runs left 650 of these behind.
+          try {
+            fs.rmSync(state, { recursive: true, force: true });
+          } catch {
+            /* best effort — never fail a suite over a temp dir */
+          }
+          resolve();
+        };
+        if (child.exitCode !== null) return done();
+        child.once("exit", done);
         child.kill("SIGTERM");
         setTimeout(() => child.kill("SIGKILL"), 3000).unref?.();
       }),

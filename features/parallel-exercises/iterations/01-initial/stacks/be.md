@@ -279,7 +279,7 @@ evidence-backed decision the capacity study deliberately left to the user.
 
 ### be-6 — corrections fan out per exercise, and cannot be started twice
 
-**status:** todo · **tag:** hardening · **filed by:** QA (bugs A + B)
+**status:** done · **tag:** hardening · **filed by:** QA (bugs A + B)
 
 **Intent.** SEED §5 exit criterion 3 — "corrections stream per exercise the same way" — was
 **silently dropped between the SEED and the contract**, which never specified a transport for

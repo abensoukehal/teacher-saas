@@ -27,6 +27,16 @@ const SKILLS_DIR = path.join(REPO, "agent", ".claude", "skills");
 const PROMOTED = ["exam-plan", "exercise-one"];
 /** Frozen by be-1's Delta: promoting must not disturb what already shipped. */
 const PRE_EXISTING = ["exam-subject", "refine-exercise", "solution-sheet"];
+/**
+ * Added later in this job — DECLARED SUPERSESSION of the exact-catalogue clause below.
+ *
+ * be-6 split `solution-one` out of `solution-sheet` the way be-1 split `exercise-one` out
+ * of `exam-subject`. Adding a capability is the product growing, so the clause is widened
+ * rather than deleted: it still fails if a skill DISAPPEARS or the listing stops sorting,
+ * which is what it was written to catch.
+ */
+const ADDED_BY_BE6 = ["solution-one"];
+const CATALOGUE = [...PROMOTED, ...PRE_EXISTING, ...ADDED_BY_BE6];
 
 let server;
 let call;
@@ -55,7 +65,7 @@ describe("be-1 — the promoted skills are in the catalogue", () => {
     const names = body.skills.map((s) => s.name);
     for (const name of PRE_EXISTING) expect(names).toContain(name);
     // The whole catalogue, sorted — a promotion adds, it never reorders or drops.
-    expect(names).toEqual([...PROMOTED, ...PRE_EXISTING].sort((a, b) => a.localeCompare(b)));
+    expect(names).toEqual([...CATALOGUE].sort((a, b) => a.localeCompare(b)));
   });
 
   test("every listed skill carries a non-empty description", async () => {
