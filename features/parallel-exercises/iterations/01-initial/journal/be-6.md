@@ -127,9 +127,23 @@ Worth recording because both would have produced a *green* suite that verified n
 - **`attempts()` hardcoded the `exercise-one-` prefix**, so every correction clause would
   have read 0 spawns instead of failing. The skill is now an explicit argument.
 
+## Mutation spot-checks — 4/4 killed
+
+| mutation | clauses red |
+|---|---|
+| `correctable()` returns true (blanks sent for correction) | **3** |
+| the batch claim removed (bug B restored) | **2** |
+| the scale-sums-to-points check removed | **1** |
+| upserts batched to the end (the PRE-FIX monolithic behaviour) | **1** — "ONE correction is readable while the others are still generating" |
+
+The last one is the important one: it re-creates exactly what QA measured and the
+criterion's own clause catches it, so bug A cannot silently come back.
+
 ## Exit protocol
 
-- oracle green ×2
-- promoted `be` net green against the JOB checkout
-- `/api/generate` byte-identical
+- oracle green ×2 — 140/140 across six suites, twice
+- promoted `be` net green against the JOB checkout — 224/224, 13 suites
+- `/api/generate` byte-identical; `solution-sheet` skill untouched; the store-only
+  `POST /subjects/:id/solutions` validation untouched
+- mutation spot-checks 4/4 killed
 - journal sealed
