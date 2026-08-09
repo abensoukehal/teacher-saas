@@ -101,7 +101,7 @@ estimate: M
 
 ### be-1 — promote the two skills into the catalogue
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** `exam-plan` and `exercise-one` exist as measured prototypes in
 `agent/.claude/skills/`. Make them real catalogue entries: listed by `/api/skills`,
@@ -137,7 +137,7 @@ journal sealed.
 
 ### be-2 — POST /api/exams: plan, insert the skeleton, fan out, fill in place
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** The core of the job. Plan once, insert the whole exam with `pending`
 placeholders, then generate the exercises concurrently and fill each slot as it returns —

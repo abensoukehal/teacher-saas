@@ -49,24 +49,44 @@ try {
 }
 
 /**
- * A valid `exercise-one` result for ex1.
+ * The recorded statement for a slot.
  *
- * There is no VALID recorded ex1 in the fan-out — the real one came back truncated, which
- * is why `rec-fan-ex1.json` is be-3's material rather than be-2's. So the statement is
- * lifted verbatim from `rec-run-ex3.json`'s first exercise (a real generated first
- * exercise on the same topic, same controls) and the assignment fields are echoed back
- * from the request, which is exactly what the real skill does with them.
+ * ex2 and ex3 come from the fan-out recordings. There is no VALID recorded ex1 — the real
+ * one came back truncated, which is why `rec-fan-ex1.json` is be-3's material and not
+ * be-2's — so ex1 borrows the first exercise of the recorded MONOLITH run, a real
+ * generated first exercise on the same topic under the same controls. Slots past the three
+ * recorded ones reuse ex2's statement; nothing above three exercises was ever recorded
+ * (SEED §9.7) and no clause reads that content.
  */
-function composedEx1() {
-  const monolith = JSON.parse(rec("rec-run-ex3.json").result);
-  const source = monolith.exercises[0];
+function recordedStatement(id) {
+  if (id === "ex2") return JSON.parse(rec("rec-fan-ex2.json").result);
+  if (id === "ex3") return JSON.parse(rec("rec-fan-ex3.json").result);
+  if (id === "ex1") return JSON.parse(rec("rec-run-ex3.json").result).exercises[0];
+  return JSON.parse(rec("rec-fan-ex2.json").result);
+}
+
+/**
+ * The assignment fields are ALWAYS echoed from the request, exactly as the real skill is
+ * required to (`exercise-one`: "echo them back exactly as given"). For the canonical
+ * 3-exercise replay the request and the recording agree, so this is byte-identical to the
+ * recording; it only differs when a test drives an assignment no run ever covered.
+ *
+ * `bad-echo-ex2` deliberately breaks that promise, which is the only way to exercise
+ * `be`'s verify-don't-trust rule (contract §5.2) — the CLI reports such a run as a success.
+ */
+function exerciseResult() {
+  if (MODE === "trunc-ex1" && input.id === "ex1") {
+    return rec("rec-fan-ex1.json"); // the real truncated capture, verbatim
+  }
+  const source = recordedStatement(input.id);
   const envelope = rec("rec-fan-ex2.json");
+  const points = MODE === "bad-echo-ex2" && input.id === "ex2" ? input.points + 1 : input.points;
   return {
     ...envelope,
     result: JSON.stringify({
       id: input.id,
       label: input.label,
-      points: input.points,
+      points,
       difficulty: input.difficulty ?? source.difficulty,
       topics: source.topics ?? [],
       statement: source.statement,
@@ -74,30 +94,34 @@ function composedEx1() {
   };
 }
 
-function exerciseResult() {
-  if (input.id === "ex1") {
-    return MODE === "trunc-ex1" ? rec("rec-fan-ex1.json") : composedEx1();
-  }
-  if (input.id === "ex2") return rec("rec-fan-ex2.json");
-  if (input.id === "ex3") return rec("rec-fan-ex3.json");
-  // Beyond the three recorded assignments, echo the request as a minimal valid result —
-  // enough for an orchestration clause, and never claimed to be recorded material.
-  const envelope = rec("rec-fan-ex2.json");
-  return {
-    ...envelope,
-    result: JSON.stringify({
-      id: input.id,
-      label: input.label,
-      points: input.points,
-      difficulty: input.difficulty,
-      topics: [],
-      statement: `$f(x)=x^{2}$ — ${input.id}`,
-    }),
-  };
+/**
+ * The recorded plan is a 3-exercise composition and is served verbatim for that shape.
+ *
+ * For any OTHER `exerciseCount` the assignments are WIDENED synthetically — clearly not a
+ * recording, and used for exactly one thing: driving a fan-out wider than the recordings
+ * cover, so the number of concurrent writers into one document can be pinned at the
+ * service's own ceiling. It asserts nothing about plan QUALITY at that width; SEED §9.7 is
+ * explicit that nothing above 3 exercises has been exercised for real.
+ */
+function planResult() {
+  const envelope = rec("rec-plan.json");
+  const n = Number(input.exerciseCount ?? 3);
+  const total = Number(input.totalPoints ?? 20);
+  if (n === 3) return envelope;
+
+  const plan = JSON.parse(envelope.result);
+  const base = Math.floor(total / n);
+  const assignments = Array.from({ length: n }, (_, i) => ({
+    ...(plan.assignments[i % plan.assignments.length] ?? {}),
+    id: `ex${i + 1}`,
+    label: `التمرين ${i + 1}`,
+    points: i === n - 1 ? total - base * (n - 1) : base,
+  }));
+  return { ...envelope, result: JSON.stringify({ ...plan, assignments }) };
 }
 
 let out;
-if (skill === "exam-plan") out = rec("rec-plan.json");
+if (skill === "exam-plan") out = planResult();
 else if (skill === "exercise-one") out = exerciseResult();
 else if (skill === "exam-subject") out = rec("rec-run-ex3.json");
 else {
