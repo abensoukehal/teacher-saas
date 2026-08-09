@@ -30,6 +30,13 @@
           "derived_from": {
             "subissues": "21c1c4bb9a9dc5a1"
           }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
         }
       },
       "subissues": {
@@ -112,7 +119,8 @@
             "contracts": "c344aae13fce3440"
           }
         }
-      }
+      },
+      "summary": "Exams and corrections generate per exercise and render as they arrive; one bad exercise no longer costs the whole exam"
     }
   }
 }
