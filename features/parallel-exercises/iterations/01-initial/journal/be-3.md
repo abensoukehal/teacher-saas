@@ -95,3 +95,50 @@ the exam still sums to 20.
 - replay fixtures used, never a live call, in every clause of this suite
 - mutation spot-check on the retry budget — 5 clauses red
 - journal sealed
+
+## review
+
+**Verdict: approve-with-debt** (one oracle gap; the mechanism itself held everything
+thrown at it). (Cross-model REVIEW gate, 2026-08-09.)
+
+**Attack log.**
+- Permanent truncation (`trunc-ex1`) driven live on a replay boot: ex1 `failed` with
+  `""`, ex2/ex3 `ready`, sum still 20, 201/200 throughout, no error response. Held.
+- Mutation `GENERATION_ATTEMPTS = 1` → **6 clauses red** (journal claimed 5; be-4's
+  suite has since added one — stronger, consistent).
+- The §10.1 correction (trunc-9 is fenced, not truncated) was re-verified during review
+  reading: the oracle asserting *ready in one attempt* for the fenced case is the right
+  polarity, and it is what stops a wasted loop being pinned as correct.
+- The `failed` marking going through the same fill path (CAS + no revision) held under
+  the width-6 race probes.
+
+**Debt — an oracle gap found by mutation:** `worthRetrying` mutated to `return true`
+(retry `auth`, `not_installed`, `timeout` too) **survives the entire gate, 105/105
+green**. The design decision is documented in this journal and in the code comment, but
+no clause defends it. Cost if regressed: a timing-out exercise would spend
+2 × CLAUDE_TIMEOUT_MS (10 min at defaults) before failing, and an expired login would
+spawn N useless retries per exam. Cheap clause: replay a `claude_auth`-shaped failure
+and assert exactly **1** attempt.
+
+---
+
+## Review follow-up (2026-08-09)
+
+**Mutation survivor closed: `worthRetrying → always true`.** Nothing asserted that `auth`
+and `timeout` are excluded from the retry, so the exclusion could have been deleted in
+silence. Two clauses now cover it, each on its own replay mode:
+
+- **`auth-ex1`** — the fake returns `is_error: true` with an expired-login `result`, which
+  `runner.ts` classifies `auth`. The slot is `failed` after **one** spawn. Retrying an
+  expired login is pure waste: it fails every exercise of every exam and only a human
+  `/login` changes that.
+- **`timeout-ex1`** — the fake hangs past a 1.2 s `CLAUDE_TIMEOUT_MS` so the real SIGKILL
+  path runs without waiting the production 300 s. One spawn. This is the expensive one:
+  a retried timeout means a **10-minute** worst case for a single slot, holding a
+  concurrency slot the whole way.
+
+Both also assert the other two exercises still land and the exam still sums to 20 — a
+failure a retry cannot fix still costs one exercise, not the exam.
+
+The attempt tally is written at spawn, not at exit, which is what makes a killed run
+countable.

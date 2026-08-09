@@ -231,3 +231,32 @@ already exists and is unchanged.
 - `features/parallel-exercises/tests/fe/fixtures.ts`
 - `features/parallel-exercises/tests/fe/fixtures/rec-fanout.2026-08-09.json`
 - `features/parallel-exercises/tests/fe/fixtures/rec-exam-subject.2026-08-07.json`
+
+## review
+
+**Verdict: approve.** (Cross-model REVIEW gate, 2026-08-09.)
+
+**Blind vs actual:** predicted shape matched (status readers, injectable-wait poll,
+additive api.ts, conditional attributes, boolean-keyed effect). The deliberate
+non-wiring of `startExam` — the biggest judgement call in this journal — was resolved by
+fe-2's amendment and is the right call in hindsight: the frozen oracle won, and the
+repoint happened as a *declared* behaviour change instead of a silent one.
+
+**Attack log.**
+- Mutations: `statusOf` absent→pending → **8 red**; `isRenderable` trusting status alone
+  → **2 red** (the blank-box clauses); unbounded poll (`maxPolls` ignored) → **17 red**
+  (suite-wide timeouts — the stop property is heavily load-bearing). All killed.
+- The freeze audit reproduced exactly: `git diff --numstat main -- src/lib/api.ts` →
+  94 insertions, **0 deletions** (fe-1+fe-2 combined); `post`/`generateExam`/
+  `buildRefineRequest`/`generateSolutions` byte-identical to main.
+- The promoted net (242→244 clauses) verified green against the JOB checkout by this
+  review, independently of the journals' runs — including the byte-pinned ExamView
+  baselines, which is the 6,086-exam regression guard doing its job.
+- Live composition (real browser, replay be): skeleton painted with the /20 correct
+  before any statement; fills appeared on the sheet; the poll stopped (network log went
+  quiet after settle). The "opens mid-generation from another entry point" property is
+  what the boolean-keyed effect buys, and it is pinned.
+
+Nothing broke. The one thing I expected to break — a monolith exam somewhere reading
+`pending` through a missed default — has exactly one definition per stack (`statusOf`),
+both allow-lists, both mutation-killed. That is why it could not break.

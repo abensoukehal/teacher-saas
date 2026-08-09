@@ -296,3 +296,48 @@ one on demand is not currently possible.
   `tests/fe/persistence-gaps/pending-save` · `tests/fe/persistence-gaps/cost-join` ·
   `tests/fe/persistence-gaps/auth` · `tests/fe/accounts-hardening/kpis-thread`
   — the promoted net, re-baselined on the job branch with a written reason per clause
+
+## review
+
+**Verdict: approve-with-debt.** (Cross-model REVIEW gate, 2026-08-09.)
+
+**The composition gap this journal flagged is now CLOSED — by review, with a real
+failure.** "The failure→retry loop has not been walked end to end in a browser" was the
+strongest open risk in the slice, so it was walked: replay-boot be in `trunc-ex1-first2`
+(the fan-out's two ex1 attempts truncate for real — the recorded 906-char capture — then
+a third succeeds), real Vite dev server, real browser. Observed: skeleton at 201 with
+the /20 header correct; ex2/ex3 filled progressively with KaTeX; ex1 settled to the
+Arabic failure copy with «إعادة توليد هذا التمرين»; the refine control on the failed
+slot disabled; pressing retry issued exactly `POST …/exercises/ex1/regenerate` (no PUT,
+no /api/generate) and the slot filled in place with rendered math; the poll stopped
+(zero further reads). No English, no error code, no exercise id, no LaTeX anywhere in
+the failure surface. **The assembly works.**
+
+**Attack log, rest.**
+- Mutations: retry control also offered for `pending` → **1 red**; solution filter
+  removed (blank exercises sent to solution-sheet) → **1 red**. Killed.
+- The 37-clause re-baseline was audited file by file. Every retired clause either kept
+  its invariant on a new driver (app-persistence, save-state), moved it to the side that
+  owns it with a replacement clause pinning the new truth (cost-join, kpis-thread), or
+  narrowed to the surviving real state with the dormancy itself pinned (pending-save's
+  one-affordance clause). **No real invariant was retired.** The promoted net was
+  re-run against the job checkout by this review: **244/244**.
+- The freeze audit reproduced byte-for-byte, including the declared `KIND` judgement —
+  which this review endorses: the freeze is on the calls, and every call site is
+  byte-identical.
+
+**Debt — the contract's "pending-and-abandoned" retry is unreachable from the UI.**
+Contract §2 blesses regenerating a pending-and-abandoned exercise; be-4 accepts it; fe
+offers the retry control only for a settled `failed`. So the one real orphan case —
+a be restart mid-fan-out, be-2's recorded gap — leaves a teacher staring at «جارٍ كتابة
+هذا التمرين…» with no affordance, forever (the poll stops at MAX_POLLS; the copy keeps
+promising). be-2's journal names be-4 as "the teacher-facing recovery" for exactly this,
+and that recovery does not compose through this UI. Note the flip side before fixing it
+naively: offering retry on any pending slot recreates the double-writer race found in
+be-4's review — the right sequencing is be-4's suggested guard first (fan-out fills
+registered in the in-flight set), then fe can offer retry on a pending slot the server
+will 409 while it is genuinely in flight.
+
+**Also still true (inherited, honest):** no organically-failed exercise has ever been
+rendered — the browser walk above used the recorded truncation via replay, which is as
+close as it gets without burning a run to chance.

@@ -152,3 +152,76 @@ Without the retry budget the fan-out silently loses two thirds of a teacher's ex
   index untouched
 - mutation spot-check on the absent-status default — 6 clauses red under the flip
 - journal sealed
+
+## review
+
+**Verdict: approve-with-debt.** (Cross-model REVIEW gate, 2026-08-09.)
+
+**Blind vs actual.** Predicted the shape almost exactly (plan → verify → skeleton insert →
+201 → detached fan-out → CAS fill → setKpis). Divergence: I predicted a single outer fill
+loop; the code has `FILL_ATTEMPTS = 3` outer × 5 inner CAS attempts, which is stronger.
+
+**The concurrent-fill race — could not break it, and here is why it cannot lose.**
+- Empirical: 10 consecutive width-6 fan-outs (MAX_EXERCISES, fills overlapping by equal
+  delay) through the real HTTP surface against real Mongo — **0 slots lost, 0 failed**.
+- Structural: a CAS loss means another writer's `findOneAndUpdate` landed — and a fan-out
+  writer that lands *leaves the pool*. So with N=6 concurrent fills a writer can lose at
+  most 5 races before it is alone, against a budget of 15 attempts (3×5). The budget is
+  not merely "probably enough"; it cannot be exhausted by the fan-out itself.
+- Mutation: single-attempt CAS + no outer retry → **5 clauses red** (journal claimed the
+  same class). `statusOf` flipped to absent→pending → **6 clauses red, exactly as the
+  journal's mutation table claims** — spot-audit of that table reproduces.
+
+**Held under attack:** skeleton sums to 20 before any statement exists; ids in order;
+byte-identical 404s for other-teacher/ghost (correlation-id-stripped comparison);
+401 on missing AND on well-formed-but-never-issued ids; `/api/generate` handler diffed
+against main — **byte-identical**, live response keys exactly
+`{correlationId, costUsd, data, durationMs, sessionId, text}`, no `status` invented;
+legacy no-status exam archives a revision on replace; rogue-echo refusal (mutation
+"trust the echo" → 4 red).
+
+**Debt (charged here — `invalidControls` is this sub-issue's):**
+1. **`totalPoints` is unvalidated.** `0`, `-5` and `1e9` all pass validation, spawn a real
+   ~26 s plan run, then 502 (`sum ≠ totalPoints` is unsatisfiable for ≤0 with positive
+   points). Verified live on a replay boot: three requests, three burned plan runs. An
+   authenticated caller can loop this into a quota burner. One-line bounds check.
+2. The plan's assignment COUNT is never checked against `exerciseCount` — only `≤ MAX`.
+   A 2-assignment plan for a 3-exercise request would ship a 2-exercise exam silently.
+   Reading-level finding; the fake always obeys, so no execution proof.
+3. `POST /api/subjects` accepts exercises carrying `status: "pending"` verbatim (planted
+   via probe, 201). Self-inflicted, poll-bounded by fe's MAX_POLLS; recorded, not urgent.
+4. The restart-orphan gap recorded here ("be-4's regenerate is the teacher-facing
+   recovery") **does not compose**: fe offers the regenerate control only for a settled
+   `failed`, so an orphaned `pending` slot has no UI recovery. See fe-2's review.
+
+---
+
+## Review follow-up (2026-08-09)
+
+**Finding 3 — `totalPoints` was unvalidated on `POST /api/exams`.** `0`, `-5` and `1e9`
+are each unsatisfiable: no set of positive per-exercise points sums to them, so the plan
+came back and failed verification every time. Unvalidated, one authenticated request burnt
+a real ~26 s agent loop and a concurrency slot for a guaranteed 502 — a quota-burner that
+costs the caller nothing. Now bounded in `invalidControls` (integer, 1…`MAX_TOTAL_POINTS`
+= 100) so it is refused **before** the spawn. Seven clauses, including one asserting the
+gate is untouched afterwards (`claude.active`, `claude.queued` and `fanout.groups` all 0)
+— the point is the loop that never happens, not the status code.
+
+**Finding 3b — the plan's assignment COUNT was never checked.** `readPlan` verified the
+ids, the points and the sum, but not that there were `exerciseCount` of them. A plan
+returning two exercises for a 3-exercise composition adds up perfectly and is still the
+wrong exam, and every other check passed it. Now `502 claude_bad_output`.
+
+**Unexplained, closed by construction: five subjects with `teacherId: null`.** Found in
+the dev store while running the promoted net — carrying this job's exact controls and
+replay statements, so they came from `POST /api/exams`. **Not reproducible against the
+finished code**: no header, a bogus id, an empty header and a trailing slash all answer
+401, and the guard is mounted on the router. But the Mongo driver serialises `undefined`
+as `null`, so any route that ever reached `create` without the middleware would insert a
+subject owned by nobody — unreachable by its author (every read is scoped
+`{_id, teacherId}`), invisible to ownership scoping, and still counted in `/api/admin/kpis`.
+
+Rather than leave that resting on "the guard was fine when I checked", `create` now
+rejects a non-32-hex owner (`MissingOwner`). Same discipline that makes `create`
+insert-only: the store refuses the shape, so no caller can produce it by accident. The
+orphans were removed from the dev store.

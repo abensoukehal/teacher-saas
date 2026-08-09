@@ -114,6 +114,16 @@ function exerciseResult() {
     // regenerate (attempt 3) succeeds. The real journey be-4 exists for.
     if (MODE === "trunc-ex1-first2" && attempt <= 2) return rec("rec-fan-ex1.json");
     if (MODE === "fenced-ex1") return rec("rec-trunc-9.json"); // recovered, not a failure
+    // An EXPIRED CLI LOGIN. The CLI reports it in `result` with is_error true, and
+    // runner.ts classifies it `auth`. Retrying is pure waste — a human must /login.
+    if (MODE === "auth-ex1") {
+      return {
+        ...rec("rec-fan-ex2.json"),
+        is_error: true,
+        subtype: "error_during_execution",
+        result: "OAuth token has expired. Please run /login to re-authenticate.",
+      };
+    }
   }
 
   const source = recordedStatement(input.id);
@@ -143,6 +153,10 @@ function exerciseResult() {
  */
 function planResult() {
   const envelope = rec("rec-plan.json");
+  // `short-plan` ignores the requested count and always returns the recorded three, so the
+  // "the plan returned the wrong number of assignments" check has something to catch.
+  if (MODE === "short-plan") return envelope;
+
   const n = Number(input.exerciseCount ?? 3);
   const total = Number(input.totalPoints ?? 20);
   if (n === 3) return envelope;
@@ -169,7 +183,13 @@ else {
   process.exit(1);
 }
 
+// `timeout-ex1` hangs past CLAUDE_TIMEOUT_MS so the runner SIGKILLs the child and raises
+// `timeout`. The attempt is already tallied — attemptNumber runs at spawn, not at exit —
+// so a killed run still counts, which is what makes "a timeout is not retried" checkable.
+const hang = MODE === "timeout-ex1" && input.id === "ex1";
+const delay = hang ? 60_000 : skill === "exam-plan" ? Math.min(DELAY, 100) : DELAY;
+
 setTimeout(() => {
   process.stdout.write(JSON.stringify(out));
   process.exit(0);
-}, skill === "exam-plan" ? Math.min(DELAY, 100) : DELAY);
+}, delay);

@@ -97,3 +97,46 @@ these suites passes the value explicitly and would never notice the *default* mo
 - mutation spot-checks on the gate and the clamp — 3 clauses red between them
 - the default cap verified unchanged at 3, pinned against source
 - journal sealed
+
+## review
+
+**Verdict: approve.** (Cross-model REVIEW gate, 2026-08-09.)
+
+**Spot-audit of this journal's own verifier (protocol ⑥):** the budget-binds claim was
+re-measured independently — a width-6 fan-out on a replay boot with `/health` sampled
+every 40 ms: **peak `claude.active` = 2 across 26 samples** (budget 2, cap 3). The
+journal's clause says what it does.
+
+**Held under attack:**
+- Clamp-defeat mutation (return the configured value raw) → **2 clauses red**, exactly
+  as this journal's mutation table claims.
+- Lock ordering: group-before-global held under a saturated gate (no deadlock across all
+  concurrency probes, including two simultaneous 6-exercise fan-outs plus a third
+  teacher's plan).
+- The default cap stayed 3 in every boot; `/health`'s `claude` object did not grow
+  (promoted `health-store` suite green against the job checkout, 224/224).
+
+**Two survivors/edges, recorded as debt-notes rather than defects:**
+1. **The group-map leak is unpinned**: mutating `acquireGroup` to never delete its entry
+   survives 105/105. Cost is one small map entry per exam ever generated plus a
+   `/health fanout.groups` figure that only ever grows — an operator-lying-number, the
+   class this product cares about. One clause on `groups` returning to 0 would pin it.
+2. **The invariant is per-EXAM, not per-teacher.** Verified by execution: one teacher
+   starting TWO exams holds `active: 3` — the whole default gate (2 groups × budget 2,
+   demand 4 > cap 3). The global FIFO still admitted a second teacher's plan after
+   ~one fill-length (measured 1.36 s at 1.5 s fills; 45–120 s at real fills), so this is
+   delay, not starvation — but "may one teacher have all of it" is answered *no* only
+   per exam. Fine at the two-teacher milestone; worth remembering when the cap is raised.
+
+---
+
+## Review follow-up (2026-08-09)
+
+**Mutation survivor closed: the group-map leak.** `acquireGroup` deletes its map entry when
+the last run of an exam releases, and nothing asserted it — so the delete could have been
+removed silently, turning `/health`'s `fanout.groups` from a live gauge into a lifetime
+total and leaking one `Map` entry per exam ever generated. The clause reads `groups` before
+a fan-out (0), runs one, waits for it to settle, and reads it again (0).
+
+Kept deliberately narrow: it asserts the gauge **returns** to zero rather than pinning any
+value during the run, so it cannot become a disguised timing oracle.

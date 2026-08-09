@@ -92,3 +92,80 @@ already spent (3 total).
 - oracle green ×2 — 105/105, twice
 - the 409 path exercised, and the guard's release proved
 - journal sealed
+
+## review
+
+**Verdict: approve-with-debt** — the route's own oracle surface held completely; the one
+real hit is a seam this sub-issue shares with be-2's fan-out. (Cross-model REVIEW, 2026-08-09.)
+
+**Held under attack (live probes on a replay boot):**
+- Byte-identical 404s for other-teacher / ghost-subject / unknown-exercise (compared with
+  correlation ids stripped — identical to the byte). No header → 401. Existence not probeable.
+- The whole be-4 journey (`trunc-ex1-first2`: fan-out fails ex1 twice → teacher
+  regenerates → ready in attempt 3) was ALSO walked end-to-end through the real browser
+  UI — see fe-2's review. The engine composes.
+- Mutation "onGiveUp always mark" and "drop the in-flight guard" both red (per journal);
+  the guard's release was implicitly re-proved by back-to-back regenerates in probes.
+
+**The hit — regenerating a slot that is still PENDING mid-fan-out is accepted (200):**
+the in-flight guard only tracks *regenerates*, not the fan-out's own fills, and
+`statusOf(exercise) === "pending"` maps to `onGiveUp: "mark"`, so the route happily
+spawns a second writer for a slot the fan-out is actively writing. Verified by execution:
+fan-out at 2.5 s delay, immediate regenerate of ex1 → both spawns ran (fake counted 2
+attempts), both landed, and **one `exercise_revisions` row exists for content the teacher
+never saw** — the loser's ready version was archived as "superseded teacher-visible
+work" (contract §5.4's spirit broken), and the final content is whichever writer landed
+last. fe never offers this (retry renders only for settled `failed`), so it is API-only
+today, but the contract explicitly blesses regenerating "pending-and-abandoned", and
+"abandoned" is indistinguishable from "in flight" server-side.
+
+**Suggested patch (not applied):** register the fan-out's own fills in the same
+`regenerating` set (add the `${subjectId}:${exerciseId}` key in `generateSlot` when
+invoked from `fanOut`, release in a finally). A live pending slot then answers the
+existing 409; an orphaned one (process restarted, set empty) stays regenerable — which
+is exactly the contract's "pending-and-abandoned" without the race.
+
+**Minor asymmetry, recorded:** a failed→failed regenerate answers **200** with the slot
+unchanged, while ready→failed answers 502 on the argument "a 200 there is the product
+pretending it did the work". The teacher who pressed retry on a failed slot and got
+nothing also asked for something that did not happen; the visible still-failed state
+softens it, but the two rationales disagree. Worth one line in a future contract rev.
+
+---
+
+## Review follow-up (2026-08-09)
+
+**Finding 1 — the guard covered only one of two writers.** `regenerating` lived in the
+route and guarded regenerates against each other; the **fan-out** wrote the same slots and
+was not in it. So a regenerate against a slot the fan-out was still filling was accepted:
+two spawns for one exercise, two writers racing the CAS, a phantom `exercise_revisions`
+row archiving a placeholder-shaped pre-image no teacher ever saw, and non-deterministic
+final content. That `fe` hides the control while a slot is pending made it unreachable
+from the UI — a coincidence of today's rendering, not an invariant of this service.
+
+Fixed by moving the registry into `exams.ts` as `writing`, and claiming **inside
+`generateSlot`** — the one place either writer passes through. `generateSlot` is now a
+claim wrapper around `attemptSlot`; a slot already held returns `status: "busy"`, which
+the route maps to the existing `409 conflict`. Four clauses: the 409 against a filling
+slot, **no phantom revision row and exactly one spawn per exercise** (`rev === 3`, not 4),
+and the slot regenerating normally once the fan-out has released it.
+
+**Finding 2 — "pending-and-abandoned" is now genuinely reachable.** A `be` restart
+mid-fan-out leaves an exam saying «جارٍ كتابة هذا التمرين…» with nothing in flight. be-2
+recorded "be-4 is the recovery", which only became true once the guard could tell "someone
+is writing this" from "nobody is" — which is finding 1, and why it had to land first. An
+orphaned `pending` slot now regenerates to `ready`, keeps its points, and writes no
+revision. No `be` change was needed beyond finding 1; the clause is the deliverable.
+
+### What `fe` needs (not changed here, per instruction)
+
+`fe` hides the regenerate control while a slot is `pending`, which is what makes the
+recovery unreachable. The cheapest correct change needs **no new `be` field and no timer**:
+
+- **Show the regenerate affordance for `pending` slots too**, not only `failed`.
+- **Treat `409 conflict` as the "still being written" answer** — it now means exactly
+  that, and its Arabic message already says so («جارٍ تعديل هذا التمرين، أعد المحاولة»).
+
+So the teacher can always ask; a live fan-out politely refuses, and an abandoned slot
+repairs. `be` needs nothing further — deliberately, since "has this slot got a live
+writer" is process-local and would be a lie in any field a restart could outlive.

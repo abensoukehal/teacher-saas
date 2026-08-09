@@ -172,6 +172,35 @@ describe("be-5 — the budget binds one exam", () => {
   });
 });
 
+describe("be-5 — the group map does not leak (mutation survivor)", () => {
+  test("groups returns to zero once a fan-out has finished", async () => {
+    // `fanoutLoad().groups` is what an operator watches to see whether the gate is doing
+    // anything. Deleting the map entry on the last release survived mutation testing —
+    // nothing asserted it — so the counter could have grown monotonically forever, turning
+    // a live gauge into a lifetime total and leaking one Map entry per exam ever generated.
+    const before = await call("GET", "/health");
+    expect(before.body.fanout.groups).toBe(0);
+
+    const teacher = await mint(call);
+    const { body } = await call("POST", "/api/exams", {
+      body: { ...CONTROLS, exerciseCount: 3 },
+      teacher,
+    });
+    CREATED.push(new ObjectId(body.subjectId));
+
+    const until = Date.now() + 60_000;
+    for (;;) {
+      const got = await call("GET", `/api/subjects/${body.subjectId}`, { teacher });
+      if (got.body.subject.exercises.every((e) => e.status !== "pending")) break;
+      if (Date.now() > until) throw new Error("fan-out never settled");
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    const after = await call("GET", "/health");
+    expect(after.body.fanout.groups).toBe(0);
+  });
+});
+
 describe("be-5 — a second teacher is not starved by the first one's exam", () => {
   test("their request makes progress while a 6-exercise fan-out is in flight", async () => {
     // THE ACTUAL REASON THIS EXISTS. Before the budget, a 3-exercise fan-out filled the

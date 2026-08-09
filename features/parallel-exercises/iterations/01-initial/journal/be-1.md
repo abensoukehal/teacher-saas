@@ -71,3 +71,24 @@ everything but the two skill directories, so it is flagged rather than edited.
 - oracle green ×2 — 55/55 across both suites, twice
 - `/api/skills` diffed against its recording — five skills, sorted, descriptions intact
 - journal sealed
+
+## review
+
+**Verdict: approve.** (Cross-model REVIEW gate, 2026-08-09.)
+
+Blind prediction matched the diff: zero-TypeScript promotion via the directory-read
+catalogue, and the oracle pinning the skill *text* as contract. No divergence to litigate.
+
+**Attack log.**
+- Ran the full be gate ×3 across the review (105/105 every clean run) and `/api/skills`
+  against a replay-boot instance — five skills, sorted, descriptions intact.
+- Validation rejects held under the oracle's adversarial names; nothing new found beyond
+  its list (the name interpolation is guarded before spawn, verified in `runner.ts` path).
+- The skill-text property pins (JSON ONLY, echo promise, points-sum promise, Arabic only)
+  are the right defence for a contract that lives in prose; no gate but this one would
+  notice a rewrite. Held.
+- `agent/CLAUDE.md` staleness flagged here was fixed by commit `7c2a3b0` before review.
+
+Nothing broke. Nothing expected to break here — the slice is a registration plus pins,
+and the pins killed every mutation aimed at their subject matter elsewhere (see be-2/be-3
+review sections for the shared-suite kill counts).

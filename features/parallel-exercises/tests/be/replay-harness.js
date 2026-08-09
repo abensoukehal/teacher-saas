@@ -71,7 +71,7 @@ async function startReplayServer(opts = {}) {
       ...(opts.fanoutBudget === undefined
         ? {}
         : { CLAUDE_FANOUT_BUDGET: String(opts.fanoutBudget) }),
-      CLAUDE_TIMEOUT_MS: "30000",
+      CLAUDE_TIMEOUT_MS: String(opts.timeoutMs ?? 30_000),
       FAKE_CLAUDE_FIXTURES: path.join(__dirname, "fixtures"),
       FAKE_CLAUDE_MODE: opts.mode ?? "valid",
       FAKE_CLAUDE_DELAY_MS: String(opts.delayMs ?? 250),

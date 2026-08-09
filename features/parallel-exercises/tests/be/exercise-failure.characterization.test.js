@@ -209,6 +209,70 @@ describe("be-3 — a retry that succeeds yields ready", () => {
   });
 });
 
+describe("be-3 — failures a retry cannot fix are NOT retried (mutation survivor)", () => {
+  /**
+   * `worthRetrying → always true` survived the first round of mutation testing: nothing
+   * asserted that `auth` and `timeout` are excluded, so the exclusion could have been
+   * deleted silently.
+   *
+   * What that would cost. An expired CLI login fails every exercise of every exam, and
+   * retrying each one doubles the wasted loops for an outcome only a human `/login` can
+   * change. A timeout is worse: `CLAUDE_TIMEOUT_MS` defaults to **300 s**, so a retried
+   * timeout means a **10-minute** worst case for one slot, holding a concurrency slot the
+   * whole way.
+   */
+  test("an expired login marks the slot failed after ONE attempt", async () => {
+    const ctx = await runExam("auth-ex1");
+    try {
+      const byId = new Map(ctx.response.body.subject.exercises.map((e) => [e.id, e]));
+      expect(byId.get("ex1").status).toBe("failed");
+      expect(byId.get("ex1").statement).toBe("");
+      // THE CLAUSE: one spawn, not two.
+      expect(ctx.server.attempts("ex1")).toBe(1);
+      // And it still costs that exercise only.
+      expect(byId.get("ex2").status).toBe("ready");
+      expect(byId.get("ex3").status).toBe("ready");
+      expect(ctx.response.body.subject.exercises.reduce((n, e) => n + e.points, 0)).toBe(
+        TOTAL_POINTS,
+      );
+    } finally {
+      await ctx.server.stop();
+    }
+  });
+
+  test("a timeout marks the slot failed after ONE attempt", async () => {
+    // A 1.2 s timeout against a slot that hangs, so the real SIGKILL path runs without
+    // waiting the production 300 s.
+    const server = await startReplayServer({ mode: "timeout-ex1", delayMs: 120, timeoutMs: 1200 });
+    const call = client(server.url);
+    try {
+      const { body: minted } = await call("POST", "/api/teacher");
+      TEACHERS.push(minted.teacherId);
+      const created = await call("POST", "/api/exams", { body: CONTROLS, teacher: minted.teacherId });
+      CREATED.push(new ObjectId(created.body.subjectId));
+
+      const until = Date.now() + 45_000;
+      let last;
+      for (;;) {
+        last = await call("GET", `/api/subjects/${created.body.subjectId}`, {
+          teacher: minted.teacherId,
+        });
+        if (last.body.subject.exercises.every((e) => e.status !== "pending")) break;
+        if (Date.now() > until) throw new Error("fan-out never settled");
+        await new Promise((r) => setTimeout(r, 150));
+      }
+
+      const byId = new Map(last.body.subject.exercises.map((e) => [e.id, e]));
+      expect(byId.get("ex1").status).toBe("failed");
+      expect(server.attempts("ex1")).toBe(1);
+      expect(byId.get("ex2").status).toBe("ready");
+      expect(byId.get("ex3").status).toBe("ready");
+    } finally {
+      await server.stop();
+    }
+  });
+});
+
 describe("be-3 — a FENCED but complete result is recovered, not retried", () => {
   /**
    * The second capture SEED §9.2 lists as a truncation is not one.

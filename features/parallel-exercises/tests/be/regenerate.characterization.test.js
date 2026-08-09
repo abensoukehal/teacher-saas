@@ -340,6 +340,109 @@ describe("be-4 — two concurrent regenerates of the same exercise", () => {
   });
 });
 
+describe("be-4 — ONE writer per slot, fan-out included (review finding 1)", () => {
+  /**
+   * The regenerate guard used to live in the route and cover only regenerates. The fan-out
+   * writes the same slots and was not in it, so a regenerate against a slot the fan-out was
+   * still filling was accepted: two spawns for one exercise, two writers racing the CAS, a
+   * phantom `exercise_revisions` row archiving a placeholder-shaped pre-image no teacher
+   * ever saw, and non-deterministic final content.
+   *
+   * That `fe` hides the control while a slot is pending made it unreachable from the UI —
+   * a coincidence of today's rendering, not an invariant of this service.
+   */
+  let ctx;
+  let owner;
+  let subjectId;
+
+  beforeAll(async () => {
+    // Slow enough that the fan-out is demonstrably mid-flight when the regenerate arrives.
+    ctx = await startReplayServer({ delayMs: 1500 });
+    const c = client(ctx.url);
+    const { body: minted } = await c("POST", "/api/teacher");
+    owner = minted.teacherId;
+    TEACHERS.push(owner);
+    const created = await c("POST", "/api/exams", { body: CONTROLS, teacher: owner });
+    subjectId = created.body.subjectId;
+    CREATED.push(new ObjectId(subjectId));
+    ctx.call = c;
+  });
+
+  afterAll(async () => {
+    if (ctx) await ctx.stop();
+  });
+
+  test("a regenerate against a slot the fan-out is filling is refused 409", async () => {
+    const pending = await ctx.call("GET", `/api/subjects/${subjectId}`, { teacher: owner });
+    expect(pending.body.subject.exercises.every((e) => e.status === "pending")).toBe(true);
+
+    const res = await ctx.call("POST", `/api/subjects/${subjectId}/exercises/ex1/regenerate`, {
+      teacher: owner,
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error.type).toBe("conflict");
+  });
+
+  test("no phantom revision row, and exactly one spawn per exercise", async () => {
+    // Wait for the fan-out to finish, then check what the double writer would have left.
+    const until = Date.now() + 45_000;
+    for (;;) {
+      const got = await ctx.call("GET", `/api/subjects/${subjectId}`, { teacher: owner });
+      if (got.body.subject.exercises.every((e) => e.status !== "pending")) break;
+      if (Date.now() > until) throw new Error("fan-out never settled");
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    // The phantom row is the tell: a second writer archives the placeholder the first one
+    // just wrote, putting an exercise no teacher ever saw into history.
+    expect(await revisionsOf(subjectId, "ex1")).toBe(0);
+    // And the refused regenerate never spawned — the guard is checked before the CLI.
+    expect(ctx.attempts("ex1")).toBe(1);
+
+    const doc = await db.collection("subjects").findOne({ _id: new ObjectId(subjectId) });
+    expect(doc.rev).toBe(3); // one fill per slot, not four
+    expect(doc.subject.exercises.map((e) => e.status)).toEqual(["ready", "ready", "ready"]);
+  });
+
+  test("once the fan-out has released it, the same slot regenerates normally", async () => {
+    // The claim must be scoped to the write, not to the exam's lifetime.
+    const res = await ctx.call("POST", `/api/subjects/${subjectId}/exercises/ex1/regenerate`, {
+      teacher: owner,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.subject.exercises[0].status).toBe("ready");
+    expect(await revisionsOf(subjectId, "ex1")).toBe(1); // NOW it is a real supersession
+  });
+});
+
+describe("be-4 — a pending slot with NO live writer is regenerable (review finding 2)", () => {
+  /**
+   * The "pending-and-abandoned" recovery contract §2 promises. A `be` restart mid-fan-out
+   * leaves the exam saying «جارٍ كتابة هذا التمرين…» forever with nothing in flight, and
+   * be-2 recorded "be-4 is the recovery" — which only becomes true once the guard can tell
+   * "someone is writing this" from "nobody is". Finding 1 is what makes that distinction
+   * exist, which is why it had to land first.
+   */
+  test("an orphaned pending slot repairs, and writes no revision", async () => {
+    // Planted exactly as a restart leaves it: pending, empty statement, no writer.
+    const id = await plant(teacher, [
+      READY_EX1(),
+      { ...FAILED_EX2(), status: "pending" },
+      READY_EX3(),
+    ]);
+    const { status, body } = await call("POST", `/api/subjects/${id}/exercises/ex2/regenerate`, {
+      teacher,
+    });
+    expect(status).toBe(200);
+    const ex2 = body.subject.exercises[1];
+    expect(ex2.status).toBe("ready");
+    expect(ex2.statement.trim().length).toBeGreaterThan(0);
+    expect(ex2.points).toBe(7);
+    expect(body.subject.exercises.reduce((n, e) => n + e.points, 0)).toBe(20);
+    // Still a placeholder that was replaced — no revision.
+    expect(await revisionsOf(id, "ex2")).toBe(0);
+  });
+});
+
 describe("be-4 — the whole journey: a hole in a fanned-out exam, then regenerated", () => {
   let journey;
   let journeyCall;
