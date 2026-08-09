@@ -1,7 +1,7 @@
 # Journal — fe-2 · reach the progressive path, and show a failed exercise honestly
 
 **Stack:** fe · **Branch:** `feature/parallel-exercises` · **Sealed:** 2026-08-09
-**Budget:** 8 cycles · **Used:** 5
+**Budget:** 8 cycles · **Used:** 6
 
 ---
 
@@ -193,7 +193,8 @@ clauses (41 total for the job with fe-1's suite).
 |---|---|
 | the amended scope | the button posts `/api/exams` and **not** `/api/generate`; the first ready exercise paints without waiting for the rest; it creates **no** subject; and the LIVE recording is the shape the code reads (201, every slot pending, Σ 20, and every slot ready once the fan-out settles) |
 | the frozen surface | a correction still posts `/api/generate` with exactly `{skill, input}` and never touches `/api/exams`; a correction is never asked for an exercise with no statement |
-| a failed exercise | an Arabic explanation and a retry control; the others stay rendered, refinable and summing to 20; a **pending** exercise gets no retry; retry hits `/regenerate` for that id only, over a relative URL, and issues **no PUT** (a failed exercise is not a refine — contract §5.4); a 404 is **not** offered as retryable |
+| a failed exercise | an Arabic explanation and a retry control; the others stay rendered, refinable and summing to 20; retry hits `/regenerate` for that id only, over a relative URL, and issues **no PUT** (a failed exercise is not a refine — contract §5.4); a 404 is **not** offered as retryable |
+| an unfinished exercise (REVIEW 2) | a **pending** slot offers the repair too, with copy that claims nothing is broken; asking calls `/regenerate` for that slot; `409` renders as an Arabic `role="status"` reassurance and **not** an alert, leaving the slot pending and the other exercises untouched; the reassurance clears once that slot is no longer pending |
 | print | the failed slot prints an honest note, never an empty box, and the retry control does not print; a complete exam prints byte-identically with the new prop attached |
 | hard constraints | no English, no error code, no `exerciseId`, no LaTeX in the failure copy or the retry label; the new generate wait is Arabic; `statusOf` still reads absent as ready |
 
@@ -275,6 +276,108 @@ verified separately: the progressive path was driven live through the real UI (b
 and the regenerate wire shape is now a live recording. What has not been observed is a
 teacher seeing a genuinely failed slot and pressing the button on it, because producing
 one on demand is not currently possible.
+
+## Cycle 6 — REVIEW finding 2: the two halves that never composed
+
+**The finding.** The regenerate control was offered for `failed` only. That left
+contract §2's "pending-and-abandoned" recovery unreachable: if `be` restarts
+mid-fan-out nothing is writing the slot and nothing ever will, and the exam sat on
+«جارٍ كتابة هذا التمرين…» with no affordance. `be` recorded "be-4 is the recovery" and
+`fe` recorded "asking again while it is being written wastes an agent loop". Both
+sentences were locally reasonable; together they left a promise with no path to it.
+
+My clause was the wrong half. It read *"asking again while it is still being written
+spends a second agent loop for nothing"* — true of a slot that HAS a live writer, and
+`be` now refuses that case itself with `409` before spawning anything. What it missed
+is the case where there is no writer at all.
+
+**The fix, and the design point.** There is deliberately **no new field and no timer**.
+Whether a slot has a live writer is process-local knowledge; any flag persisted for it
+would survive the restart and become a lie — the exact failure being repaired. So the
+teacher may always ask, and both answers are correct: a live fan-out refuses with 409,
+an abandoned slot repairs.
+
+- `ExamView` offers the control for `pending` as well as `failed`, with different copy:
+  «لم يظهر بعد؟ اطلبه من جديد» — it does not claim anything is broken, because nothing
+  may be. Hidden only while *our own* request is in flight, and never printed.
+- `409 conflict` stopped being an error. `App.onRegenerate` catches it, keeps the error
+  banner away, and shows an Arabic reassurance **in the slot itself**
+  («التمرين قيد الكتابة فعلاً. سيظهر بعد قليل دون أي تدخّل.») as a `role="status"`
+  polite region. Rendering a red alert for "it is working" would be the app inventing a
+  problem. It clears itself the moment that exercise stops being pending — it answered a
+  question about one slot, and leaving it up would tell a teacher that an exercise they
+  can already read is still being written.
+
+**The oracle clause was REVERSED, not deleted** — with the reasoning above written into
+it, so the next person sees why the original was wrong rather than just that it changed.
+Three clauses added alongside: asking about a pending slot calls `/regenerate` for that
+slot; 409 renders as reassurance and not an alert (Arabic, no internals, no LaTeX, still
+pending, other exercises untouched); and the reassurance clears when the slot lands.
+45 clauses now.
+
+### Walked live on lane 6 — the composition, not the halves
+
+Produced a **genuinely** stranded exam rather than simulating one: started a real
+`POST /api/exams`, then restarted `be` mid-fan-out. Sixty seconds later both slots were
+still `pending` with `0` chars and nothing writing them.
+
+1. Opened it in the browser — **both stranded slots offered «لم يظهر بعد؟ اطلبه من جديد»**.
+   Before this fix there was nothing to press.
+2. Pressed ex1's → «جارٍ إعادة توليد التمرين…» → **ready, 19 KaTeX islands, no alert**.
+3. Started a competing regeneration of ex2 from another client, then pressed ex2's in
+   the UI → **409** on the wire → the Arabic reassurance appeared with `role="status"`,
+   **no error banner**, the slot still read pending, ex1 untouched.
+4. When ex2 landed: **the note cleared itself**, both retry controls gone, zero
+   placeholders, both exercises ready, score still 20/20.
+5. **The poll stopped** — 78 reads, unchanged across ~11 further intervals.
+
+### Mutation-testing the fix, and one clause that was not doing its job
+
+Three mutations against the new behaviour. The third is the interesting one.
+
+| mutation | result |
+|---|---|
+| retry hidden for `pending` again (the pre-fix behaviour) | **4 red** |
+| `409` falls back to the error banner | **2 red** |
+| the reassurance is never cleared | **SURVIVED** → fixed, now 1 red |
+
+**The survivor was my clause's fault, not the code's.** "The reassurance clears once
+that slot is no longer pending" drove the slot from `pending` → `ready` — and a ready
+exercise renders its statement, so the whole placeholder disappears and takes the note
+with it. The clause passed for a *structural* reason and would have passed with the
+clearing logic deleted.
+
+`pending` → **`failed`** is the case that discriminates: the placeholder is still
+rendered, so an uncleared note would sit on screen saying «قيد الكتابة فعلاً» directly
+above «تعذّرت كتابة هذا التمرين» — the same slot described as both being written and
+given up on. Added as its own clause; the mutation is now red. 46 clauses.
+
+Worth noting because REVIEW's own attack log lists *"retry control also offered for
+`pending` → 1 red"* as a killed mutation. That mutation is now the shipped behaviour —
+which is exactly the finding — and the reversed clause is what pins it.
+
+## Found while verifying — not mine, not worked around
+
+**KaTeX's font files 403 in the job lane.** Nine of them, dev only:
+
+```
+GET /@fs/…/project/stacks/teacher-fe/node_modules/katex/dist/fonts/KaTeX_Main-Regular.woff2
+    → 403 Forbidden
+```
+
+Cause: the job worktree's `node_modules` is a **symlink** to the main checkout
+(`project/stacks/teacher-fe/node_modules`), so the real path lies outside the worktree
+root and Vite's default `server.fs.allow` refuses to serve it. `vite.config.ts` sets no
+`fs.allow`.
+
+Scope: **dev lanes only, and cosmetic.** The maths still renders — the `.katex` markup
+is all there — but with fallback glyphs rather than the KaTeX fonts. `npm run build`
+emits 59 KaTeX font assets, so a production build is unaffected, and the main checkout
+(where `node_modules` is real) is unaffected too.
+
+Pre-existing, unrelated to this job, and reported rather than patched: adding an
+`fs.allow` entry to `vite.config.ts` would be a real change to a file the job did not
+otherwise touch, and it is a harness/worktree concern rather than a product one.
 
 ## Files
 

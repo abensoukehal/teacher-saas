@@ -311,15 +311,168 @@ describe("a failed exercise says so and can be asked for again", () => {
     expect(visibleText(container)).toContain("العلامة: 20/20");
   });
 
-  test("a PENDING exercise gets no retry control — it has not failed yet", () => {
-    // Asking again while it is still being written spends a second agent loop on the
-    // same slot for nothing.
+  /**
+   * REVERSED by REVIEW finding 2, 2026-08-09. This asserted the opposite, and the
+   * reasoning behind it was wrong in a way worth recording.
+   *
+   * It read: "asking again while it is still being written spends a second agent loop
+   * for nothing." True of a slot that HAS a live writer — and `be` now refuses that
+   * case itself with `409 conflict`, before spawning anything. What the old clause
+   * missed is the other case: if `be` restarts mid-fan-out, nothing is writing the slot
+   * and nothing ever will. Hiding the control there left contract §2's
+   * "pending-and-abandoned" recovery unreachable — `be` promised the repair, `fe` hid
+   * the way to it, and the exam sat on «جارٍ كتابة هذا التمرين…» forever.
+   *
+   * `fe` cannot tell the two apart, and must not try: "does this slot have a live
+   * writer" is process-local, so any field persisted for it would outlive a restart and
+   * become a lie. Asking is therefore always allowed, and `be` gives the true answer.
+   */
+  test("a PENDING exercise CAN be asked for again — the abandoned-slot repair", () => {
     const { container } = render(
       <ExamView exam={partial({ ex2: "ready" })} onRegenerate={() => {}} />,
     );
-    expect(container.querySelectorAll(".ex__retry")).toHaveLength(0);
-    expect(container.querySelectorAll('[data-status="pending"]')).toHaveLength(2);
+    const pendingSlots = container.querySelectorAll('[data-status="pending"]');
+    expect(pendingSlots).toHaveLength(2);
+    // Every pending slot offers the way out. Without this the exam is stranded.
+    for (const slot of pendingSlots) {
+      const retry = slot.querySelector(".ex__retry") as HTMLButtonElement;
+      expect(retry).toBeTruthy();
+      expect(retry.disabled).toBe(false);
+      // …and the copy does not claim anything is broken, because nothing may be.
+      expect(retry.textContent).toBe("لم يظهر بعد؟ اطلبه من جديد");
+      expect(visibleText(slot)).not.toContain("تعذّرت");
+    }
+    // A ready exercise still has none — there is nothing to repair.
+    expect(
+      container.querySelector('[data-exercise-id="ex2"]')!.querySelector(".ex__retry"),
+    ).toBeNull();
   });
+
+  test("asking about a pending slot calls /regenerate for THAT slot", async () => {
+    const h = harness({ reads: [record(SID, partial({ ex2: "ready" }))] });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => expect(document.querySelector(".ex__retry")).toBeTruthy());
+
+    // ex1 and ex3 are pending; press the first one's control.
+    const slot = document.querySelector('[data-exercise-id="ex1"]')!;
+    await act(async () => {
+      (slot.querySelector(".ex__retry") as HTMLButtonElement).click();
+    });
+
+    await waitFor(() => expect(h.regenerates()).toHaveLength(1));
+    expect(h.regenerates()[0]!.url).toBe(`/api/subjects/${SID}/exercises/ex1/regenerate`);
+  }, 20_000);
+
+  test("409 means STILL BEING WRITTEN — reassurance, not an error", async () => {
+    // The other half of the design: no field and no timer, so a live fan-out answers
+    // 409 and the teacher is told the truth rather than shown a failure.
+    const h = harness({
+      reads: [record(SID, partial({ ex2: "ready" }))],
+      regen: [409, { error: { message: "جارٍ تعديل هذا التمرين، أعد المحاولة", type: "conflict" } }],
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => expect(document.querySelector(".ex__retry")).toBeTruthy());
+    const slot = () => document.querySelector('[data-exercise-id="ex1"]')!;
+    await act(async () => {
+      (slot().querySelector(".ex__retry") as HTMLButtonElement).click();
+    });
+    await waitFor(() => expect(h.regenerates()).toHaveLength(1));
+
+    // NOT the error banner: nothing went wrong, and saying so would invent a problem.
+    await waitFor(() => expect(slot().querySelector(".ex__placeholder-note")).toBeTruthy());
+    expect(document.querySelector(".alert")).toBeNull();
+
+    const note = slot().querySelector(".ex__placeholder-note")!;
+    expect(visibleText(note)).toContain("قيد الكتابة فعلاً");
+    // A polite live region, not a blocking dialog.
+    expect(note.getAttribute("role")).toBe("status");
+    expect(note.getAttribute("aria-live")).toBe("polite");
+    // Arabic, no internals, no LaTeX — the constraints hold on the new string too.
+    expectNoLatinWords(uiText(note));
+    expectNoLatex(visibleText(note));
+    expect(note.textContent ?? "").not.toMatch(/ex\d|409|conflict/i);
+    // The slot is still pending and still says so — the notice adds, never replaces.
+    expect(visibleText(slot())).toContain("جارٍ كتابة هذا التمرين");
+    // The exercise that worked is untouched.
+    expect(document.querySelectorAll("section.ex .statement")).toHaveLength(1);
+  }, 20_000);
+
+  test("the reassurance is GONE once that slot settles as failed — not just hidden", async () => {
+    /**
+     * The version of this that actually tests the clearing.
+     *
+     * The obvious scenario — the slot becomes `ready` — passes even if the state is
+     * never cleared, because a ready exercise renders its statement and the whole
+     * placeholder disappears with the note inside it. That is structure, not logic: a
+     * mutation removing the clear survived it (caught by mutation-testing this suite
+     * after REVIEW, 2026-08-09).
+     *
+     * pending → **failed** is the case that discriminates. The placeholder is still
+     * rendered, so a note that was never cleared would still be on screen — saying
+     * «قيد الكتابة فعلاً» directly above «تعذّرت كتابة هذا التمرين». The teacher would
+     * be told the same slot is both being written and given up on.
+     */
+    const h = harness({
+      reads: [
+        record(SID, partial({ ex2: "ready" })),
+        record(SID, partial({ ex1: "failed", ex2: "ready", ex3: "ready" })),
+      ],
+      regen: [409, { error: { message: "جارٍ تعديل هذا التمرين، أعد المحاولة", type: "conflict" } }],
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => expect(document.querySelector(".ex__retry")).toBeTruthy());
+    const slot = () => document.querySelector('[data-exercise-id="ex1"]')!;
+    await act(async () => {
+      (slot().querySelector(".ex__retry") as HTMLButtonElement).click();
+    });
+    await waitFor(() => expect(h.regenerates()).toHaveLength(1));
+    await waitFor(() => expect(slot().querySelector(".ex__placeholder-note")).toBeTruthy());
+
+    // The poll settles ex1 as FAILED. The placeholder stays; the note must not.
+    await waitFor(() => expect(slot().getAttribute("data-status")).toBe("failed"), {
+      timeout: 15_000,
+    });
+    expect(slot().querySelector(".ex__placeholder")).toBeTruthy();
+    expect(slot().querySelector(".ex__placeholder-note")).toBeNull();
+    expect(visibleText(slot())).toContain("تعذّرت كتابة هذا التمرين");
+    expect(visibleText(slot())).not.toContain("قيد الكتابة فعلاً");
+  }, 30_000);
+
+  test("the reassurance clears once that slot is no longer pending", async () => {
+    // It answered a question about ONE slot. Leaving it up would tell a teacher an
+    // exercise they can already read is still being written.
+    const h = harness({
+      reads: [
+        record(SID, partial({ ex2: "ready" })),
+        record(SID, partial({ ex1: "ready", ex2: "ready", ex3: "ready" })),
+      ],
+      regen: [409, { error: { message: "جارٍ تعديل هذا التمرين، أعد المحاولة", type: "conflict" } }],
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => expect(document.querySelector(".ex__retry")).toBeTruthy());
+    await act(async () => {
+      (document
+        .querySelector('[data-exercise-id="ex1"]')!
+        .querySelector(".ex__retry") as HTMLButtonElement).click();
+    });
+    await waitFor(() => expect(h.regenerates()).toHaveLength(1));
+    await waitFor(() => expect(document.querySelector(".ex__placeholder-note")).toBeTruthy());
+
+    // The poll delivers the finished exam; the notice goes with the pending state.
+    await waitFor(() => expect(document.querySelectorAll("section.ex .statement")).toHaveLength(3), {
+      timeout: 15_000,
+    });
+    expect(document.querySelector(".ex__placeholder-note")).toBeNull();
+    expect(document.querySelectorAll(".ex__retry")).toHaveLength(0);
+  }, 30_000);
 
   test("retry calls /regenerate for THAT exerciseId only", async () => {
     const h = harness({
