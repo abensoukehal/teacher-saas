@@ -23,6 +23,7 @@ import ExamView from "@/components/ExamView";
 import { statusOf } from "@/lib/exam";
 import {
   LIVE_FINAL,
+  LIVE_REGEN,
   LIVE_START,
   MONOLITH,
   PLAN,
@@ -347,6 +348,30 @@ describe("a failed exercise says so and can be asked for again", () => {
     await waitFor(() => expect(document.querySelectorAll("section.ex .statement")).toHaveLength(3));
     expect(document.querySelectorAll(".ex__retry")).toHaveLength(0);
   }, 20_000);
+
+  test("the LIVE regenerate is the shape this code reads — a whole SubjectRecord", () => {
+    // Recorded against `be` on lane 6 AFTER be-4 mounted the route. `fe` does
+    // `setExam(rec.subject)` off this, so the response being the entire updated subject
+    // rather than the one exercise is what makes the retry a single assignment.
+    expect(LIVE_REGEN.http).toBe(200);
+    const body = LIVE_REGEN.body as any;
+    expect(Object.keys(body)).toEqual(expect.arrayContaining(["id", "subject", "createdAt", "updatedAt"]));
+
+    const before = (LIVE_REGEN.before as any).subject.exercises;
+    const after = body.subject.exercises;
+    // ONE slot moved, and only one — the exercises that worked were not disturbed.
+    expect(after[0].statement).not.toBe(before[0].statement);
+    expect(after[1].statement).toBe(before[1].statement);
+    // The assignment survived the fill: contract §5.2, verified on real output.
+    for (let i = 0; i < after.length; i++) {
+      expect([after[i].id, after[i].label, after[i].points]).toEqual([
+        before[i].id,
+        before[i].label,
+        before[i].points,
+      ]);
+    }
+    expect(after.reduce((n: number, e: any) => n + e.points, 0)).toBe(20);
+  });
 
   test("a 404 from regenerate is NOT offered as retryable", async () => {
     // `be`'s catch-all answers `type: "not_found"`, which was missing from fe's error

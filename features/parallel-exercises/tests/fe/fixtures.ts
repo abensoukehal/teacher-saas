@@ -121,10 +121,16 @@ export function partial(state: Record<string, "ready" | "failed">): ExamSubject 
 const LIVE = read("rec-live-exams.2026-08-09.json") as {
   start: { http: number; durationMs: number; body: Record<string, unknown> };
   final: { http: number; body: Record<string, unknown> };
+  regen: { http: number; body: Record<string, unknown>; before: Record<string, unknown> };
 };
 
 export const LIVE_START = LIVE.start;
 export const LIVE_FINAL = LIVE.final;
+/**
+ * A LIVE regenerate, recorded once `be-4` mounted the route — it did not exist when
+ * this suite was first written, and the clauses below ran off the contract until it did.
+ */
+export const LIVE_REGEN = LIVE.regen;
 
 /** A `SubjectRecord` envelope around any subject — what `GET /api/subjects/:id` sends. */
 export const record = (id: string, subject: ExamSubject) => ({

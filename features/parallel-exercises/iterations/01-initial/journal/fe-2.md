@@ -1,7 +1,7 @@
 # Journal — fe-2 · reach the progressive path, and show a failed exercise honestly
 
 **Stack:** fe · **Branch:** `feature/parallel-exercises` · **Sealed:** 2026-08-09
-**Budget:** 8 cycles · **Used:** 4
+**Budget:** 8 cycles · **Used:** 5
 
 ---
 
@@ -44,9 +44,13 @@ POST …/exercises/exNOPE/regenerate  → 404 {"message":"not found","type":"not
 POST …/subjects/totally/made/up     → 404 {"message":"not found","type":"not_found"}
 ```
 
-`be`'s log confirms it: `be-1` and `be-2` have landed, `be-3` and `be-4` have not.
-`regenerateOne` exists as an exported engine function in `routes/exams.ts:415` with no
-router mounting it. See "Not verified" below.
+`be`'s log confirmed it: `be-1` and `be-2` had landed, `be-3` and `be-4` had not.
+`regenerateOne` existed as an exported engine function in `routes/exams.ts:415` with no
+router mounting it.
+
+> **Superseded during this sub-issue.** `be-3/be-4/be-5` landed before it sealed, so the
+> route was re-probed and the retry is now verified against the live service — see
+> "Cycle 5". The clauses ran off the contract only in between.
 
 **A real defect fell out of that probe.** `type: "not_found"` was missing from `fe`'s
 `KIND` map, so a 404 fell through to the default — `backend`, **retryable** — and the
@@ -223,30 +227,54 @@ clauses (41 total for the job with fe-1's suite).
 
 ---
 
+## Cycle 5 — the gap closed mid-flight
+
+`be-3/be-4/be-5` landed while this sub-issue was being sealed, so the one thing flagged
+as unverified was re-probed rather than left in the journal as a caveat.
+
+**`POST …/exercises/:id/regenerate` now exists** — `routes/subjects.ts:396`, calling
+`regenerateOne`. The 404 changed from the app catch-all (`not_found`) to a real
+`subject_not_found` with a correlation id, which is how the route announced itself.
+
+One real regeneration against the live lane:
+
+```
+POST …/subjects/6a7818d40c106c65630f3b90/exercises/ex1/regenerate   →  200
+keys: id · subject · createdAt · updatedAt · genCorrelationId · costUsd · durationMs · correlationId
+ex1: 872 → 747 chars, changed          ex2: 831 → 831, untouched
+id/label/points preserved on both      Σ points still 20
+```
+
+That is a `SubjectRecord`, which is exactly what `regenerateExercise` was typed to
+return and what `setExam(rec.subject)` consumes — **no change needed**. Recorded as
+`LIVE_REGEN` with a clause pinning it, so the retry path is no longer contract-driven.
+
+What `be` decided that `fe` did not know when this was written, all compatible:
+
+- **A `ready` exercise CAN be regenerated**, with `"keep"` semantics — if the run fails,
+  the exercise the teacher already had survives and the request errors rather than
+  quietly returning an unchanged 200. `fe` is stricter and offers the control only for
+  a settled failure, which is a subset, so nothing conflicts.
+- **A second concurrent regeneration of the same exercise is refused with `409
+  conflict`** before it spawns. `fe` maps `conflict` to retryable, and the Arabic
+  message `be` sends («جارٍ تعديل هذا التمرين، أعد المحاولة») says to retry — correct.
+- **An unknown `exerciseId` answers `subject_not_found`**, deliberately identical to a
+  subject that is not yours, so existence is not probeable. Already mapped
+  non-retryable in `fe`.
+
 ## Not verified, and why
 
-**The retry has never run against a live `be`.** `POST …/exercises/:id/regenerate` is
-not mounted — `be-3` (which marks an exercise `failed`) and `be-4` (which exposes the
-route) have not landed. So:
+**No `failed` exercise has ever been produced by the real system.** `be-3` marks one
+now, but ~10% of runs fail (SEED §10.1) and none of the handful run in this session
+did. Every failed-state fixture is therefore still synthesised per contract §1
+(`statement: ""`, `status: "failed"`). The shape is small and the contract is explicit,
+but the rendering has not met a real one — worth a look the first time it happens.
 
-- The `/regenerate` clauses run against the contract's stated shape, exactly as fe-1's
-  `/api/exams` clauses did before this session. The risk is the same and so is the
-  containment: if the real response differs, the fix is `regenerateExercise`'s return
-  type and the retry clauses, nothing else.
-- **No `failed` exercise has ever been produced by the real system**, because nothing
-  marks one yet. Every failed-state fixture is synthesised per contract §1
-  (`statement: ""`, `status: "failed"`). SEED §10.1 says ~10% of runs come back
-  malformed, so real ones will appear as soon as `be-3` lands — worth re-checking the
-  rendering against one then.
-- Whether `be` refuses to regenerate a **ready** exercise is unknown. Today it 404s,
-  but that is the catch-all, not a decision. `fe` only offers the control for a settled
-  failure, so it does not depend on the answer.
-
-Worth flagging to the coordinator: **SEED §5 exit criterion 2 — "the failed one is
-retryable on its own" — is not demonstrable end to end until be-4 lands.** The fe half
-is built and pinned; the loop cannot be closed from this side.
-
----
+**The failure→retry loop has not been walked end to end in a browser.** Both halves are
+verified separately: the progressive path was driven live through the real UI (below),
+and the regenerate wire shape is now a live recording. What has not been observed is a
+teacher seeing a genuinely failed slot and pressing the button on it, because producing
+one on demand is not currently possible.
 
 ## Files
 
@@ -262,7 +290,8 @@ is built and pinned; the loop cannot be closed from this side.
 
 - `features/parallel-exercises/tests/fe/exercise-failure.characterization.test.tsx`
 - `features/parallel-exercises/tests/fe/fixtures/rec-live-exams.2026-08-09.json`
-- `features/parallel-exercises/tests/fe/fixtures.ts` — `LIVE_START` / `LIVE_FINAL`
+- `features/parallel-exercises/tests/fe/fixtures.ts` — `LIVE_START` / `LIVE_FINAL` /
+  `LIVE_REGEN`
 - `tests/fe/persistence/app-persistence` · `tests/fe/persistence/save-state` ·
   `tests/fe/persistence-gaps/pending-save` · `tests/fe/persistence-gaps/cost-join` ·
   `tests/fe/persistence-gaps/auth` · `tests/fe/accounts-hardening/kpis-thread`
