@@ -28,10 +28,15 @@ interface Opts {
   save?: [number, unknown];
   /** Hold the generate reply open until the returned resolver is called. */
   slowGenerate?: boolean;
+  /** Successive answers to GET …/solutions while a batch runs. The last repeats. */
+  polled?: Array<Array<Record<string, unknown>>>;
+  /** Override POST …/solutions/generate — [status, payload]. */
+  start?: [number, unknown];
 }
 
 function harness(o: Opts = {}) {
   const calls: Call[] = [];
+  let polls = 0;
   let release: (() => void) | null = null;
   const gate = o.slowGenerate ? new Promise<void>((r) => (release = r)) : null;
 
@@ -60,7 +65,31 @@ function harness(o: Opts = {}) {
     if (url === `/api/subjects/${SID}`) {
       return res(200, { id: SID, createdAt: "t", updatedAt: "t", subject: EXAM, genCorrelationId: "g" });
     }
+    /**
+     * RE-BASELINED for parallel-exercises fe-3 (declared supersession, WF-65).
+     *
+     * The WHOLE-EXAM correction moved to `POST …/solutions/generate` (202), after
+     * which `be` writes each correction as it lands and `fe` polls `GET …/solutions`
+     * — QA bug A, which measured 230 s of `[]` and then three at once. So the
+     * whole-exam path no longer spends an `/api/generate` run from `fe` and no longer
+     * saves; `be` does both.
+     *
+     * `/api/generate` + `POST …/solutions` are UNCHANGED and still used, by
+     * per-exercise regeneration — the new surface corrects the whole exam and cannot
+     * express "just this one". The "stale — regenerating exactly one exercise" block
+     * below still drives them and is untouched.
+     */
+    if (url === `/api/subjects/${SID}/solutions/generate` && method === "POST") {
+      if (gate) await gate;
+      const [st, pl] = o.start ?? [
+        202,
+        { subjectId: SID, exerciseIds: ["ex1", "ex2", "ex3"], skipped: [], correlationId: "batch-1" },
+      ];
+      return res(st, pl);
+    }
     if (url === `/api/subjects/${SID}/solutions` && method === "GET") {
+      const seq = o.polled;
+      if (seq) return res(200, { solutions: seq[Math.min(polls++, seq.length - 1)], correlationId: "c" });
       return res(200, { solutions: o.existing ?? [], correlationId: "c" });
     }
     if (url === `/api/subjects/${SID}/solutions` && method === "POST") {
@@ -76,6 +105,8 @@ function harness(o: Opts = {}) {
     calls,
     of,
     generates: () => of("/api/generate"),
+    /** The whole-exam correction batch — THE new call. */
+    batches: () => of(`/api/subjects/${SID}/solutions/generate`),
     saves: () => of(`/api/subjects/${SID}/solutions`),
     release: () => release?.(),
   };
@@ -92,7 +123,9 @@ async function mountApp() {
   return r;
 }
 
-const generateBtn = () => screen.getByRole("button", { name: /توليد التصحيح/ });
+/** Matches the batch label too: fe-3 relabels it «جارٍ تحضير التصحيح…» while one runs. */
+const generateBtn = () =>
+  screen.getByRole("button", { name: /توليد التصحيح|تحضير التصحيح/ });
 
 /**
  * A real double-click: several presses with NO re-render in between.
@@ -143,56 +176,77 @@ describe("idle · empty", () => {
 });
 
 describe("generating — and the money clause", () => {
-  test("generate posts {skill:'solution-sheet'} then SAVES with the run's own id", async () => {
+  /**
+   * SUPERSEDED by fe-3 — `fe` no longer generates or saves the whole-exam correction.
+   *
+   * It asked for a run and stored the result, which is exactly why the teacher saw
+   * nothing for 230 s: nothing could be shown until the whole batch came back. `be`
+   * now owns both halves and writes each correction as it lands. The join-key
+   * invariant this clause also carried still holds on the per-exercise path and is
+   * pinned in "stale — regenerating exactly one exercise", which is unchanged.
+   */
+  test("generate starts a BATCH — and `fe` neither runs nor saves it", async () => {
     const h = harness();
     await mountApp();
     fireEvent.click(generateBtn());
 
-    await waitFor(() => expect(h.saves()).toHaveLength(1));
-    expect(h.generates()).toHaveLength(1);
-    expect(h.generates()[0].body.skill).toBe("solution-sheet");
-    expect(h.generates()[0].body.input).toEqual(EXAM);
-
-    const save = h.saves()[0];
-    expect(save.body.genCorrelationId).toBe(GEN_CID);
-    // NOT the storing request's own id, which would answer nothing.
-    expect(save.body.genCorrelationId).not.toBe(SAVE_CID);
-    expect(save.body.solutions.map((s: any) => s.exerciseId)).toEqual(["ex1", "ex2", "ex3"]);
+    await waitFor(() => expect(h.batches()).toHaveLength(1));
+    expect(h.batches()[0].headers["x-teacher-id"]).toBe(TID);
+    // No run spent here, and nothing stored from this browser.
+    expect(h.generates()).toHaveLength(0);
+    expect(h.saves()).toHaveLength(0);
   });
 
-  test("DOUBLE-CLICK issues exactly ONE /api/generate — this is $0.76 a press", async () => {
+  test("DOUBLE-CLICK issues exactly ONE batch — the money clause, on the new call", async () => {
+    // Unchanged in substance: a correction batch is ~200 s of real quota per press,
+    // and `disabled` repaints a tick too late to stop a burst off one gesture.
     const h = harness({ slowGenerate: true });
     await mountApp();
     // Three presses, no re-render between them — a real double-click.
     await burst(generateBtn());
 
     h.release();
-    await waitFor(() => expect(h.saves()).toHaveLength(1));
-    expect(h.generates()).toHaveLength(1);
+    await waitFor(() => expect(h.batches()).toHaveLength(1));
+    expect(h.generates()).toHaveLength(0);
   });
 
-  test("while it runs the control is disabled and the teacher is told it takes minutes", async () => {
-    const h = harness({ slowGenerate: true });
+  test("while the BATCH runs the control is disabled — not just while the request is", async () => {
+    // Strengthened by fe-3. The 202 returns in a moment and the corrections take
+    // ~200 s, so disabling on the request alone re-enabled the button for the whole
+    // fan-out — which is QA bug B, two tabs and two full runs.
+    const h = harness({ polled: [[]] });
     await mountApp();
     fireEvent.click(generateBtn());
+    await waitFor(() => expect(h.batches()).toHaveLength(1));
 
+    // The request is long finished and nothing has arrived yet.
     await waitFor(() => expect((generateBtn() as HTMLButtonElement).disabled).toBe(true));
     const pane = document.querySelector(".solutions-pane")!;
-    expect(within(pane as HTMLElement).getByText(/جارٍ توليد التصحيح/)).toBeTruthy();
-
-    h.release();
-    await waitFor(() => expect(h.saves()).toHaveLength(1));
+    expect(visibleText(pane)).toContain("جارٍ تحضير التصحيح");
+    // Pressing again starts nothing.
+    await burst(generateBtn());
+    expect(h.batches()).toHaveLength(1);
   });
 
-  test("the result the teacher sees comes from the SAVE — it is the only source of `stale`", async () => {
-    const h = harness({ save: [201, { solutions: stored({ ex3: true }), correlationId: SAVE_CID }] });
+  test("the result the teacher sees comes from the SERVER — `fe` never invents `stale`", async () => {
+    // The principle is untouched; only the source moved. It used to be the SAVE
+    // response; with fe-3 it is the polled read. Either way `stale` is computed by
+    // `be` on every read and `fe` has no way to derive it, so a locally-assembled
+    // correction would be one the app cannot tell is current.
+    const h = harness({ polled: [[], stored({ ex3: true })] });
     await mountApp();
     fireEvent.click(generateBtn());
 
     await waitFor(() => expect(document.querySelectorAll("[data-solution-for]").length).toBe(3));
-    expect(document.querySelector('[data-solution-for="ex3"]')!.getAttribute("data-stale")).toBe("true");
-    void h;
-  });
+    await waitFor(
+      () =>
+        expect(
+          document.querySelector('[data-solution-for="ex3"]')!.getAttribute("data-stale"),
+        ).toBe("true"),
+      { timeout: 15_000 },
+    );
+    expect(h.saves()).toHaveLength(0);
+  }, 30_000);
 });
 
 describe("stale — regenerating exactly one exercise", () => {
@@ -242,11 +296,17 @@ describe("stale — regenerating exactly one exercise", () => {
 
 describe("failure — the type decides, not the status", () => {
   test("store_unavailable (503) is retryable, and the retry does NOT regenerate", async () => {
+    // Driver moved to the PER-EXERCISE path with fe-3: the whole-exam correction no
+    // longer saves from `fe`, so a save failure can only arise where `fe` still
+    // stores one. The rule is the same and is the expensive one — a retry that
+    // re-ran would charge a second full run for a result the app is still holding.
     const h = harness({
+      existing: stored({ ex2: true }),
       save: [503, { error: { message: "الخدمة غير متاحة مؤقتًا", type: "store_unavailable" } }],
     });
     await mountApp();
-    fireEvent.click(generateBtn());
+    await waitFor(() => expect(document.querySelectorAll(".sol__regen").length).toBe(1));
+    fireEvent.click(document.querySelector(".sol__regen") as HTMLButtonElement);
     await waitFor(() => expect(h.saves()).toHaveLength(1));
 
     fireEvent.click(await screen.findByRole("button", { name: "إعادة المحاولة" }));
@@ -257,11 +317,17 @@ describe("failure — the type decides, not the status", () => {
   });
 
   test("claude_auth (503) is NOT retryable — a human must re-login", async () => {
+    // Driver moved to the PER-EXERCISE path with fe-3: this pins `/api/generate`'s
+    // error classification, and that route is now reached from the regenerate control
+    // rather than the whole-exam button. The rule is untouched — a 503 that needs a
+    // human must never be offered as a retry.
     const h = harness({
+      existing: stored({ ex2: true }),
       generate: [503, { error: { message: "انتهت جلسة المولّد", type: "claude_auth" } }],
     });
     await mountApp();
-    fireEvent.click(generateBtn());
+    await waitFor(() => expect(document.querySelectorAll(".sol__regen").length).toBe(1));
+    fireEvent.click(document.querySelector(".sol__regen") as HTMLButtonElement);
 
     const alert = await screen.findByRole("alert");
     expect(alert.className).toContain("alert--hard");
@@ -270,12 +336,16 @@ describe("failure — the type decides, not the status", () => {
   });
 
   test("a failed run leaves no half-correction on screen", async () => {
-    harness({ generate: [504, { error: { message: "انتهت المهلة", type: "claude_timeout" } }] });
+    // Same rule on the new surface: if the BATCH cannot even start, the sheet must not
+    // appear at all — a correction block with nothing in it is the empty-correction
+    // failure this job's whole solutions half exists to prevent.
+    harness({ start: [504, { error: { message: "انتهت المهلة", type: "claude_timeout" } }] });
     await mountApp();
     fireEvent.click(generateBtn());
 
     await screen.findByRole("alert");
     expect(document.querySelectorAll("[data-solution-for]").length).toBe(0);
+    expect(document.querySelectorAll(".sol__pending").length).toBe(0);
   });
 });
 

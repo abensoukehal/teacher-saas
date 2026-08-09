@@ -82,7 +82,28 @@ async function mountApp() {
   return render(<App />);
 }
 
-const generate = () => fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+/**
+ * RE-BASELINED for parallel-exercises fe-2 (declared supersession, WF-65), 2026-08-09.
+ *
+ * This suite pins the QUEUED-SAVE mechanism: a retryable create failure holds the exam
+ * in `teacher.pending.v1`, offers it on the next load, and never replays it silently.
+ * Every clause was driven by clicking «توليد الموضوع», because generation was what
+ * created a subject and therefore the only thing that could fail with an exam in hand.
+ *
+ * fe-2 repoints that button at POST /api/exams. `be` inserts the skeleton at plan time
+ * and answers with a `subjectId` that already exists, so `fe` never holds the only copy
+ * of an exam — which means **a progressive generation cannot produce a queued save at
+ * all**. The mechanism is not obsolete, it is narrower: it now exists to DRAIN a queue
+ * written by an earlier build of this app, which is a browser state that really exists
+ * and must keep working. A new clause at the end of the first block pins the new truth.
+ *
+ * So the driver becomes a pre-seeded queue plus «حفظ الآن» — the one affordance that
+ * still reaches `createOnce` → `persist`, and the exact path a upgrading browser takes.
+ */
+const QUEUED = { subject: EXAM, controls: null, genCorrelationId: GEN_CID, queuedAt: "t" };
+const seedQueue = () => localStorage.setItem(PENDING_KEY, JSON.stringify(QUEUED));
+/** Replay a queued save. Replaces `generate()` as this suite's write trigger. */
+const generate = () => fireEvent.click(screen.getByRole("button", { name: "حفظ الآن" }));
 const replayBtn = () => screen.getByRole("button", { name: "حفظ الآن" });
 const pending = () => localStorage.getItem(PENDING_KEY);
 
@@ -104,10 +125,11 @@ afterEach(() => {
 });
 
 describe("queueing a failed save", () => {
-  test("a RETRYABLE failure writes teacher.pending.v1 with the exam", async () => {
+  test("a RETRYABLE failure keeps teacher.pending.v1, exam and join key intact", async () => {
+    seedQueue();
     const h = harness({ createFails: "store" });
     await mountApp();
-    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
@@ -118,19 +140,65 @@ describe("queueing a failed save", () => {
     expect(q.genCorrelationId).toBe(GEN_CID);
   });
 
+  test("a progressive generation queues NOTHING — there is no copy to lose", async () => {
+    // The new truth this mechanism's original clause was replaced by. `be` stores the
+    // exam before answering, so the window in which `fe` held the only copy — the
+    // whole reason the queue exists — is closed on the generate path. If someone
+    // reinstates a client-side create here, this clause is what notices.
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push(`${init.method ?? "GET"} ${url}`);
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/exams") {
+          return res(201, { subjectId: "s1", subject: EXAM, correlationId: GEN_CID });
+        }
+        if (url === "/api/subjects" && (init.method ?? "GET") === "GET") {
+          return res(200, { subjects: [] });
+        }
+        if (url === "/api/subjects/s1") {
+          return res(200, { id: "s1", createdAt: "t", updatedAt: "t", subject: EXAM });
+        }
+        // A create on this path would be a SECOND exam, and this refuses it loudly.
+        return res(500, { error: { message: "unexpected", type: "internal_error" } });
+      }),
+    );
+    await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+
+    await waitFor(() => expect(calls).toContain("POST /api/exams"));
+    expect(calls).not.toContain("POST /api/subjects");
+    expect(pending()).toBeNull();
+  });
+
   test("a NON-retryable failure does not queue — a human must act, not a loop", async () => {
+    seedQueue();
     const h = harness({ createFails: "auth" });
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
-    expect(pending()).toBeNull();
+    // Driver changed with fe-2, so the assertion is the same rule read from the other
+    // side: with a queue already present, a HARD failure must not add to it and must
+    // not offer a retry. The old wording ("does not queue") could only be written when
+    // generation was the thing that queued.
+    expect(pending()).toBe(JSON.stringify(QUEUED));
+    expect(screen.queryByRole("button", { name: "إعادة المحاولة" })).toBeNull();
   });
 
   test("a successful save queues nothing", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
@@ -202,8 +270,10 @@ describe("the replay — offered, never silent", () => {
   test("THE QUEUE AND THE RETRY ARE THE SAME WRITE — never two exams", async () => {
     // A failed save shows a retry AND queues. If both affordances can start a
     // create concurrently, the teacher gets a duplicate.
+    seedQueue();
     const h = harness({ createFails: "store" });
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
     await waitFor(() => expect(pending()).toBeTruthy());
@@ -253,15 +323,19 @@ describe("the replay — offered, never silent", () => {
 
 describe("the save states a teacher actually sees", () => {
   test("saving → saved", async () => {
+    seedQueue();
     harness();
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
     await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
   });
 
   test("retryable failure → an Arabic queued notice AND a retry", async () => {
+    seedQueue();
     harness({ createFails: "store" });
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
 
     await waitFor(() => expect(pending()).toBeTruthy());
@@ -275,13 +349,17 @@ describe("the save states a teacher actually sees", () => {
   });
 
   test("hard failure → no queue, and the teacher is told a retry will not help", async () => {
+    seedQueue();
     harness({ createFails: "auth" });
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("لا يُحل بإعادة المحاولة");
-    expect(pending()).toBeNull();
+    // Unchanged, not cleared and not appended to — see the clause above.
+    expect(pending()).toBe(JSON.stringify(QUEUED));
+    expect(screen.queryByRole("button", { name: "إعادة المحاولة" })).toBeNull();
   });
 });
 
@@ -303,9 +381,33 @@ describe("negative — the storage discipline and gap #5", () => {
   });
 
   test("the paint cache keeps its behaviour", async () => {
-    harness();
+    // Driven by the GENERATE path, not the replay: the cache mirrors `exam` state, and
+    // replaying a queued save deliberately does not put anything on screen. Under
+    // fe-2 the exam that reaches state is the skeleton `POST /api/exams` returns, so
+    // that is what must land in the cache.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/exams") {
+          return res(201, { subjectId: "s1", subject: EXAM, correlationId: GEN_CID });
+        }
+        if (url === "/api/subjects" && (init.method ?? "GET") === "GET") {
+          return res(200, { subjects: [] });
+        }
+        if (url === "/api/subjects/s1") {
+          return res(200, { id: "s1", createdAt: "t", updatedAt: "t", subject: EXAM });
+        }
+        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+      }),
+    );
     await mountApp();
-    generate();
+    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
     await waitFor(() => expect(localStorage.getItem("teacher.cache.v1")).toBeTruthy());
     expect(JSON.parse(localStorage.getItem("teacher.cache.v1")!).title).toBe(EXAM.title);
   });
@@ -327,10 +429,11 @@ describe("negative — the storage discipline and gap #5", () => {
   });
 
   test("a queue attempt under broken storage does not break the save path", async () => {
+    seedQueue();
     const h = harness({ createFails: "store" });
     localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
     await mountApp();
-    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
 
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("storage disabled");
@@ -344,8 +447,10 @@ describe("negative — the storage discipline and gap #5", () => {
   });
 
   test("no existing key changed name or shape", async () => {
+    seedQueue();
     harness();
     await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
     generate();
     await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
 
@@ -362,57 +467,43 @@ describe("negative — the storage discipline and gap #5", () => {
 });
 
 describe("review F3 — a second DIFFERENT save must not be dropped", () => {
-  test("an intent arriving mid-flight is queued, then created — both exams exist", async () => {
-    // `create` is insert-only, so two intents must become two subjects — but never by
-    // firing concurrently, which would double-insert one of them.
-    let release: (() => void) | null = null;
-    const created: unknown[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string, init: RequestInit = {}) => {
-        const res = (status: number, payload: unknown) => ({
-          ok: status < 300,
-          status,
-          json: async () => payload,
-        });
-        if (url === "/api/subjects" && init.method === "POST") {
-          const body = JSON.parse(init.body as string);
-          created.push(body.subject);
-          if (created.length === 1) {
-            // hold the FIRST create open so the second arrives mid-flight
-            await new Promise<void>((r) => {
-              release = r;
-            });
-          }
-          return res(201, {
-            id: `s${created.length}`,
-            createdAt: "t",
-            updatedAt: "t",
-            subject: body.subject,
-            genCorrelationId: body.genCorrelationId ?? null,
-          });
-        }
-        if (url === "/api/subjects") return res(200, { subjects: [] });
-        if (url === "/api/generate") return res(200, { data: EXAM, correlationId: "g1" });
-        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
-      }),
-    );
+  /**
+   * SUPERSEDED by parallel-exercises fe-2, 2026-08-09 — the RACE became unreachable,
+   * and the clause now pins the reason rather than the race.
+   *
+   * `createOnce` holds a second, DIFFERENT intent that arrives while one is in flight
+   * and runs it afterwards, because `create` is insert-only and firing both at once
+   * would double-insert. Driving that needed TWO independent things able to start a
+   * create — which is exactly what generation-plus-replay used to be.
+   *
+   * fe-2 leaves one affordance that reaches `createOnce`: «حفظ الآن», the replay of a
+   * queued save. Two clicks of it are the SAME intent, which `createOnce` collapses by
+   * design (pinned above: "A DOUBLE-CLICKED REPLAY CREATES ONE EXAM, NOT TWO"). There
+   * is no longer a UI path that produces two different intents, so the drain branch is
+   * dormant rather than broken.
+   *
+   * The queue logic is NOT deleted — a browser upgrading into this build can still hold
+   * a queued save, and re-queueing on a failed replay still works. What is asserted
+   * here is the property that makes the race unreachable, because that property is what
+   * a future change would silently undo: if something new starts calling `createOnce`,
+   * this clause stops being true and the drain branch needs a driver again.
+   */
+  test("exactly ONE affordance can start a create — which is why the race is dormant", async () => {
+    seedQueue();
+    const h = harness();
+    await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
 
-    localStorage.setItem("teacher.id.v1", JSON.stringify(TID));
-    const { default: App } = await import("@/App");
-    render(<App />);
+    // The generate button is on screen and enabled, and it creates nothing.
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
+    expect(h.creates()).toHaveLength(0);
 
-    // first save starts and blocks
+    // The replay is the only thing that does.
     generate();
-    await waitFor(() => expect(created).toHaveLength(1));
-
-    // a second, DIFFERENT save arrives while the first is still open
-    generate();
-
-    // let the first finish; the queued one must then run — not be dropped
-    await waitFor(() => expect(release).toBeTruthy());
-    release!();
-
-    await waitFor(() => expect(created).toHaveLength(2));
+    await waitFor(() => expect(h.creates()).toHaveLength(1));
+    await waitFor(() => expect(pending()).toBeNull());
+    // …and once drained, the affordance is gone, so nothing can start a second one.
+    expect(screen.queryByRole("button", { name: "حفظ الآن" })).toBeNull();
   });
 });

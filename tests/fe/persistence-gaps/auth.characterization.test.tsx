@@ -105,6 +105,14 @@ function harness(
       return res(201, { id: "s9", createdAt: "t", updatedAt: "t", subject: body.subject });
     }
     if (url === "/api/generate") return res(200, { data: EXAM, correlationId: "g1" });
+    // parallel-exercises fe-2: exam creation moved to POST /api/exams. `be` inserts the
+    // skeleton and answers with its id, so there is no create from `fe` on this path.
+    if (url === "/api/exams" && method === "POST") {
+      return res(201, { subjectId: "s9", subject: EXAM, correlationId: "g1" });
+    }
+    if (url === "/api/subjects/s9" && method === "GET") {
+      return res(200, { id: "s9", createdAt: "t", updatedAt: "t", subject: EXAM });
+    }
     if (url === "/api/teacher") return res(201, { teacherId: TID });
     return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
   });
@@ -511,15 +519,28 @@ describe("negative — the hard product constraints", () => {
 });
 
 describe("negative — the core loop is untouched for a signed-in teacher", () => {
-  test("generate still posts {skill, input} and the exam renders", async () => {
+  /**
+   * SUPERSEDED by parallel-exercises fe-2, 2026-08-09 — the flow moved, and what this
+   * clause is FOR did not.
+   *
+   * It lives in an auth suite to prove the gate did not break the core loop for a
+   * signed-in teacher: press generate, get an exam, still be able to print it. That is
+   * unchanged. Only the call it rides on moved — to POST /api/exams, teacher-scoped
+   * exactly as before, which is the property this suite actually cares about.
+   */
+  test("generate still works for a signed-in teacher, now via /api/exams", async () => {
     localStorage.setItem("teacher.id.v1", JSON.stringify(HELD));
     const h = harness();
     await mountApp();
     await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
 
     click("توليد الموضوع");
-    await waitFor(() => expect(h.of("/api/generate")).toHaveLength(1));
-    expect(Object.keys(h.of("/api/generate")[0].body as object).sort()).toEqual(["input", "skill"]);
+    await waitFor(() => expect(h.of("/api/exams")).toHaveLength(1));
+    // The controls, unwrapped — and still carrying the signed-in teacher's id.
+    expect(Object.keys(h.of("/api/exams")[0].body as object).sort()).toEqual(
+      ["difficulty", "durationMinutes", "exerciseCount", "format", "level", "stream", "topic"].sort(),
+    );
+    expect(h.of("/api/exams")[0].teacher).toBe(HELD);
 
     await waitFor(() => expect(screen.getByText("الموضوع الأول")).toBeTruthy());
     // The print path is still offered once an exam is on screen.

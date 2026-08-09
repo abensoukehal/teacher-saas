@@ -101,7 +101,39 @@ async function mountApp() {
   return render(<App />);
 }
 
-const generate = () => fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+/**
+ * RE-BASELINED for parallel-exercises fe-2 (declared supersession, WF-65), 2026-08-09.
+ *
+ * These clauses pin THE JOIN KEY AND THE KPI PAIR reaching the store in the create
+ * body. Under fe-2, exam creation moved to POST /api/exams: `be` plans, inserts the
+ * skeleton, fans out, and sets `genCorrelationId`, `costUsd` and `durationMs` ITSELF
+ * (routes/exams.ts → setKpis, one correlation id per exam across all spawns). `fe`
+ * sends none of them on that path and must not — it cannot even measure a fan-out that
+ * finishes after the response.
+ *
+ * So the invariant did not weaken, it MOVED, and the fe-side half is now narrower: the
+ * create body still carries the pair on the one path that still makes a create — the
+ * replay of a queued save, which is a real state for a browser upgrading into this
+ * build. That is the driver below. The clauses about what `fe` sends keep testing what
+ * `fe` sends; the new clause at the end of the first block pins the other half, that a
+ * progressive generation sends nothing and reads the numbers back from `be`.
+ *
+ * `generateExam`'s own contract is untouched and is still pinned at module level in
+ * this file's negative block.
+ */
+const QUEUED = {
+  subject: REC.data,
+  controls: null,
+  genCorrelationId: GEN_CID,
+  costUsd: REC.costUsd,
+  durationMs: REC.durationMs,
+  queuedAt: "t",
+};
+const seedQueue = () => localStorage.setItem("teacher.pending.v1", JSON.stringify(QUEUED));
+/** Replay a queued save — the surviving path that sends the join key from `fe`. */
+const generate = () => fireEvent.click(screen.getByRole("button", { name: "حفظ الآن" }));
+const awaitReplay = async () =>
+  waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
 
 beforeEach(() => {
   localStorage.clear();
@@ -115,19 +147,69 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe("the join key reaches the store", () => {
-  test("generate → save carries genCorrelationId = the GENERATION's id", async () => {
+  test("a replayed save carries genCorrelationId = the GENERATION's id", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
-    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    await awaitReplay();
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
     expect(h.creates()[0].body.genCorrelationId).toBe(GEN_CID);
   });
 
+  test("a progressive generation sends NO join key and NO KPIs — `be` owns both", async () => {
+    // The other half of the moved invariant. `fe` cannot measure a fan-out that
+    // finishes after the response, so inventing a number here would answer the cost
+    // question WRONG — which the product brief calls out as worse than not answering.
+    const calls: Array<{ method: string; url: string; body: any }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        const method = init.method ?? "GET";
+        calls.push({ method, url, body: init.body ? JSON.parse(init.body as string) : undefined });
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/exams") {
+          return res(201, { subjectId: "s1", subject: REC.data, correlationId: GEN_CID });
+        }
+        if (url === "/api/subjects" && method === "GET") return res(200, { subjects: [] });
+        if (url === "/api/subjects/s1") {
+          return res(200, {
+            id: "s1",
+            createdAt: "t",
+            updatedAt: "t",
+            subject: REC.data,
+            // `be` filled these in after the fan-out — observed live, lane 6.
+            genCorrelationId: GEN_CID,
+            costUsd: REC.costUsd,
+            durationMs: REC.durationMs,
+          });
+        }
+        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+      }),
+    );
+    await mountApp();
+    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+
+    await waitFor(() => expect(calls.some((c) => c.url === "/api/exams")).toBe(true));
+    const start = calls.find((c) => c.url === "/api/exams")!;
+    for (const k of ["genCorrelationId", "costUsd", "durationMs"]) {
+      expect(Object.keys(start.body)).not.toContain(k);
+    }
+    // …and no create was made from here at all.
+    expect(calls.filter((c) => c.url === "/api/subjects" && c.method === "POST")).toHaveLength(0);
+  });
+
   test("the two correlation ids stay distinct — the save's own id is NOT the join key", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -136,8 +218,10 @@ describe("the join key reaches the store", () => {
   });
 
   test("it travels in the BODY — not a header, not a query param", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -170,8 +254,10 @@ describe("the join key reaches the store", () => {
    * `null` is sent when there is nothing to record — a zero would corrupt every average.
    */
   test("costUsd IS persisted from fe now — and absence is null, never zero", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
     const body = h.creates()[0].body as Record<string, unknown>;
@@ -195,10 +281,12 @@ describe("the join key reaches the store", () => {
     // The repeat case, written from the start. A retry that lost the id would
     // store a subject whose cost is unanswerable — the very gap being closed —
     // and one that invented a fresh id would answer it WRONG, which is worse.
+    seedQueue();
     const h = harness({
       create: [503, { error: { message: "الخدمة غير متاحة مؤقتًا", type: "store_unavailable" } }],
     });
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -213,9 +301,30 @@ describe("the join key reaches the store", () => {
 
 describe("negative — the envelope change is invisible everywhere else", () => {
   test("the recorded exam renders exactly as before", async () => {
-    harness();
+    // Driven through the progressive path now: this pins that the exam a teacher sees
+    // is unchanged by where it came from, which is the point of the whole re-baseline.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        const method = init.method ?? "GET";
+        const res = (status: number, payload: unknown) => ({
+          ok: status < 300,
+          status,
+          json: async () => payload,
+        });
+        if (url === "/api/exams") {
+          return res(201, { subjectId: "s1", subject: REC.data, correlationId: GEN_CID });
+        }
+        if (url === "/api/subjects" && method === "GET") return res(200, { subjects: [] });
+        if (url === "/api/subjects/s1") {
+          return res(200, { id: "s1", createdAt: "t", updatedAt: "t", subject: REC.data });
+        }
+        return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+      }),
+    );
     await mountApp();
-    generate();
+    await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
 
     await waitFor(() => expect(screen.getByText(REC.data.title)).toBeTruthy());
     for (const ex of REC.data.exercises) {
@@ -280,11 +389,31 @@ describe("negative — the envelope change is invisible everywhere else", () => 
     expect(out).toEqual(one);
   });
 
+  /**
+   * SUPERSEDED by parallel-exercises fe-2, 2026-08-09 — asserted at the module level
+   * instead of through the button.
+   *
+   * `/api/generate` is still FROZEN and still takes {skill, input}; what changed is
+   * that the exam-creation FLOW no longer goes through it, so clicking «توليد الموضوع»
+   * can no longer be the way this is observed. `generateExam` is untouched and
+   * exported, so the frozen request is asserted where it actually lives — and
+   * solutions-api/solutions-app pin the surface still being USED, by the solution sheet.
+   */
   test("the generate REQUEST shape is untouched — /api/generate is frozen", async () => {
-    const h = harness();
-    await mountApp();
-    generate();
-    await waitFor(() => expect(h.of("/api/generate")).toHaveLength(1));
-    expect(Object.keys(h.of("/api/generate")[0].body).sort()).toEqual(["input", "skill"]);
+    const calls: Array<{ url: string; body: any }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push({ url, body: JSON.parse(init.body as string) });
+        return { ok: true, status: 200, json: async () => ({ data: REC.data, correlationId: "c" }) };
+      }),
+    );
+    const { generateExam } = await import("@/lib/api");
+    await generateExam(
+      { skill: "exam-subject", input: { topic: "الدوال" } } as never,
+      new AbortController().signal,
+    );
+    expect(calls[0]!.url).toBe("/api/generate");
+    expect(Object.keys(calls[0]!.body).sort()).toEqual(["input", "skill"]);
   });
 });

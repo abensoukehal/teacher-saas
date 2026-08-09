@@ -91,7 +91,72 @@ async function mountApp() {
   return render(<App />);
 }
 
-const generate = () => fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+/**
+ * RE-BASELINED for parallel-exercises fe-2 (declared supersession, WF-65), 2026-08-09.
+ *
+ * Same supersession as cost-join, for the same reason. Exam creation moved to
+ * POST /api/exams, where `be` inserts the skeleton and then sets `costUsd`,
+ * `durationMs` and `genCorrelationId` itself once the fan-out finishes
+ * (routes/exams.ts → setKpis; one correlation id per exam across all spawns). `fe`
+ * cannot measure a run that completes after the response, so on that path it sends
+ * none of them — and inventing a number would answer the cost question WRONG, which
+ * project/CLAUDE.md calls out as worse than not answering it.
+ *
+ * The pair still travels from `fe` on the one path that still creates a subject — the
+ * replay of a queued save — so that is the driver, and every rule these clauses exist
+ * for (numbers not strings, null never zero, never re-measured on a retry, one exam per
+ * double-click) is still pinned on the code that still does it.
+ */
+const QUEUED = {
+  subject: REC.data,
+  controls: null,
+  genCorrelationId: GEN_CID,
+  costUsd: REC.costUsd,
+  durationMs: REC.durationMs,
+  queuedAt: "t",
+};
+const seedQueue = (over: Partial<typeof QUEUED> = {}) =>
+  localStorage.setItem("teacher.pending.v1", JSON.stringify({ ...QUEUED, ...over }));
+/** Replay a queued save — the surviving path that sends the pair from `fe`. */
+const generate = () => fireEvent.click(screen.getByRole("button", { name: "حفظ الآن" }));
+const awaitReplay = async () =>
+  waitFor(() => expect(screen.getByRole("button", { name: "حفظ الآن" })).toBeTruthy());
+
+/** The progressive path, stubbed. `be` fills the numbers in after the fan-out. */
+function progressive(calls: Array<{ method: string; url: string; body: any }>) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? "GET";
+      calls.push({ method, url, body: init.body ? JSON.parse(init.body as string) : undefined });
+      const res = (status: number, payload: unknown) => ({
+        ok: status < 300,
+        status,
+        json: async () => payload,
+      });
+      if (url === "/api/exams") {
+        return res(201, { subjectId: "s1", subject: REC.data, correlationId: GEN_CID });
+      }
+      if (url === "/api/subjects" && method === "GET") return res(200, { subjects: [] });
+      if (url === "/api/subjects/s1") {
+        return res(200, {
+          id: "s1",
+          createdAt: "t",
+          updatedAt: "t",
+          subject: REC.data,
+          genCorrelationId: GEN_CID,
+          costUsd: REC.costUsd,
+          durationMs: REC.durationMs,
+        });
+      }
+      return res(404, { error: { message: "غير موجود", type: "subject_not_found" } });
+    }),
+  );
+}
+const startExamFromUI = async () => {
+  await waitFor(() => expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+};
 
 beforeEach(() => {
   localStorage.clear();
@@ -105,12 +170,11 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe("the two numbers reach the store", () => {
-  test("generate → the create body carries costUsd and durationMs from THAT run", async () => {
+  test("a replayed save carries costUsd and durationMs from THAT run", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "توليد الموضوع" })).toBeTruthy(),
-    );
+    await awaitReplay();
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
@@ -124,8 +188,10 @@ describe("the two numbers reach the store", () => {
   });
 
   test("they travel in the BODY, beside the join key — not a header, not a query param", async () => {
+    seedQueue();
     const h = harness();
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -168,10 +234,12 @@ describe("the two numbers reach the store", () => {
   test("an envelope WITHOUT the numbers sends null, never zero and never a guess", async () => {
     // `be` has always been free to omit them, and a run that fails to report is not a
     // run that cost nothing. Same rule as the legacy path, reached from the other side.
+    seedQueue({ costUsd: undefined, durationMs: undefined });
     const h = harness({
       envelope: { data: REC.data, correlationId: GEN_CID },
     });
     await mountApp();
+    await awaitReplay();
     generate();
 
     await waitFor(() => expect(h.creates()).toHaveLength(1));
@@ -181,10 +249,12 @@ describe("the two numbers reach the store", () => {
   });
 
   test("a RETRIED save re-sends the SAME pair — never dropped, never re-measured", async () => {
+    seedQueue();
     const h = harness({
       create: [503, { error: { message: "الخدمة غير متاحة مؤقتًا", type: "store_unavailable" } }],
     });
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -228,10 +298,12 @@ describe("the two numbers reach the store", () => {
     // component cannot re-render between them — which is the only version of this that
     // exercises the ref guard. `create` is insert-only: a second create is a second exam,
     // in a product with no delete route, and it would double-count in every KPI average.
+    seedQueue();
     const h = harness({
       create: [503, { error: { message: "الخدمة غير متاحة مؤقتًا", type: "store_unavailable" } }],
     });
     await mountApp();
+    await awaitReplay();
     generate();
     await waitFor(() => expect(h.creates()).toHaveLength(1));
 
@@ -249,9 +321,9 @@ describe("the two numbers reach the store", () => {
 
 describe("negative — nothing else moved", () => {
   test("the recorded exam renders exactly as before", async () => {
-    harness();
+    progressive([]);
     await mountApp();
-    generate();
+    await startExamFromUI();
 
     await waitFor(() => expect(screen.getByText(REC.data.title)).toBeTruthy());
     for (const ex of REC.data.exercises) {
@@ -263,9 +335,11 @@ describe("negative — nothing else moved", () => {
   test("no usage figure is ever shown to a teacher", async () => {
     // fe-1 STORES the numbers; it does not render them. `costUsd` is not money and the
     // teacher-facing surface has no business carrying an operator's metric at all.
-    harness();
+    // Driven through the progressive path, where the numbers now come BACK from `be`
+    // on the subject read — which is the version of this that could newly leak one.
+    progressive([]);
     await mountApp();
-    generate();
+    await startExamFromUI();
     await waitFor(() => expect(screen.getByText(REC.data.title)).toBeTruthy());
 
     const text = document.body.textContent ?? "";
@@ -276,12 +350,27 @@ describe("negative — nothing else moved", () => {
     expect(text).not.toContain("USD");
   });
 
+  /**
+   * SUPERSEDED by parallel-exercises fe-2 — asserted at module level, same as cost-join.
+   * `/api/generate` is still frozen and still takes {skill, input}; the exam-creation
+   * FLOW simply no longer goes through it, so the button cannot observe it any more.
+   */
   test("the generate REQUEST shape is untouched — /api/generate is frozen", async () => {
-    const h = harness();
-    await mountApp();
-    generate();
-    await waitFor(() => expect(h.of("/api/generate")).toHaveLength(1));
-    expect(Object.keys(h.of("/api/generate")[0].body).sort()).toEqual(["input", "skill"]);
+    const calls: Array<{ url: string; body: any }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push({ url, body: JSON.parse(init.body as string) });
+        return { ok: true, status: 200, json: async () => ({ data: REC.data, correlationId: "c" }) };
+      }),
+    );
+    const { generateExam } = await import("@/lib/api");
+    await generateExam(
+      { skill: "exam-subject", input: { topic: "الدوال" } } as never,
+      new AbortController().signal,
+    );
+    expect(calls[0]!.url).toBe("/api/generate");
+    expect(Object.keys(calls[0]!.body).sort()).toEqual(["input", "skill"]);
   });
 
   test("refineExercise still resolves to ONE exercise, not an envelope", async () => {

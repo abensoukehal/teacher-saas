@@ -4,10 +4,10 @@ id: feat-solution-sheets
 title: "The correction a teacher keeps"
 plane: product
 part_of: prod-exam-builder
-realized_by: [cmp-be-skill-solution-sheet, mod-be-solution-store, cmp-fe-solution-view, flow-generate-correction]
+realized_by: [cmp-be-skill-solution-sheet, cmp-be-skill-solution-one, cmp-be-corrections-endpoint, cmp-be-inflight, mod-be-solution-store, cmp-fe-solution-view, flow-generate-correction]
 demonstrated_by: [features/solution-sheets/iterations/01-initial/qa.md]
 status: fresh
-last_verified: 2026-08-08
+last_verified: 2026-08-09
 tags: [arabic, rtl, katex]
 ---
 

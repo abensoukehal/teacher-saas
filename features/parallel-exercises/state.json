@@ -1,0 +1,126 @@
+{
+  "slug": "parallel-exercises",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-09",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "8db3992dd3a30cb6"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "subissues": "21c1c4bb9a9dc5a1"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-4": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-5": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          },
+          "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-6": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          }
+        },
+        "fe-3": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "62cf6e9df9eca3ac",
+            "contracts": "c344aae13fce3440"
+          }
+        }
+      },
+      "summary": "Exams and corrections generate per exercise and render as they arrive; one bad exercise no longer costs the whole exam"
+    }
+  }
+}

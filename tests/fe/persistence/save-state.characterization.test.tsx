@@ -28,11 +28,37 @@ const ok = (status: number, payload: unknown) => ({
   json: async () => payload,
 });
 
-async function bootAndGenerate() {
+/**
+ * RE-BASELINED for parallel-exercises fe-2 (declared supersession, WF-65), 2026-08-09.
+ *
+ * These clauses pin THE SAVE INDICATOR on the create path — saving → saved, a
+ * retryable failure offering a retry, a non-retryable one refusing to. Every one of
+ * them was driven by clicking «توليد الموضوع», because generation used to be what
+ * created a subject.
+ *
+ * fe-2 repoints that button at POST /api/exams, where `be` inserts the skeleton
+ * itself — so a generation no longer produces a create from `fe`, and the old driver
+ * exercises nothing.
+ *
+ * `createOnce` is NOT gone, and the behaviour these clauses guard is NOT gone with it.
+ * Two entry points still reach it, and only one of them reaches the INDICATOR: the
+ * legacy-draft adoption calls `createSubject` directly (App.boot), with no `persist()`
+ * around it, so it shows no save state and never did. The replay of a queued save —
+ * «حفظ الآن» — goes through `createOnce` → `persist`, which is exactly the path these
+ * clauses were written for.
+ *
+ * So a queued save is the driver. It also belongs to a browser that predates this job
+ * and must keep working, which makes it the right thing to still be pinning.
+ */
+async function bootWithPendingWork() {
+  localStorage.setItem(
+    "teacher.pending.v1",
+    JSON.stringify({ subject: EXAM, controls: null, genCorrelationId: null }),
+  );
   const { default: App } = await import("@/App");
   render(<App />);
   await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
-  fireEvent.click(screen.getByRole("button", { name: "توليد الموضوع" }));
+  fireEvent.click(await screen.findByRole("button", { name: "حفظ الآن" }));
 }
 
 beforeEach(() => {
@@ -68,7 +94,7 @@ describe("positive — an honest save indicator", () => {
       return ok(200, { subjects: [] });
     });
 
-    await bootAndGenerate();
+    await bootWithPendingWork();
     await waitFor(() => expect(screen.getByText("تم الحفظ")).toBeTruthy());
     expect(screen.getByRole("status")).toBeTruthy();
   });
@@ -85,7 +111,7 @@ describe("positive — an honest save indicator", () => {
       return ok(200, { subjects: [] });
     });
 
-    await bootAndGenerate();
+    await bootWithPendingWork();
     await waitFor(() => expect(screen.getByText("لم نتمكّن من الحفظ.")).toBeTruthy());
     expect(creates).toBe(1);
 
@@ -105,7 +131,7 @@ describe("positive — an honest save indicator", () => {
       return ok(200, { subjects: [] });
     });
 
-    await bootAndGenerate();
+    await bootWithPendingWork();
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
     // The save indicator must not invite a retry that cannot work.
     expect(screen.queryByText("لم نتمكّن من الحفظ.")).toBeNull();
@@ -121,7 +147,7 @@ describe("positive — an honest save indicator", () => {
       return ok(200, { subjects: [] });
     });
 
-    await bootAndGenerate();
+    await bootWithPendingWork();
     await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
     expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
   });
@@ -153,11 +179,16 @@ describe("QA regression — a failed boot must not silently drop every save", ()
       return ok(200, { subjects: [] });
     });
 
+    // Driver changed with fe-2 (see bootWithPendingWork): the create now comes from
+    // the legacy-draft adoption, which is one of the two paths that still make one.
+    // The invariant is untouched — a flaky /api/teacher must never leave a teacher who
+    // HAS an identity unable to save.
+    localStorage.setItem("teacher.draft.v1", JSON.stringify(EXAM));
     const { default: App } = await import("@/App");
     render(<App />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "توليد الموضوع" }));
     await waitFor(() => expect(creates).toBe(1));
+    expect(localStorage.getItem("teacher.draft.v1")).toBeNull();
   });
 });
 

@@ -26,6 +26,7 @@ function harness() {
   const calls: Array<{ method: string; url: string; body: unknown; teacher?: string }> = [];
   let generateCount = 0;
   let createCount = 0;
+  let startCount = 0;
 
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
     const method = init.method ?? "GET";
@@ -40,6 +41,26 @@ function harness() {
     });
 
     if (url === "/api/teacher") return ok(201, { teacherId: TID });
+    // RE-BASELINED for parallel-exercises fe-2 (declared supersession, WF-65).
+    // Exam creation moved from POST /api/generate to POST /api/exams: `be` plans,
+    // INSERTS the skeleton itself, and fans out. So a generation no longer produces a
+    // create from `fe` at all — the id in the response is of a row that already exists.
+    if (url === "/api/exams" && method === "POST") {
+      startCount += 1;
+      return ok(201, {
+        subjectId: `s${startCount}`,
+        subject: startCount === 1 ? EXAM_A : EXAM_B,
+        correlationId: "c",
+      });
+    }
+    if (/^\/api\/subjects\/s\d+$/.test(url) && method === "GET") {
+      return ok(200, {
+        id: url.split("/").pop(),
+        createdAt: "t",
+        updatedAt: "t",
+        subject: url.endsWith("s1") ? EXAM_A : EXAM_B,
+      });
+    }
     if (url === "/api/generate") {
       // refine returns ONE exercise, generate returns a whole subject — the two
       // skills share this route and must not be conflated.
@@ -67,7 +88,12 @@ function harness() {
   });
 
   vi.stubGlobal("fetch", fetchMock);
-  return { calls, creates: () => calls.filter((c) => c.url === "/api/subjects" && c.method === "POST") };
+  return {
+    calls,
+    creates: () => calls.filter((c) => c.url === "/api/subjects" && c.method === "POST"),
+    /** A progressive generation. THE new exam-creation call. */
+    starts: () => calls.filter((c) => c.url === "/api/exams" && c.method === "POST"),
+  };
 }
 
 async function generate() {
@@ -102,21 +128,31 @@ afterEach(() => {
 });
 
 describe("THE DEFECT — a second exam must not destroy the first", () => {
-  test("two generations issue two creates with different subject ids", async () => {
+  /**
+   * SUPERSEDED by parallel-exercises fe-2, 2026-08-09 — driver changed, invariant kept.
+   *
+   * This asserted two generations → two POST /api/subjects. `fe` no longer creates a
+   * subject on this path: `be` inserts the skeleton at plan time, so the create moved
+   * to the server. The DEFECT the clause exists for — a second exam destroying the
+   * first — is unchanged and, if anything, harder to reintroduce, because the insert
+   * is now on the side that owns the collection. So the assertion follows the call.
+   */
+  test("two generations start two exams, and `be` answers with different subject ids", async () => {
     const h = harness();
     const { default: App } = await import("@/App");
     render(<App />);
     await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
 
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(1));
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
+    await waitFor(() => expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s1")));
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(2));
+    await waitFor(() => expect(h.starts()).toHaveLength(2));
 
-    const [first, second] = h.creates();
-    // Two distinct exams were sent — nothing was overwritten client-side either.
-    expect((first.body as { subject: { title: string } }).subject.title).toBe("الموضوع الأول");
-    expect((second.body as { subject: { title: string } }).subject.title).toBe("الموضوع الثاني");
+    // Two distinct exams, and the second did not overwrite the first client-side.
+    await waitFor(() => expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s2")));
+    // …and `fe` created neither of them. A create here would be a THIRD exam.
+    expect(h.creates()).toHaveLength(0);
   });
 
   test("there is no single fixed exam key left as the source of truth", async () => {
@@ -125,12 +161,15 @@ describe("THE DEFECT — a second exam must not destroy the first", () => {
     render(<App />);
     await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(1));
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
 
     // The old key must not be resurrected as storage.
     expect(localStorage.getItem("teacher.draft.v1")).toBeNull();
-    // The current subject is tracked by SERVER id, not by a slot.
-    expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s1"));
+    // The current subject is tracked by SERVER id, not by a slot. `waitFor` because
+    // the id now arrives from /api/exams and is persisted by an effect a tick later.
+    await waitFor(() =>
+      expect(localStorage.getItem("teacher.current.v1")).toBe(JSON.stringify("s1")),
+    );
   });
 });
 
@@ -165,7 +204,7 @@ describe("F1 — identity", () => {
     const { default: App } = await import("@/App");
     render(<App />);
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(1));
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
     expect(h.calls.filter((c) => c.url === "/api/teacher")).toHaveLength(0);
   });
 
@@ -175,8 +214,11 @@ describe("F1 — identity", () => {
     render(<App />);
     await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(1));
-    for (const c of h.creates()) expect(c.teacher).toBe(TID);
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
+    // Driver changed with fe-2; the invariant is the same one, on the call that
+    // replaced the create. `/api/exams` is teacher-scoped exactly as `/api/subjects` is.
+    for (const c of [...h.starts(), ...h.creates()]) expect(c.teacher).toBe(TID);
+    expect(h.starts()).not.toHaveLength(0);
   });
 });
 
@@ -233,7 +275,7 @@ describe("F3 — a refinement writes through to the store", () => {
     render(<App />);
     await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
     await generate();
-    await waitFor(() => expect(h.creates()).toHaveLength(1));
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
 
     await waitFor(() => expect(screen.getAllByRole("button", { name: "تعديل هذا التمرين" }).length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByRole("button", { name: "تعديل هذا التمرين" })[0]);
@@ -257,17 +299,30 @@ describe("negative — the frozen perimeter", () => {
     await waitFor(() => expect(localStorage.getItem("teacher.controls.v1")).toBeTruthy());
   });
 
-  test("the generate request shape is unchanged", async () => {
+  /**
+   * SUPERSEDED by parallel-exercises fe-2, 2026-08-09 — the FLOW moved, the surface
+   * did not.
+   *
+   * This pinned "generate posts {skill, input} to /api/generate". Exam creation now
+   * posts the controls UNWRAPPED to /api/exams, which names its own skill server-side.
+   * `/api/generate` is still frozen and still carries {skill, input} — the solution
+   * sheet spends its run there, and solutions-api/solutions-app pin that — so what is
+   * asserted here is the new request, not the removal of the old contract.
+   */
+  test("the generate request is now /api/exams, with the controls unwrapped", async () => {
     const h = harness();
     const { default: App } = await import("@/App");
     render(<App />);
     await waitFor(() => expect(localStorage.getItem("teacher.id.v1")).toBeTruthy());
     await generate();
-    const gen = h.calls.find((c) => c.url === "/api/generate");
-    expect(gen).toBeDefined();
-    expect(gen!.method).toBe("POST");
-    // still {skill, input} — be's contract was not touched by this job
-    expect(Object.keys(gen!.body as object).sort()).toEqual(["input", "skill"]);
+    await waitFor(() => expect(h.starts()).toHaveLength(1));
+    const start = h.starts()[0]!;
+    expect(start.method).toBe("POST");
+    expect(Object.keys(start.body as object).sort()).toEqual(
+      ["difficulty", "durationMinutes", "exerciseCount", "format", "level", "stream", "topic"].sort(),
+    );
+    // No {skill, input} envelope on this surface, and no generate call from this path.
+    expect(h.calls.find((c) => c.url === "/api/generate")).toBeUndefined();
   });
 
   test("spliceExercise still throws on an unknown id (exam.ts untouched)", async () => {
