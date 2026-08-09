@@ -9,17 +9,46 @@
         "seed": {
           "status": "locked",
           "derived_from": {
-            "brief": "5643ed205ecfdd41"
+            "brief": "8db3992dd3a30cb6"
           }
         },
         "contracts": {
           "status": "locked",
           "derived_from": {
-            "seed": "25041a6fd6c28ee2"
+            "seed": "7c9fce536b101a4e"
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-3": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "be-4": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "be-5": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "hardening"
+        }
+      }
     }
   }
 }

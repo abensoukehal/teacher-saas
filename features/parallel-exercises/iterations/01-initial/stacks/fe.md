@@ -84,21 +84,74 @@ estimate: M
 ---
 ```
 
-### fe-1 — <short name>
-<!-- Six slots — the loop-ready contract (conventions/writing-sub-issues.md). -->
-1. **Intent:** why this sub-issue exists, one sentence — the loop's tiebreaker.
-2. **Ground truth (recorded + re-run command):** real shapes from the running
-   service (`curl …` / `tools/obs trace <id>`) — pasted here with the command.
-   Pre-flight: the loop re-runs this and must reproduce it before writing a line.
-3. **Delta:** target files (`path:LINE`) + the change. **Everything else frozen**
-   (freeze check is path-scoped: `git status --short -- <delta paths>`, never repo-wide — WF-63).
-4. **Oracle (executable, two-sided):**
-   - positive: spec-test / characterization `features/<slug>/tests/fe/…`
-     (run: `tools/ci fe --slug <slug>`);
-     acceptance as commands + expected observations, states incl. (loading/error/empty)
-   - negative: existing consumers' recorded shapes bit-stable; untouched paths unchanged
-   - obs assertion: `tools/obs trace <id>` shows the flow with expected status
-5. **Boundaries:** contract refs; additive/versioned only; budget: 10 loop iterations.
-6. **Exit:** done-when = oracle green + freeze respected + `tools/ci fe` green ·
-   ask-when = contract change needed / non-additive / frozen file / red pin / budget blown
-   (see `conventions/autonomy.md`).
+### fe-1 — render the exam as it arrives
+
+**status:** todo · **tag:** happy-path
+
+**Intent.** Start a generation, then show each exercise the moment it exists instead of a
+blank wait ending in everything at once. Per `contracts/fe-be-progressive.contract.md` §4.
+This is the win the job is actually shipping (SEED §3): first exercise at ~74 s rather than
+~110 s.
+
+**Ground truth.** Today `api.ts:117` POSTs `/api/generate` and blocks; `ExamView.tsx`
+renders a complete `exercises[]`; `Progress.tsx` is the wait state. Recorded monolith
+response: `scratchpad/run-ex3.json`. Reproduce the current wait:
+```
+tools/dev up -d && open http://localhost:10000/
+```
+
+**Delta (freeze).** May touch: `src/lib/api.ts` (new calls only), `src/lib/exam.ts`,
+`src/components/ExamView.tsx`, `src/components/Progress.tsx`, `src/App.tsx`.
+**FROZEN: the existing `/api/generate` calls, byte for byte** — the comment at
+`api.ts:235` states this and it is now contractual. The monolith path keeps working.
+
+**Oracle.** `features/parallel-exercises/tests/fe/progressive-render.characterization.test.tsx`
+- given a subject with `ex1: ready, ex2: pending, ex3: pending`, ex1's statement renders and
+  the other two show a waiting state (positive — the whole feature)
+- **an empty `statement` is never rendered as an exercise** (negative — contract §4; a blank
+  exercise reads as a product bug)
+- polling stops once no exercise is `pending` (negative — a poll that never stops is a
+  battery and quota leak)
+- a subject whose exercises have **no `status` field renders fully** — 6,086 stored exams
+  predate it (negative; contract §1)
+- every new string is Arabic and the layout holds under `dir="rtl"` (positive — hard
+  constraint, and jsdom will not catch a visual break, so assert the strings)
+- **no LaTeX is ever visible** — maths goes through KaTeX, never raw into a text node
+
+**Boundaries.** Budget 10 cycles. Failure/retry UI is fe-2. Do not touch `be`.
+
+**Exit protocol.** Oracle green ×2 · perimeter diff: the promoted `project/tests/fe` net
+(242 clauses) still green · freeze audit on the `/api/generate` calls · journal sealed.
+
+---
+
+### fe-2 — a failed exercise says so, in Arabic, and can be retried
+
+**status:** todo · **tag:** hardening
+
+**Intent.** 27% of 3-exercise exams will have a hole (SEED §10.1). The teacher must see
+which exercise is missing, in their language, and be able to ask for it again — without
+losing the exercises that worked.
+
+**Ground truth.** `be-3` marks it `status:"failed"` with `statement:""`; `be-4` exposes
+`POST /api/subjects/:id/exercises/:exerciseId/regenerate`. Recorded failure shape:
+`scratchpad/fan-ex1.json`.
+
+**Delta (freeze).** May touch: `ExamView.tsx`, `api.ts` (the regenerate call),
+`SolutionView.tsx` (corrections stream the same way — exit criterion 3).
+**Frozen:** the refine flow (`RefinePanel.tsx`) — a *failed* exercise and a *refined* one
+are different things and must not share a path.
+
+**Oracle.** `tests/fe/exercise-failure.characterization.test.tsx`
+- a `failed` exercise renders an Arabic explanation and a retry control (positive)
+- the other exercises stay fully rendered and usable alongside it (positive — the reason
+  fan-out was chosen over streaming the monolith)
+- retry calls `/regenerate` for **that** `exerciseId` only (positive)
+- the failure message contains no English, no error code, no `exerciseId`, and no LaTeX
+  (negative — hard constraints; a teacher must never see internals)
+- printing an exam with a `failed` exercise does not print an empty box (negative)
+
+**Boundaries.** Budget 8 cycles.
+
+**Exit protocol.** Oracle green ×2 · Arabic-only assertions on every new string ·
+journal sealed.

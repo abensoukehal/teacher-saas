@@ -99,21 +99,178 @@ estimate: M
 ---
 ```
 
-### be-1 — <short name>
-<!-- Six slots — the loop-ready contract (conventions/writing-sub-issues.md). -->
-1. **Intent:** why this sub-issue exists, one sentence — the loop's tiebreaker.
-2. **Ground truth (recorded + re-run command):** real shapes from the running
-   service (`curl …` / `tools/obs trace <id>`) — pasted here with the command.
-   Pre-flight: the loop re-runs this and must reproduce it before writing a line.
-3. **Delta:** target files (`path:LINE`) + the change. **Everything else frozen**
-   (freeze check is path-scoped: `git status --short -- <delta paths>`, never repo-wide — WF-63).
-4. **Oracle (executable, two-sided):**
-   - positive: spec-test / characterization `features/<slug>/tests/be/…`
-     (run: `tools/ci be --slug <slug>`);
-     acceptance as commands + expected observations, states incl. (loading/error/empty)
-   - negative: existing consumers' recorded shapes bit-stable; untouched paths unchanged
-   - obs assertion: `tools/obs trace <id>` shows the flow with expected status
-5. **Boundaries:** contract refs; additive/versioned only; budget: 10 loop iterations.
-6. **Exit:** done-when = oracle green + freeze respected + `tools/ci be` green ·
-   ask-when = contract change needed / non-additive / frozen file / red pin / budget blown
-   (see `conventions/autonomy.md`).
+### be-1 — promote the two skills into the catalogue
+
+**status:** todo · **tag:** happy-path
+
+**Intent.** `exam-plan` and `exercise-one` exist as measured prototypes in
+`agent/.claude/skills/`. Make them real catalogue entries: listed by `/api/skills`,
+spawnable by name, and pinned so their contracts cannot silently drift. No orchestration
+code — a skill IS the capability (`project/CLAUDE.md`, be section).
+
+**Ground truth.** Both already run and were measured (SEED §1, §10):
+```
+cd stacks/teacher-be/agent
+claude -p --output-format json --setting-sources project '/exam-plan {"stream":"علوم تجريبية","level":"3AS","topic":"الدوال العددية والنهايات","difficulty":"متوسط","exerciseCount":3,"durationMinutes":120,"format":"composition","totalPoints":20}'
+```
+→ 25.8 s, `points [5,7,8]=20`, `workload [30,40,50]=120`, 3 assignments with `avoid`.
+Replay fixtures: `scratchpad/plan.json`, `scratchpad/fan-ex{1,2,3}.json`.
+
+**Delta (freeze).** May touch: `agent/.claude/skills/exam-plan/`,
+`agent/.claude/skills/exercise-one/`. **Frozen:** every existing skill —
+`exam-subject`, `refine-exercise`, `solution-sheet` are untouched, and `exam-subject`
+keeps working for the monolith path until fe-1 lands.
+
+**Oracle.** `features/parallel-exercises/tests/be/skills-catalogue.characterization.test.js`
+- `GET /api/skills` lists `exam-plan` and `exercise-one` (positive)
+- both names pass skill validation; `exam-plan-x` and `../etc` are rejected `400
+  invalid_request` (negative — the name is interpolated into the prompt as `/<name>`)
+- the three pre-existing skills are still listed (regression)
+**Never call a real generation from a test** — replay the recorded fixtures.
+
+**Boundaries.** Budget 6 cycles. Do not change the runner, routes or store here.
+
+**Exit protocol.** Oracle green ×2 · `/api/skills` diffed against its recording ·
+journal sealed.
+
+---
+
+### be-2 — POST /api/exams: plan, insert the skeleton, fan out, fill in place
+
+**status:** todo · **tag:** happy-path
+
+**Intent.** The core of the job. Plan once, insert the whole exam with `pending`
+placeholders, then generate the exercises concurrently and fill each slot as it returns —
+so `GET /api/subjects/:id` shows a growing exam. Per
+`contracts/fe-be-progressive.contract.md` §0, §2.
+
+**Ground truth.** Today one call blocks ~110 s and returns everything at once:
+```
+curl -s -X POST localhost:9000/api/generate -H 'content-type: application/json' \
+  -d '{"skill":"exam-subject","input":{…3 exercises…}}'
+```
+→ 109.7 s, 9,035 tok, whole `exercises[]` (recording: `scratchpad/run-ex3.json`).
+
+**Delta (freeze).** May touch: `src/app.ts` (mount only), a new `src/routes/exams.ts`,
+`src/store/subjects.ts` (status field + fill path), `src/claude/runner.ts` (fan-out call
+site only). **FROZEN: `/api/generate` request and response, byte for byte** — SEED §9.1,
+and `fe/src/lib/api.ts:235` records that freeze on the other side. Also frozen: the
+`subjects` document shape apart from `exercises[].status`, and the `{teacherId,updatedAt}`
+index.
+
+**Oracle.** `tests/be/progressive-generate.characterization.test.js`
+- POST `/api/exams` returns after the plan with N exercises, **all** `status:"pending"`,
+  `statement:""`, and `points` already summing to 20 (positive)
+- `GET /api/subjects/:id` for that id returns the same skeleton, owner-scoped (positive)
+- a second teacher's id gets the same not-found as a nonexistent exam (negative —
+  existence is not probeable)
+- no `x-teacher-id` → `401 teacher_required` (negative)
+- **CONCURRENCY (write it now, not later):** N concurrent fills into ONE document all land;
+  no exercise is lost and `rev` advances once per fill. This is the first path that races
+  `replaceExercise`'s CAS deliberately — contract §5.5
+- filling a placeholder writes **no** `exercise_revisions` row (contract §5.4)
+- an exercise's `id`, `label`, `points` after filling equal the plan's (contract §5.2)
+- **absent `status` on a pre-existing subject reads as `ready`, never `pending`**
+  (contract §1 — the `roleOf` absent→admin class of bug)
+
+**Boundaries.** Budget 12 cycles. Retry and the failure path are be-3, not here — this
+sub-issue assumes every exercise returns valid. Do not touch `fe`.
+**Stop and ask** if the fan-out cannot fill concurrently without relaxing the CAS.
+
+**Exit protocol.** Oracle green ×2 · perimeter diff vs `run-ex3.json` recording ·
+`/api/generate` byte-identical · freeze audit · mutation spot-check on the absent-status
+default · journal sealed.
+
+---
+
+### be-3 — a malformed exercise fails alone, and retries itself
+
+**status:** todo · **tag:** hardening
+
+**Intent.** Measured 1/10 malformed (SEED §10.1) — so a 3-exercise fan-out has a **27%**
+chance of a hole. Detect it, retry that exercise automatically, and if it still fails mark
+it `failed` while the rest of the exam stands.
+
+**Ground truth.** A real truncated capture is in hand — 906 chars, unbalanced brace, and
+the CLI reported `subtype: success`, `is_error: false`:
+`scratchpad/fan-ex1.json` (also `trunc-9.json`, 763 chars). **Exit code and `is_error` are
+useless here** — validity must be decided by parsing and shape-checking the result.
+
+**Delta (freeze).** May touch: the fan-out result handling in `src/routes/exams.ts`,
+validation helpers. **Frozen:** the retry must not change `id`/`label`/`points`, must not
+write a revision row for a failed fill, and must not turn a partial exam into an error
+response (contract §3).
+
+**Oracle.** `tests/be/exercise-failure.characterization.test.js`
+- a replayed truncated result marks that exercise `failed`, `statement:""`, and the OTHER
+  exercises stay `ready` (positive — the whole point)
+- retry is attempted before `failed` is written, and a retry that succeeds yields `ready`
+  (positive)
+- the exam is **not** an error response when one exercise fails (negative — contract §3)
+- `points` still sum to 20 with a `failed` exercise present (negative)
+- a `failed` fill writes no `exercise_revisions` row (negative)
+
+**Boundaries.** Budget 10 cycles. Retry count is bounded and stated; unbounded retry on a
+~110 s loop is a resource bug. Do not re-call real generations in tests — replay.
+
+**Exit protocol.** Oracle green ×2 · replay fixtures used, not live calls · journal sealed.
+
+---
+
+### be-4 — regenerate one exercise on demand
+
+**status:** todo · **tag:** hardening
+
+**Intent.** `POST /api/subjects/:id/exercises/:exerciseId/regenerate` — the teacher-facing
+half of be-3, for an exercise that failed or that they abandoned. Contract §2.
+
+**Ground truth.** The sibling surface already exists and is the shape to match:
+`PUT /api/subjects/:id/exercises/:exerciseId` (replace) — see `src/routes/subjects.ts`, and
+its recorded behaviour in the promoted net `project/tests/be/persistence-gaps/`.
+
+**Delta (freeze).** May touch: `src/routes/subjects.ts` (or exams.ts). **Frozen:** the
+existing replace and revisions routes, and ownership scoping — the new route is scoped
+inside the query exactly as its siblings, never by a post-hoc check.
+
+**Oracle.** `tests/be/regenerate.characterization.test.js`
+- regenerating a `failed` exercise fills the same slot, same `id`/`label`/`points` (positive)
+- an unknown `exerciseId` → 404, and another teacher's subject → the same 404 (negative)
+- regenerating a `ready` exercise DOES write an `exercise_revisions` row — that one IS a
+  supersession of teacher-visible work (positive; contrast contract §5.4)
+- two concurrent regenerates of the same exercise → one wins, the other `409 conflict`
+  (negative — the existing CAS behaviour must not regress)
+
+**Boundaries.** Budget 8 cycles.
+
+**Exit protocol.** Oracle green ×2 · the `409` path exercised · journal sealed.
+
+---
+
+### be-5 — a fan-out gets a budget, not a bigger cap
+
+**status:** todo · **tag:** hardening
+
+**Intent.** One exam now occupies N+1 loops. `CLAUDE_MAX_CONCURRENT` defaults to **3**, so a
+single 3-exercise fan-out saturates the whole gate and starves every other teacher
+(SEED §6). Give a fan-out a per-exam budget under the global cap.
+
+**Ground truth.** `src/claude/runner.ts:72` — `if (active >= config.claude.maxConcurrent)`
+queues. `GET /health` reports `claude.{active,queued,max}`; measured live at
+`active: 20, queued: 0` during the capacity study, so the gate is observable.
+Measured cost: ~375 MB resident per loop.
+
+**Delta (freeze).** May touch: `src/claude/runner.ts`, `src/config.ts`. **Frozen:** the
+global cap must still bound total loops — a per-exam budget is an ADDITIONAL bound, never a
+replacement. `project/CLAUDE.md` records "the concurrency cap stays" as a must-not-undo.
+
+**Oracle.** `tests/be/fanout-budget.characterization.test.js`
+- one exam's fan-out never occupies more than its budget of concurrent loops (positive)
+- with the gate saturated by one exam, a second teacher's request still makes progress
+  rather than starving (positive — the actual reason this exists)
+- total active never exceeds the global cap (negative)
+- `/health` reports the budget alongside the cap, so an operator can see it (positive)
+
+**Boundaries.** Budget 8 cycles. **Do not raise the default cap** — that is a separate,
+evidence-backed decision the capacity study deliberately left to the user.
+
+**Exit protocol.** Oracle green ×2 · `/health` shape diffed · journal sealed.
