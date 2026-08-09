@@ -15,7 +15,7 @@
         "contracts": {
           "status": "locked",
           "derived_from": {
-            "seed": "7c9fce536b101a4e"
+            "seed": "62cf6e9df9eca3ac"
           }
         }
       },
@@ -82,6 +82,14 @@
             "contracts": "c344aae13fce3440"
           },
           "reviewed": "{\"contracts\": \"c344aae13fce3440\", \"seed\": \"62cf6e9df9eca3ac\"}"
+        },
+        "be-6": {
+          "status": "todo",
+          "tag": "hardening"
+        },
+        "fe-3": {
+          "status": "todo",
+          "tag": "hardening"
         }
       }
     }

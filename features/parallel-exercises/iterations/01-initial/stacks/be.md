@@ -274,3 +274,52 @@ replacement. `project/CLAUDE.md` records "the concurrency cap stays" as a must-n
 evidence-backed decision the capacity study deliberately left to the user.
 
 **Exit protocol.** Oracle green ×2 · `/health` shape diffed · journal sealed.
+
+---
+
+### be-6 — corrections fan out per exercise, and cannot be started twice
+
+**status:** todo · **tag:** hardening · **filed by:** QA (bugs A + B)
+
+**Intent.** SEED §5 exit criterion 3 — "corrections stream per exercise the same way" — was
+**silently dropped between the SEED and the contract**, which never specified a transport for
+it. QA measured the consequence: one monolithic `solution-sheet` run, `solutions: []` on every
+poll for 230 s, then all three at once. The criterion is not met.
+
+Second defect, same surface (QA bug B): **solutions generation has no in-flight guard.** The
+same exam in two tabs gives two enabled buttons and two full runs — QA drove `claude.active`
+1→2 with 206 s and 233 s runs both completing. Data survives (last-writer-wins on an upsert),
+but it is double quota for a result nobody sees. Refine has its `409`, regenerate has the
+`writing` registry; **solutions is the one generation surface with neither.**
+
+**Ground truth.** QA's ledger, `.../iterations/01-initial/qa.md`, cases for bugs A and B —
+both with repro. Today: `POST /api/generate {skill:"solution-sheet"}` takes the whole exam and
+bulk-upserts. Recording: `run-log.jsonl` shows a single spawn per correction request.
+
+**Delta (freeze).** May touch: a new per-exercise solution path in `src/routes/`, the solutions
+store, and `agent/.claude/skills/` (a lean per-exercise correction skill, mirroring how
+`exercise-one` was split out of `exam-subject`). **Frozen:** `/api/generate` byte-for-byte —
+`solution-sheet` keeps working and QA confirmed it consumes an assembled fan-out exam
+correctly; the `solutions` collection's `{subjectId, exerciseId}` unique index and its
+`answersHash` staleness derivation; the scale-sums-to-points rule.
+
+**Oracle.** `tests/be/solutions-fanout.characterization.test.js`
+- corrections arrive per exercise: after the first lands, `GET .../solutions` returns ONE
+  while others are still generating (positive — the criterion, and what QA measured absent)
+- each `scale` still sums exactly to that exercise's `points` (negative — the existing
+  invariant must survive the split)
+- **two concurrent solution requests for the same exam: one proceeds, the other is refused
+  without spawning** (positive — bug B; assert `claude.active` never exceeds one for that
+  exam, the same way be-5's clause asserts its budget)
+- a correction for one exercise does not disturb another's (negative)
+- `answersHash` still derives staleness per exercise, and a refine mid-generation still marks
+  only that exercise's correction stale (negative — the ~145 s window is why this exists)
+- **a blank/`failed` exercise is never sent for correction** (negative — fe-2 recorded this
+  hazard: ~145 s spent writing a worked answer to nothing, then stored as current)
+
+**Boundaries.** Budget 12 cycles. Reuse the `writing` registry pattern from be-3/be-4 rather
+than inventing a second one. Do NOT change `/api/generate`. Never call a real generation from
+a test — QA's recordings and the existing fixtures replay.
+
+**Exit protocol.** Oracle green ×2 · the promoted `be` net green against the JOB checkout ·
+`/api/generate` byte-identical · journal sealed.

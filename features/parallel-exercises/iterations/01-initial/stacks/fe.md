@@ -178,3 +178,35 @@ are different things and must not share a path.
 
 **Exit protocol.** Oracle green ×2 · Arabic-only assertions on every new string ·
 journal sealed.
+
+---
+
+### fe-3 — corrections appear one by one
+
+**status:** todo · **tag:** hardening · **filed by:** QA (bug A)
+
+**Intent.** The teacher watches `solutions: []` for ~230 s and then gets everything at once.
+Same defect the exam had before this job, on the correction path. Render each correction as it
+lands, exactly as exercises now do.
+
+**Ground truth.** QA's ledger `.../qa.md`, bug A: one spawn, 230 s of empty polls, then three
+corrections together. `SolutionView.tsx` renders the whole set today.
+
+**Delta (freeze).** May touch: `SolutionView.tsx`, the solutions calls in `api.ts`, the poll
+helper (`lib/poll.ts` already exists and already provably stops — reuse it, do not write a
+second poller). **Frozen:** the `/api/generate` calls, the exam-side progressive path shipped
+in fe-1/fe-2, and the print sheet's behaviour.
+
+**Oracle.** `tests/fe/solutions-progressive.characterization.test.tsx`
+- one correction present and two pending → the one renders, the others show an Arabic waiting
+  state (positive)
+- polling stops once no correction is pending (negative — same brake as the exam poll)
+- **the correction button cannot start a second run while one is in flight** (positive — QA
+  bug B's user-facing half; two tabs gave two enabled buttons)
+- an exam with no corrections yet renders no empty correction boxes (negative)
+- every new string Arabic, no LaTeX visible, RTL holds (positive — hard constraints)
+
+**Boundaries.** Budget 8 cycles. Do not touch the exam-side progressive path.
+
+**Exit protocol.** Oracle green ×2 · promoted `fe` net green against the JOB checkout ·
+journal sealed.
