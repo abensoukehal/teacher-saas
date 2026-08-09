@@ -125,9 +125,27 @@ tools/dev up -d && open http://localhost:10000/
 
 ---
 
-### fe-2 — a failed exercise says so, in Arabic, and can be retried
+### fe-2 — reach the progressive path, and show a failed exercise honestly
 
 **status:** todo · **tag:** hardening
+
+> **SCOPE AMENDED after fe-1 (2026-08-09).** fe-1 shipped `startExam` tested but
+> **uncalled** — nothing in the UI starts a progressive run, because the promoted net binds
+> «توليد الموضوع» to `/api/generate` and fe-1's exit protocol required that net green. Both
+> could not hold, so the frozen oracle won and reachability was deferred here. **SEED §5
+> exit criterion 1 is not met until a teacher can actually reach this**, so it is now part
+> of this sub-issue rather than a follow-up.
+>
+> **Decision: repoint the existing button. Do not add a second one.** Two generate buttons
+> is the over-engineering the hard constraints forbid, and a teacher cannot be asked to know
+> which one to press. `/api/generate` stays FROZEN as a *surface* — `solution-sheet` still
+> uses it — but the exam-creation *flow* moves to `POST /api/exams`.
+>
+> **Consequence, and it must be deliberate:** promoted clauses that assert the button calls
+> `/api/generate` (in `project/tests/fe/` — `cost-join`, `kpis-thread`, `auth`) are
+> asserting behaviour this job intentionally replaces. Update them to the new flow **in the
+> job's own test dir**, and state the change in the journal. A characterization net going
+> red on an intended change is the net working; silently deleting a clause is not.
 
 **Intent.** 27% of 3-exercise exams will have a hole (SEED §10.1). The teacher must see
 which exercise is missing, in their language, and be able to ask for it again — without
@@ -150,6 +168,11 @@ are different things and must not share a path.
 - the failure message contains no English, no error code, no `exerciseId`, and no LaTeX
   (negative — hard constraints; a teacher must never see internals)
 - printing an exam with a `failed` exercise does not print an empty box (negative)
+- **«توليد الموضوع» starts a PROGRESSIVE run** — `POST /api/exams`, then the first `ready`
+  exercise paints without waiting for the rest (positive — the amended scope; without this
+  clause the whole job is unreachable)
+- the solution-sheet flow still calls `/api/generate` and is unaffected (negative — the
+  surface is frozen, only the exam-creation flow moved)
 
 **Boundaries.** Budget 8 cycles.
 
