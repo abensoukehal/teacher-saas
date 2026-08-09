@@ -147,7 +147,7 @@ tools/dev up -d && open http://localhost:10000/
 > job's own test dir**, and state the change in the journal. A characterization net going
 > red on an intended change is the net working; silently deleting a clause is not.
 
-**Intent.** 27% of 3-exercise exams will have a hole (SEED §10.1). The teacher must see
+**Intent.** ~22% of 3-exercise exams will have a hole (SEED §10.1, as corrected). The teacher must see
 which exercise is missing, in their language, and be able to ask for it again — without
 losing the exercises that worked.
 

@@ -214,7 +214,7 @@ Neither holds teacher content and neither may start to.
 
 | unknown | disposition |
 |---|---|
-| truncation rate | **MEASURED: 1/10 malformed** (plus 1/3 in the fan-out = 2/13 ≈ 15%). See §10 |
+| truncation rate | **MEASURED: 1/13 ≈ 8% unrecoverable** (2/13 raw-parse; see the §10.1 correction) |
 | how `fe` receives progressive results (SSE vs poll) | **PLANNING decides** — both viable; `/api/generate` frozen means a new endpoint either way |
 | partial-exam persistence timing | **PLANNING decides** — insert-only `create` forbids progressive upsert into one doc without a new mechanism |
 | plan quality on `مواضيع مختلطة` | **PARKED** — single-topic only was exercised; not blocking, but no oracle may assume it |
@@ -243,13 +243,21 @@ Ten `exercise-one` runs, rotating the three real assignments:
                             ↑ MALFORMED (763 chars, truncated)
 ```
 
-### 10.1 Malformed output is ~10%, not exotic
+### 10.1 Unrecoverable output is ~8% — corrected during be-3
 
-**9/10 valid, 1/10 malformed** — combined with the fan-out's 1/3, that is **2/13 ≈ 15%**,
-and 10% is the conservative read. This is not a rare edge case to log and forget.
+> **CORRECTION (be-3, 2026-08-09).** This section first read "1/10 malformed … 2/13 ≈ 15%".
+> That **overcounted**, and the error was in the counting script, not the service: it used a
+> bare `JSON.parse`, while `be` strips a ```json fence before parsing. `trunc-9.json` is
+> wrapped in exactly such a fence — 763 chars, braces balanced **18/18** — so the service
+> recovers it. Re-verified independently: `trunc-9` parses after stripping; `fan-ex1`
+> (906 chars, braces **22/21**) is genuinely truncated and does not.
 
-For a 3-exercise fan-out, P(at least one exercise malformed) = 1 − 0.9³ = **27%**. **More
-than a quarter of exams would arrive with a hole in them.** Per-exercise retry is therefore
+**Raw-parse failures: 2/13. Service-visible unrecoverable failures: 1/13 ≈ 8%.** Of the ten
+repeat runs, **zero** were unrecoverable; the single unrecoverable case came from the
+three-run fan-out.
+
+For a 3-exercise fan-out, P(at least one exercise unrecoverable) = 1 − 0.92³ ≈ **22%**.
+**Roughly one exam in five would arrive with a hole in it.** Per-exercise retry is therefore
 not a nice-to-have in this design — it is what makes the design shippable at all, and it
 must be automatic, not a button the teacher has to find.
 

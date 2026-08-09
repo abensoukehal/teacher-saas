@@ -187,7 +187,7 @@ default · journal sealed.
 
 **status:** done · **tag:** hardening
 
-**Intent.** Measured 1/10 malformed (SEED §10.1) — so a 3-exercise fan-out has a **27%**
+**Intent.** Measured ~8% unrecoverable (SEED §10.1) — so a 3-exercise fan-out has a **~22%**
 chance of a hole. Detect it, retry that exercise automatically, and if it still fails mark
 it `failed` while the rest of the exam stands.
 
