@@ -50,6 +50,8 @@ interface Opts {
   regen?: [number, unknown];
   /** Nothing open at boot, so the app starts on an empty workspace. */
   noCurrent?: boolean;
+  /** What GET …/solutions answers with at boot. */
+  solutions?: unknown[];
   /**
    * Hold POST /api/exams open until `release()`.
    *
@@ -102,7 +104,10 @@ function harness(o: Opts = {}) {
     if (url === "/api/generate" && method === "POST") {
       return res(200, { data: { solutions: [] }, correlationId: "sol-1" });
     }
-    if (url.endsWith("/solutions")) return res(200, { solutions: [] });
+    if (url.endsWith("/solutions/generate") && method === "POST") {
+      return res(202, { subjectId: SID, exerciseIds: ["ex2", "ex3"], skipped: [], correlationId: "s1" });
+    }
+    if (url.endsWith("/solutions")) return res(200, { solutions: o.solutions ?? [] });
     return res(404, { error: { message: "not found", type: "not_found" } });
   });
 
@@ -118,6 +123,8 @@ function harness(o: Opts = {}) {
     exams: () => of("/api/exams"),
     generates: () => of("/api/generate"),
     regenerates: () => calls.filter((c) => c.url.endsWith("/regenerate") && c.method === "POST"),
+    startSolutions: () =>
+      calls.filter((c) => c.url.endsWith("/solutions/generate") && c.method === "POST"),
     release: () => release?.(),
   };
 }
@@ -229,30 +236,55 @@ describe("«توليد الموضوع» starts a PROGRESSIVE run", () => {
 // ---------------------------------------------------------------------------------
 
 describe("the solution-sheet flow is unaffected", () => {
-  test("generating a correction still posts /api/generate with {skill, input}", async () => {
-    const h = harness({ reads: [record(SID, MONOLITH)] });
+  /**
+   * RE-BASELINED by fe-3, 2026-08-09 — the driver moved, the frozen surface did not.
+   *
+   * This clicked the WHOLE-EXAM correction button, which fe-3 repoints at
+   * `POST …/solutions/generate` so corrections arrive one by one (QA bug A). What is
+   * unchanged is `/api/generate` itself: PER-EXERCISE regeneration still spends its
+   * run there, because the new surface corrects the whole exam and cannot express
+   * "just this one". So the clause drives the path that still uses the frozen route.
+   */
+  test("regenerating ONE correction still posts /api/generate with {skill, input}", async () => {
+    // One correction already stored, so the sheet renders; the OTHER exercises are
+    // missing theirs and each offers its own regenerate control.
+    const h = harness({
+      reads: [record(SID, MONOLITH)],
+      solutions: [
+        { exerciseId: "ex1", answer: "الجواب", scale: [{ part: "خطوة", points: 6 }], stale: false },
+      ],
+    });
     await act(async () => {
       render(<App />);
     });
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "توليد التصحيح النموذجي" })).toBeTruthy(),
-    );
+    await waitFor(() => expect(document.querySelector(".sol__regen")).toBeTruthy());
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "توليد التصحيح النموذجي" }));
+      (document.querySelector(".sol__regen") as HTMLButtonElement).click();
     });
 
     await waitFor(() => expect(h.generates()).toHaveLength(1));
     // The frozen surface, byte for byte: exactly the two keys it has always taken.
     expect(Object.keys(h.generates()[0]!.body).sort()).toEqual(["input", "skill"]);
     expect(h.generates()[0]!.body.skill).toBe("solution-sheet");
-    // And it did NOT go anywhere near the new one.
+    // And it did NOT go anywhere near the exam surface.
     expect(h.exams()).toHaveLength(0);
   }, 20_000);
 
-  test("a correction is never asked for an exercise that has no statement", async () => {
-    // New hazard with progressive generation: a blank exercise handed to
-    // `solution-sheet` spends ~145 s and $0.756 writing a worked answer to nothing,
-    // which is then stored as that exercise's correction and reads as current.
+  /**
+   * RE-BASELINED by fe-3, 2026-08-09 — the filter MOVED to `be`, and the fe guard that
+   * remains is the one worth pinning here.
+   *
+   * The hazard is unchanged and still real: a blank exercise handed to `solution-sheet`
+   * spends ~145 s writing a worked answer to nothing, which is then stored as that
+   * exercise's CURRENT correction. What changed is who applies the rule. The whole-exam
+   * request no longer carries exercises at all — `be` selects them itself with the same
+   * `correctable` test, on the document rather than on this browser's copy of it, which
+   * is the better place for it.
+   *
+   * `fe` keeps one half it can still answer alone: refusing to start a run when NOTHING
+   * is correctable. That is a decision made before any request, so it belongs here.
+   */
+  test("the correction request carries no exercises — `be` owns the filter now", async () => {
     const h = harness({
       reads: [record(SID, partial({ ex2: "ready", ex3: "ready", ex1: "failed" }))],
     });
@@ -266,10 +298,32 @@ describe("the solution-sheet flow is unaffected", () => {
       fireEvent.click(screen.getByRole("button", { name: "توليد التصحيح النموذجي" }));
     });
 
-    await waitFor(() => expect(h.generates()).toHaveLength(1));
-    const sent = h.generates()[0]!.body.input.exercises as Array<{ id: string; statement: string }>;
-    expect(sent.map((e) => e.id)).toEqual(["ex2", "ex3"]);
-    expect(sent.every((e) => e.statement.trim().length > 0)).toBe(true);
+    await waitFor(() => expect(h.startSolutions()).toHaveLength(1));
+    // No exercise payload to get wrong, and no /api/generate run spent on the batch.
+    expect(h.startSolutions()[0]!.body).toBeUndefined();
+    expect(h.generates()).toHaveLength(0);
+  }, 20_000);
+
+  test("an exam with NOTHING correctable never starts a run at all", async () => {
+    // The half `fe` can still decide alone, and it must: this is a refusal made before
+    // any request, so there is no server-side filter to defer to.
+    const h = harness({
+      reads: [record(SID, partial({ ex1: "failed" }))], // ex1 failed, ex2/ex3 pending
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "توليد التصحيح النموذجي" })).toBeTruthy(),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "توليد التصحيح النموذجي" }));
+    });
+
+    await waitFor(() => expect(document.querySelector(".alert")).toBeTruthy());
+    expect(document.body.textContent).toContain("لا يوجد تمرين مكتمل");
+    expect(h.startSolutions()).toHaveLength(0);
+    expect(h.generates()).toHaveLength(0);
   }, 20_000);
 });
 
