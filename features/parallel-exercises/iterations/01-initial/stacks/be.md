@@ -185,7 +185,7 @@ default · journal sealed.
 
 ### be-3 — a malformed exercise fails alone, and retries itself
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** Measured 1/10 malformed (SEED §10.1) — so a 3-exercise fan-out has a **27%**
 chance of a hole. Detect it, retry that exercise automatically, and if it still fails mark
@@ -219,7 +219,7 @@ response (contract §3).
 
 ### be-4 — regenerate one exercise on demand
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** `POST /api/subjects/:id/exercises/:exerciseId/regenerate` — the teacher-facing
 half of be-3, for an exercise that failed or that they abandoned. Contract §2.
@@ -248,7 +248,7 @@ inside the query exactly as its siblings, never by a post-hoc check.
 
 ### be-5 — a fan-out gets a budget, not a bigger cap
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** One exam now occupies N+1 loops. `CLAUDE_MAX_CONCURRENT` defaults to **3**, so a
 single 3-exercise fan-out saturates the whole gate and starves every other teacher

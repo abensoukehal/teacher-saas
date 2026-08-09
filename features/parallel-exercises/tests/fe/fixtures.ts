@@ -107,6 +107,25 @@ export function partial(state: Record<string, "ready" | "failed">): ExamSubject 
   };
 }
 
+/**
+ * A LIVE recording of the real thing — lane 6, `be` on :9600, 2026-08-09.
+ *
+ * `POST /api/exams` answered **HTTP 201** in 22.5 s with every exercise
+ * `status: "pending"` and `statement: ""`; polling `GET /api/subjects/:id` then showed
+ * ex2 finish roughly 60 s before ex1. That gap IS the feature, observed rather than
+ * assumed — a real finished exercise on screen while another is still being written.
+ *
+ * fe-1 could only guess these key names because the endpoint did not exist yet. This
+ * is what replaces the guess.
+ */
+const LIVE = read("rec-live-exams.2026-08-09.json") as {
+  start: { http: number; durationMs: number; body: Record<string, unknown> };
+  final: { http: number; body: Record<string, unknown> };
+};
+
+export const LIVE_START = LIVE.start;
+export const LIVE_FINAL = LIVE.final;
+
 /** A `SubjectRecord` envelope around any subject — what `GET /api/subjects/:id` sends. */
 export const record = (id: string, subject: ExamSubject) => ({
   id,

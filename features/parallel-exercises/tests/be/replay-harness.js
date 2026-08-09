@@ -15,6 +15,8 @@
  */
 const { spawn } = require("node:child_process");
 const { createServer } = require("node:net");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const REPO = process.env.CHAR_ROOTDIR;
@@ -52,6 +54,7 @@ async function startReplayServer(opts = {}) {
   if (!REPO) throw new Error("CHAR_ROOTDIR is not set — run this via tools/ci, not jest directly");
   const port = await freePort();
   const url = `http://127.0.0.1:${port}`;
+  const state = fs.mkdtempSync(path.join(os.tmpdir(), "fake-claude-"));
   let buffer = "";
 
   const child = spawn("npx", ["tsx", "src/index.ts"], {
@@ -65,10 +68,14 @@ async function startReplayServer(opts = {}) {
       // THE POINT OF THE HARNESS: no real generation can happen from here.
       CLAUDE_BIN: path.join(__dirname, "fake-claude.mjs"),
       CLAUDE_MAX_CONCURRENT: String(opts.maxConcurrent ?? 3),
+      ...(opts.fanoutBudget === undefined
+        ? {}
+        : { CLAUDE_FANOUT_BUDGET: String(opts.fanoutBudget) }),
       CLAUDE_TIMEOUT_MS: "30000",
       FAKE_CLAUDE_FIXTURES: path.join(__dirname, "fixtures"),
       FAKE_CLAUDE_MODE: opts.mode ?? "valid",
       FAKE_CLAUDE_DELAY_MS: String(opts.delayMs ?? 250),
+      FAKE_CLAUDE_STATE: state,
       // Telemetry off: this instance must not append to the lane's run log.
       RUN_LOG: "",
     },
@@ -87,6 +94,17 @@ async function startReplayServer(opts = {}) {
   return {
     url,
     logs: () => buffer,
+    /** How many times the CLI was spawned for one exercise — i.e. attempts, not outcomes. */
+    attempts: (exerciseId) => {
+      try {
+        return fs
+          .readFileSync(path.join(state, `exercise-one-${exerciseId}.log`), "utf8")
+          .split("\n")
+          .filter(Boolean).length;
+      } catch {
+        return 0;
+      }
+    },
     stop: () =>
       new Promise((resolve) => {
         if (child.exitCode !== null) return resolve();

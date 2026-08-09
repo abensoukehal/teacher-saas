@@ -21,12 +21,34 @@
  *                         clause to mean anything, so every exercise run waits the same
  *                         amount and they all land together. Default 250.
  */
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const DIR = process.env.FAKE_CLAUDE_FIXTURES;
 const MODE = process.env.FAKE_CLAUDE_MODE || "valid";
 const DELAY = Number(process.env.FAKE_CLAUDE_DELAY_MS ?? 250);
+/** Where each invocation is tallied, so a suite can count ATTEMPTS, not just outcomes. */
+const STATE = process.env.FAKE_CLAUDE_STATE;
+
+/**
+ * How many times this exact (skill, exercise) has been spawned before now.
+ *
+ * Append-and-count rather than read-modify-write: every spawn is its own process, and
+ * concurrent slots of one fan-out would race a counter. Different slots write different
+ * files, and retries of one slot are strictly sequential, so appending is exact.
+ */
+function attemptNumber(key) {
+  if (!STATE) return 1;
+  const path = join(STATE, `${key}.log`);
+  let before = 0;
+  try {
+    before = readFileSync(path, "utf8").split("\n").filter(Boolean).length;
+  } catch {
+    before = 0;
+  }
+  appendFileSync(path, `${Date.now()}\n`);
+  return before + 1;
+}
 
 const argv = process.argv.slice(2);
 
@@ -75,9 +97,25 @@ function recordedStatement(id) {
  * `be`'s verify-don't-trust rule (contract §5.2) — the CLI reports such a run as a success.
  */
 function exerciseResult() {
-  if (MODE === "trunc-ex1" && input.id === "ex1") {
-    return rec("rec-fan-ex1.json"); // the real truncated capture, verbatim
+  const attempt = attemptNumber(`exercise-one-${input.id}`);
+
+  // The two real captures SEED §9.2 calls truncations. Both were reported by the CLI as
+  // `subtype: success`, `is_error: false` — which is why validity has to be decided by
+  // parsing, never by an exit code. They are NOT the same failure, though:
+  //
+  //   rec-fan-ex1.json  906 chars, braces 22 vs 21 — cut mid-object, UNRECOVERABLE.
+  //   rec-trunc-9.json  763 chars, braces 18 vs 18, closing fence present — COMPLETE.
+  //                     Only the ```json fence makes a raw JSON.parse fail, and stripping
+  //                     that fence is exactly what `src/claude/json.ts` exists to do.
+  if (input.id === "ex1") {
+    if (MODE === "trunc-ex1") return rec("rec-fan-ex1.json"); // never recovers
+    if (MODE === "trunc-ex1-once" && attempt === 1) return rec("rec-fan-ex1.json");
+    // The fan-out's two attempts both truncate, so the slot ends `failed`; a later
+    // regenerate (attempt 3) succeeds. The real journey be-4 exists for.
+    if (MODE === "trunc-ex1-first2" && attempt <= 2) return rec("rec-fan-ex1.json");
+    if (MODE === "fenced-ex1") return rec("rec-trunc-9.json"); // recovered, not a failure
   }
+
   const source = recordedStatement(input.id);
   const envelope = rec("rec-fan-ex2.json");
   const points = MODE === "bad-echo-ex2" && input.id === "ex2" ? input.points + 1 : input.points;

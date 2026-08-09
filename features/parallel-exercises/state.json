@@ -45,16 +45,28 @@
           }
         },
         "be-3": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "7c9fce536b101a4e",
+            "contracts": "c344aae13fce3440"
+          }
         },
         "be-4": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "7c9fce536b101a4e",
+            "contracts": "c344aae13fce3440"
+          }
         },
         "be-5": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "7c9fce536b101a4e",
+            "contracts": "c344aae13fce3440"
+          }
         },
         "fe-2": {
           "status": "todo",
