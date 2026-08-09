@@ -1,118 +1,133 @@
-# SEED — enriched product blueprint (DISCOVERY output)
+# SEED — parallel-exercises
 
-> **Phase:** DISCOVERY. **Input:** `00-brief.md` (your raw, vague brief). **Output:**
-> this file. **Consumed by:** PLANNING (it turns SEED into the specs tree).
->
-> DISCOVERY is where I take your raw brief and **enrich it** via EXPLORE —
-> reading the codebase and the documentation, and (per *investigate-by-running*)
-> exercising the real code headless to record how it actually behaves today. The
-> result is the **locked product spec**: what we're building and why, agreed
-> before any technical planning starts. Product-level only — no
-> sub-issue/implementation detail yet (that's PLANNING). For a bugfix/hotfix,
-> DISCOVERY runs in troubleshoot mode and this SEED carries the proven root
-> cause — there is no separate RCA.md.
->
-> Locked = the problem/solution/scope below are agreed and stop moving. PLANNING
-> and everything downstream derive from this; changing it means re-running DISCOVERY.
+> **STATUS: the brief's central projection is FALSIFIED.** Fan-out does not make an exam
+> faster. It makes the *first exercise* arrive sooner and makes failure cheaper to repair.
+> Those are real wins, but they are a different job from the one the brief proposed, so
+> this SEED is **not sealed** pending a scope decision. See §5.
 
-## Anchor
-- **Job kind:** <feature | bugfix | hotfix | exploration | eval>
-- **Upstream:** <source_url from 00-brief — the tracker Project/Issue>
+## 1 · What the brief claimed, and what the prototype measured
 
-## Problem (enriched)
-<!-- The real problem, sharpened past the raw brief. Who feels it, when, how
-     often, cost of leaving it. Cite what in the codebase/docs confirms it. -->
+The brief projected a 3-exercise composition dropping from ~110 s to **55–60 s** by
+planning cheaply and generating exercises in parallel. Two throwaway skills were written to
+test exactly that — `exam-plan` and `exercise-one`, both in the job worktree at
+`stacks/teacher-be/agent/.claude/skills/` — and driven straight off the CLI.
 
-## Current reality — the planning kit (observed, not assumed)
+**Result, same controls both ways (3 exercises · 120 min · composition · علوم تجريبية):**
 
-> PLANNING is pure assembly: it partitions this kit into six-slot sub-issues without
-> investigating anything itself. Every artifact below is EXPLORE output — evidence,
-> not narrative. A gap here becomes a stop-and-ask downstream: fill it now.
-
-### 1 · Acting-surface map (where we'll act)
-<!-- Per stack: exact file:line, its role, and the change type. This is what PLANNING
-     partitions into sub-issues; each Delta slot (target files + freeze) is cut from it. -->
-| Stack | Path (`repo/path:LINE`) | Role | Change |
+| | total time | time to FIRST exercise | output tokens |
 |---|---|---|---|
-| | | | new / modify / read-only |
+| monolith `exam-subject` (today) | **109.7 s** | 109.7 s | 9,035 |
+| `exam-plan` + parallel `exercise-one` ×3 | **~114 s** | **~74 s** | 15,492 |
 
-### 2 · Baseline recordings (surface → re-run command → recorded shape)
-<!-- One row per acting surface. Becomes each sub-issue's Ground-truth slot verbatim;
-     the command is what the IMPLEMENT pre-flight re-runs. Record on the runtime that
-     matters (WF-44); real production seeds for prompt/LLM surfaces (WF-49).
-     LOCK RULE: the seal step re-runs every command once — the SEED locks only when
-     every recording reproduces NOW (stale → re-record). -->
-| Surface | Re-run command | Recorded shape (or pointer) | Captured (date · env) |
+**Fan-out is not faster. It is marginally slower, and burns 71% more tokens.**
+
+Per-run detail:
+
+```
+PLAN          25.8s   1,384 tok   1 turn   points [5,7,8]=20   workload [30,40,50]=120
+  ex1 (5pt سهل)    43.4s   3,376 tok   ← landed at 48s into the fan-out
+  ex2 (7pt متوسط)  56.8s   4,240 tok
+  ex3 (8pt صعب)    83.2s   6,492 tok   ← the critical path
+fan-out wall clock = 83–88s (bounded by ex3)   total = 25.8 + 88 ≈ 114s
+```
+
+## 2 · Why it fails — and it is structural, not bad luck
+
+**A fan-out costs `max(exercise)`, not `mean(exercise)` — and the plan deliberately makes
+one exercise the biggest.** `exam-plan`'s own progressive-difficulty rule assigns the last
+exercise the most points and the hardest ground (here 8 pts / صعب / a full function study,
+6,492 tokens). So the slowest task is on the critical path **by design**, and it alone cost
+83 s — 76% of the monolith's entire runtime.
+
+Add the plan's 25.8 s, which is **pure serial latency ahead of everything** (nothing can
+start before assignments exist), and the arithmetic closes: 25.8 + 83.2 ≈ 109 s ≈ the
+monolith. The parallelism is real; there is simply nothing left to win once one exercise
+must be generated in full and a plan must precede it.
+
+The brief's error was assuming per-exercise cost would fall proportionally. It does fall —
+3,376 / 4,240 / 6,492 against the monolith's 6,606-token *floor for a single exercise*, so
+the lean skill genuinely works — but the hardest exercise stays expensive because the
+mathematics in it is expensive, and that is the one that sets the clock.
+
+## 3 · What the prototype did prove
+
+**Time-to-first-content improves by ~33%** — 74 s vs 109.7 s. The teacher sees a real,
+finished, correct exercise while the rest are still being written. That is the half of the
+brief that survived, and it is the half the request actually described ("first come, first
+displayed").
+
+**Failure becomes cheap and targeted.** One of the three exercises came back **truncated** —
+906 chars, one unbalanced brace, and the CLI still reported `subtype: success`,
+`is_error: false`. Under the monolith that is a dead 110 s exam and `data: null`. Under
+fan-out it is one dead exercise, retryable in ~45 s, with the other two already on screen.
+Given this is the second sighting of the truncation mode (once in 50 concurrent generations,
+once in 3 lean ones), cheap targeted retry may be worth more than the latency.
+
+**`exam-plan` is sound.** Points summed to exactly 20, workload to exactly 120, difficulty
+was progressive, and the three assignments covered distinct ground with populated `avoid`
+lists. The coherence risk the brief worried about did not materialise in this run.
+
+## 4 · Negative results — do not re-litigate without new evidence
+
+**Smaller models are not the lever. Tested twice, failed twice.**
+
+| step | opus | sonnet | haiku |
 |---|---|---|---|
-| | `curl …` / `obs trace <id>` / LangSmith run | | |
+| generate exam | 87.2 s / 6,219 tok / valid | 82.0 s / 7,733 tok / **invalid JSON** | — |
+| plan | 25.8 s / 1,384 tok / **valid** | 27.4 s / 2,000 tok / **invalid JSON** | 23.7 s / 2,280 tok / **invalid JSON** |
 
-### 3 · Perimeter consumers (recorded)
-<!-- Every existing consumer of a touched surface + its recorded current shape.
-     Feeds the negative oracle ("shapes bit-stable") — the characterization pins. -->
-| Consumer | Surface it uses | Recorded shape (or pointer) |
-|---|---|---|
+Smaller models were **not meaningfully faster**, emitted **more** tokens, and **broke the
+JSON-only contract every time** — including on the plan step, which is scheduling rather
+than mathematics and was the most favourable case available. Throughput is ~76–84 tok/s
+regardless of model, so wall clock tracks output volume, and the smaller models talk more.
 
-### 4 · End-to-end trace (one real action, correlated)
-<!-- One action traced FE→BE→AI→data (`tools/obs trace <id>`), saved/pasted. Gives
-     PLANNING the boundary crossings (→ contracts + wire shapes), the ordering
-     skeleton (→ depends_on), and the sequence for contracts/flows.md. -->
+**There is no wrapper overhead to reclaim.** 94% of wall clock is `duration_api_ms`, in 3
+turns. Spawn cost, tool round trips and config loading are all noise.
 
-### 5 · Observability baseline
-<!-- What's visible TODAY in the acting area (logs/traces/metrics) vs blind spots.
-     Every sub-issue's obs assertion must reference something visible; blind spots
-     become the FIRST sub-issues (a loop can't verify what it can't see). -->
-- Visible today:
-- Blind spots:
+## 5 · The scope decision this SEED is blocked on
 
-### 6 · Unknowns ledger (no naked unknowns)
-<!-- Every unknown, dispositioned. An undispositioned unknown is a scheduled
-     stop-and-ask inside PLANNING/IMPLEMENT — not allowed past the lock.
-     Budget rule: an unknown that resists disposition within the phase's budget is
-     PARKED explicitly — never ground down. -->
-| Unknown | Disposition | Evidence / note |
-|---|---|---|
-| | resolved / parked (`blocked_on: …`) / accepted-risk | |
+The brief asked for a speed job. The evidence says there is no speed to be had this way.
+Three honest options:
 
-### 7 · Sweep statement (the edge of the evidence)
-<!-- Which subsystems/planes were investigated, and which deliberately were NOT (and
-     why). PLANNING can't distinguish "not relevant" from "not looked at" without this —
-     the unswept edge is exactly where freeze boundaries and stop-and-asks must be tight. -->
-- Swept:
-- Not swept (why):
+- **(a) Re-scope to progressive rendering + targeted retry.** Keep fan-out, drop the
+  "faster" claim. Ship time-to-first-exercise 74 s vs 110 s, per-exercise retry, and
+  per-exercise corrections streaming the same way. Total time unchanged.
+- **(b) Re-scope to perceived latency only, no fan-out.** Stream the monolith's exercises
+  as they are produced. Smaller change, no concurrency multiplication — but the CLI is
+  invoked with `--output-format json`, not `stream-json`, so this needs verification that
+  partial exercises are even observable mid-run. **Not yet investigated.**
+- **(c) Retire the job.** Total generation time is what the 100 s bar measures, and nothing
+  here moves it.
 
-## Solution direction (locked, product-level)
-<!-- The agreed approach in product terms. Alternatives considered, one line each
-     on why-not. NO sub-issue/impl detail — that's PLANNING. -->
+Recommendation: **(a)**, with (b) investigated first as a cheaper path to the same win.
 
-## User value (company-facing framing)
-<!-- One or two sentences in product language — seeds the company Linear
-     milestone/issue titles (/linear-sync). -->
+## 6 · Cost this decision must account for
 
-## Scope & boundaries
-- **In:**
-- **Out (non-goals):**
-- **Stacks likely touched:** <fe · be · ai · infra>  (firmed up in PLANNING)
+Fan-out multiplies concurrent loops per teacher. One 3-exercise exam becomes 3 loops plus a
+plan; nine concurrent teachers becomes ~27 loops, ≈10 GB at the measured 375 MB per loop.
+`CLAUDE_MAX_CONCURRENT` is a flat global gate (default 3) — a single fan-out of 3 saturates
+it alone, so this needs a per-exam fan-out budget *plus* a global cap, not a larger number.
+Token usage also rises 71% per exam; that is a subscription rate question, not money.
 
-## Risks & backward-compat flags
-<!-- Anything that could break, and the compat posture (additive/versioned).
-     Consumers live in kit §3 (recorded); unknowns live in kit §6 (dispositioned). -->
+## 7 · Open, not investigated
 
-## Investigation journal (hypotheses, not a reading list)
-<!-- The reasoning, auditable — one entry per hypothesis, starting with the BRIEF'S OWN
-     FRAMING (tested before anything else; the brief is a claim, not a fact). Carry two
-     competing models until evidence kills one; every why-not cites its killing evidence.
-     Format:
-     - H1 <hypothesis> → test: <the discriminating run/read> → result: <what it showed>
-       → belief: <kept / killed / refined> -->
+- Does `--output-format stream-json` expose exercises mid-generation? (decides option b)
+- Is the truncation failure rate really ~1/3, or was this run unlucky? n=1 per mode; this
+  needs a real repeat count before any retry budget is sized.
+- Does the plan step hold up on `مواضيع مختلطة من البرنامج`, where it must spread across
+  topics rather than within one? Only the single-topic case was exercised.
+- `exam-subject` still instructs the model to read `curriculum/3as-mathematiques.md`, which
+  **does not exist** — no `curriculum/` directory is present. No stored exam's
+  `meta.assumptions` reports it missing, so generation has been running from memory against
+  the "inside the official Algerian curriculum" hard constraint. Out of scope here, but it
+  should not be inherited silently.
 
-## Ready-for-PLANNING checklist
-- [ ] the brief's framing was tested, not assumed (journal H1)
-- [ ] problem + solution direction agreed and **locked**; why-nots cite killing evidence
-- [ ] acting-surface map present (kit §1); scope in/out stated
-- [ ] every acting surface has a baseline recording with its re-run command (kit §2)
-- [ ] perimeter consumers recorded (kit §3); backward-compat posture flagged
-- [ ] one correlated end-to-end trace saved (kit §4)
-- [ ] observability baseline stated — blind spots called out (kit §5)
-- [ ] **no undispositioned unknowns** (kit §6)
-- [ ] sweep statement present — the unswept edge named (kit §7)
-- [ ] **lock re-verification: every §2 recording reproduced at seal time**
+## 8 · Re-run commands
+
+```
+cd project-worktrees/parallel-exercises/stacks/teacher-be/agent
+claude -p --output-format json --setting-sources project '/exam-plan {…}'
+claude -p --output-format json --setting-sources project '/exercise-one {…}'
+```
+Captured 2026-08-09 on lane 0, job worktree at `feature/parallel-exercises`.
+Raw runs: `scratchpad/{plan,plan-sonnet,plan-haiku,fan-ex1,fan-ex2,fan-ex3}.json`.

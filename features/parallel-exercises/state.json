@@ -1,0 +1,25 @@
+{
+  "slug": "parallel-exercises",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-09",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "5643ed205ecfdd41"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "25041a6fd6c28ee2"
+          }
+        }
+      },
+      "subissues": {}
+    }
+  }
+}
