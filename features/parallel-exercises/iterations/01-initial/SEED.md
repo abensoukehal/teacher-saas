@@ -1,9 +1,10 @@
 # SEED — parallel-exercises
 
-> **STATUS: the brief's central projection is FALSIFIED.** Fan-out does not make an exam
-> faster. It makes the *first exercise* arrive sooner and makes failure cheaper to repair.
-> Those are real wins, but they are a different job from the one the brief proposed, so
-> this SEED is **not sealed** pending a scope decision. See §5.
+> **STATUS: the brief's central projection is FALSIFIED, and the job is re-scoped on that
+> evidence.** Fan-out does not make an exam faster. It makes the *first exercise* arrive
+> sooner and makes failure cheaper to repair. **Decision (2026-08-09): ship those two, drop
+> the speed claim** — option (a) in §5. Total generation time is explicitly NOT a goal of
+> this job, and no oracle may assert one.
 
 ## 1 · What the brief claimed, and what the prototype measured
 
@@ -99,7 +100,23 @@ Three honest options:
 - **(c) Retire the job.** Total generation time is what the 100 s bar measures, and nothing
   here moves it.
 
-Recommendation: **(a)**, with (b) investigated first as a cheaper path to the same win.
+**DECIDED: (a).** Keep the fan-out, ship progressive rendering and targeted retry, and state
+plainly that total time is unchanged. (b) was not chosen: streaming the monolith gives the
+same first-paint win but keeps a whole exam hostage to one truncated response, and the
+truncation mode has now been seen twice. Cheap targeted retry is the durable half of this
+job, and it requires the fan-out.
+
+**What "done" means here — the exit criteria:**
+
+1. A teacher sees the first finished exercise at roughly 70–80 s, not 110 s, and each
+   further exercise appears as it lands.
+2. One exercise failing (truncated JSON, timeout, bad shape) costs that exercise only. The
+   other exercises stay on screen, and the failed one is retryable on its own.
+3. Corrections stream per exercise the same way — the `solutions` collection is already
+   keyed per `exerciseId`, so this needs no data-model change.
+4. Points still sum to 20 and exercise ids are still `ex1…exN` in order. The assembled exam
+   is indistinguishable from a monolith exam to everything downstream.
+5. **No claim, anywhere, that generation got faster.** It did not.
 
 ## 6 · Cost this decision must account for
 
@@ -131,3 +148,132 @@ claude -p --output-format json --setting-sources project '/exercise-one {…}'
 ```
 Captured 2026-08-09 on lane 0, job worktree at `feature/parallel-exercises`.
 Raw runs: `scratchpad/{plan,plan-sonnet,plan-haiku,fan-ex1,fan-ex2,fan-ex3}.json`.
+
+## 9 · Planning kit
+
+PLANNING assembles from this without investigating. A gap here bounces back to DISCOVERY.
+
+### 9.1 Acting-surface map — what this job may touch
+
+| repo | path | role in this change |
+|---|---|---|
+| be | `agent/.claude/skills/exam-plan/SKILL.md` | NEW — the skeleton step (prototype exists, measured §1) |
+| be | `agent/.claude/skills/exercise-one/SKILL.md` | NEW — one exercise from an assignment (prototype exists) |
+| be | `src/claude/runner.ts` | the concurrency gate — a fan-out needs a per-exam budget, not a bigger global cap (§6) |
+| be | `src/app.ts` | where a NEW progressive endpoint mounts. `/api/generate` is FROZEN — do not extend it |
+| be | `src/store/subjects.ts` | how a partially-assembled exam persists. `create` is insert-only |
+| be | `src/routes/subjects.ts` | per-exercise retry lands here or on the new endpoint — decide in PLANNING |
+| fe | `src/lib/api.ts` | the only place `be` is called. `/api/generate` calls are byte-frozen (see its own comment at :235) |
+| fe | `src/lib/exam.ts` | exam shape helpers |
+| fe | `src/components/ExamView.tsx` | renders `exercises[]` — must tolerate a PARTIAL array |
+| fe | `src/components/Progress.tsx` | the existing wait state; progressive arrival changes what it means |
+| fe | `src/components/SolutionView.tsx` | corrections stream the same way (exit criterion 3) |
+| fe | `src/App.tsx` | owns the generate→render flow |
+
+**Frozen, do not modify:** `/api/generate` request/response, the `subjects` document shape,
+exercise ids `ex1…exN`, `solutions`' unique `{subjectId, exerciseId}` index.
+
+### 9.2 Baseline recordings — re-run commands in §8
+
+| recording | value | file |
+|---|---|---|
+| monolith 3-exercise | 109.7 s · 9,035 tok · valid JSON | `scratchpad/run-ex3.json` |
+| monolith 2-exercise | 87.2 s · 6,219 tok · 3 turns · 94% api | `scratchpad/one-run.json` |
+| monolith 1-exercise | 86.5 s · 6,606 tok | `scratchpad/run-ex1.json` |
+| plan (opus) | 25.8 s · 1,384 tok · points=20 workload=120 | `scratchpad/plan.json` |
+| fan-out ×3 | 43.4 / 56.8 / 83.2 s · 3,376 / 4,240 / 6,492 tok | `scratchpad/fan-ex{1,2,3}.json` |
+| **truncation failure** | ex1: 906 chars, unbalanced brace, `subtype: success` | `scratchpad/fan-ex1.json` |
+
+Captured 2026-08-09, job worktree, lane 0. **Never call a real generation from a test** —
+replay these.
+
+### 9.3 Perimeter consumers
+
+- `fe/src/lib/api.ts` is the sole caller of `be`; everything else in `fe` goes through it.
+- The promoted regression net asserts today's whole-exam behaviour: `project/tests/be/`
+  (224 clauses) and `project/tests/fe/` (242). A partial-exam render must not break the
+  clauses that assert a complete one.
+- `run-log.jsonl` gains one line per spawn. A fan-out of 3 writes 4 lines per exam where
+  there was 1 — anything aggregating it (the admin KPIs join on `genCorrelationId`) will
+  see a different shape. **This is a real perimeter break to design for.**
+- `subjects.genCorrelationId` is a single value; a fan-out has N+1 correlation ids.
+
+### 9.4 E2E trace (today, monolith)
+
+`fe` Controls → `api.ts` POST `/api/generate` {skill:"exam-subject"} → `app.ts:129` →
+`runner.ts` gate → `claude -p` (~110 s) → parse stdout → `recordRun` → response →
+`fe` renders whole `exercises[]` → POST `/api/subjects` persists.
+
+### 9.5 Obs baseline
+
+`GET /health` reports `claude.{active,queued,max}` — the gate's live depth, which is how a
+fan-out's effect on capacity is observed. `run-log.jsonl` carries per-run duration/cost.
+Neither holds teacher content and neither may start to.
+
+### 9.6 Dispositioned unknowns
+
+| unknown | disposition |
+|---|---|
+| truncation rate | **MEASURED: 1/10 malformed** (plus 1/3 in the fan-out = 2/13 ≈ 15%). See §10 |
+| how `fe` receives progressive results (SSE vs poll) | **PLANNING decides** — both viable; `/api/generate` frozen means a new endpoint either way |
+| partial-exam persistence timing | **PLANNING decides** — insert-only `create` forbids progressive upsert into one doc without a new mechanism |
+| plan quality on `مواضيع مختلطة` | **PARKED** — single-topic only was exercised; not blocking, but no oracle may assume it |
+| `curriculum/3as-mathematiques.md` missing | **PARKED, out of scope** (§7) — flag, do not deepen |
+| `CLAUDE_MAX_CONCURRENT` default 3 vs fan-out | **IN SCOPE** — §6; a fan-out of 3 saturates the gate alone |
+
+### 9.7 Sweep statement
+
+Evidence covers: the monolith at 1/2/3 exercises, the plan step on three models, a 3-way
+fan-out, and one truncation failure — all single-topic (`الدوال العددية والنهايات`),
+`علوم تجريبية`, `3AS`, on lane 0, one machine, **n=1 per configuration**.
+
+Not covered, so freeze boundaries must be tight and oracles must not assume: repeated runs
+of anything (no variance data), mixed-topic exams, exercise counts above 3, any concurrency
+above 1 exam at a time, and the interaction of fan-out with the `/api/generate` gate under
+real multi-teacher load.
+
+
+## 10 · Two findings from 10 repeat runs — both change the design
+
+Ten `exercise-one` runs, rotating the three real assignments:
+
+```
+45.9s  46.7s  53.6s  55.6s  59.8s  69.9s  90.6s  100.3s  105.6s  121.8s
+3,430  3,524  3,623  4,329  4,043  5,285  6,729   7,988   7,870    9,631 tok
+                            ↑ MALFORMED (763 chars, truncated)
+```
+
+### 10.1 Malformed output is ~10%, not exotic
+
+**9/10 valid, 1/10 malformed** — combined with the fan-out's 1/3, that is **2/13 ≈ 15%**,
+and 10% is the conservative read. This is not a rare edge case to log and forget.
+
+For a 3-exercise fan-out, P(at least one exercise malformed) = 1 − 0.9³ = **27%**. **More
+than a quarter of exams would arrive with a hole in them.** Per-exercise retry is therefore
+not a nice-to-have in this design — it is what makes the design shippable at all, and it
+must be automatic, not a button the teacher has to find.
+
+Note what this also means for the monolith: the same failure kills the *entire* exam. The
+current product has been running at this rate all along; fan-out does not introduce the
+failure, it makes it survivable.
+
+### 10.2 Latency variance is huge, and it makes fan-out WORSE than measured once
+
+Same skill, same three assignments: **45.9 s to 121.8 s — a 2.7× spread**, tracking output
+tokens (3,430 → 9,631) at the usual ~76–84 tok/s.
+
+A fan-out's wall clock is `max` of N draws from that distribution, and **the max of N draws
+grows with N**. The §1 measurement (83.2 s) was one sample of `max(3)`; from this spread the
+expected `max(3)` is meaningfully higher — around 100 s — which would put the fan-out at
+~126 s against the monolith's ~110 s.
+
+**This strengthens §2 rather than changing the decision.** The job was already re-scoped off
+speed; this says the speed story is not merely flat but probably negative, and the SEED's
+exit criteria (§5) must never be read as implying otherwise. Time-to-FIRST-exercise is
+unaffected — that is `min`, not `max`, and `min` of N draws *improves* with N. The first
+exercise landing early is the one genuinely robust win here, and this data makes it more
+robust, not less.
+
+**Consequence for PLANNING:** an oracle may assert time-to-first-exercise. **No oracle may
+assert total generation time**, in either direction — n=1 per configuration, and a 2.7×
+spread means any single timing is noise.
