@@ -53,6 +53,7 @@ against a live service, including recovery from a service restart mid-generation
 
 Known and accepted: the fan-out budget is per-exam rather than per-teacher; the corrections
 backstop takes 5–10 minutes to give up on a dead batch; no organic truncation has ever been
-observed rendering, so that path's evidence remains replay-driven; and `exam-subject` still
-tells the model to read a curriculum file that does not exist — flagged twice now, deliberately
-untouched, and still generating from memory against a hard constraint that forbids it.
+observed rendering, so that path's evidence remains replay-driven; and only شعبة الرياضيات has a
+curriculum file — `علوم تجريبية`, which nearly every measurement here used, has none. (An earlier
+claim in this retro that the curriculum file was *missing entirely* was my error; it exists and
+always has. The file documents its own limits: authoritative topic names, inferred per-topic notes.)
