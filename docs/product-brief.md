@@ -708,10 +708,18 @@ marks their own position needs no calendar at all. The calendar is what makes *d
 
 Nothing here is optional-order: each step is unusable without the one before it.
 
-**1 · The programme corpus.** Transcribe all five documents into the structure in §F.2, and
-fix شعبة الرياضيات's missing quarter (item A) as the same pass through the same document.
-Delivers item A, proves the schema on the stream we already serve, and is the foundation for
-everything after. *Nothing else can start until this exists.*
+**1 · The programme corpus — التدرجات only.** Transcribe all five **progressions** into the
+structure in §F.2, and fix شعبة الرياضيات's missing quarter (item A) as the same pass through
+the same document. Delivers item A, proves the schema on the stream we already serve, and is
+the foundation for everything after. *Nothing else can start until this exists.*
+
+> **Decided 2026-08-10: التوزيع السنوي is deferred to its own job**, after the tracker. The
+> two documents have different sources, different authority and different lifecycles — the
+> progression is the ministry's and changes rarely; the distribution is teacher-made and
+> changes every September. Bundling them would tie a stable transcription to an annual chore,
+> and the calendar earns nothing until there is a tracker to put it in: a teacher who marks
+> their own position needs no calendar at all. The calendar improves *defaults*, not
+> correctness.
 
 **2 · Teacher profile + all six streams** (item B). Sign-up learns what a teacher teaches; the
 topic taxonomy per stream comes from the corpus rather than a hardcoded constant; the printed
