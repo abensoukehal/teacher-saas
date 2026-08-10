@@ -132,6 +132,7 @@ try {
         WEEKS_PER_YEAR: M.WEEKS_PER_YEAR,
         PROGRAMMES: M.PROGRAMMES,
         PROGRAMME_REVISIONS: M.PROGRAMME_REVISIONS,
+        EDITION_PATTERN: M.EDITION_PATTERN?.source ?? null,
       });
       break;
 

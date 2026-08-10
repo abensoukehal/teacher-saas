@@ -415,6 +415,139 @@ describe("be-4 · the live-database guard", () => {
   });
 });
 
+/**
+ * be-11 — QA's B2 at the CLI: exit 5, and the two flags that must never be one flag.
+ *
+ * `--correct` says "we misread our own page"; `--new-edition` says "the ministry revised the
+ * programme". The store module holds the state table (see the be-11 clauses there); these
+ * clauses pin what an OPERATOR sees, because the failure QA was pointing at is an operator
+ * failure — a wrong edition string that exits 0 and reports `inserted`.
+ */
+describe("be-11 · a new edition needs saying so", () => {
+  /** The same document at a later edition, content changed as a real revision would be. */
+  function nextEditionLines(edition = "2023-09") {
+    const lines = F.variant("valid");
+    lines[0].edition = edition;
+    for (const l of lines) if (l.type === "week") l.hours = 7;
+    return lines;
+  }
+
+  const write = (name, lines) => F.writeJsonl(tmp, name, lines);
+
+  test("a second edition exits 5, names what is already stored, and writes nothing", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    const res = load(scratchArgs(write("e2-refused", nextEditionLines())));
+    expect(res.code).toBe(5);
+    expect(res.out).toMatch(/REFUSED/);
+    expect(res.out).toMatch(/already stored at 2022-09/);
+    expect(res.out).toMatch(/2023-09/);
+    // Both ways out are named — this is the message an operator acts on.
+    expect(res.out).toMatch(/--new-edition/);
+    expect(res.out).toMatch(/--correct can never change a document's edition/);
+    expect(res.out).toMatch(/action=refused-new-edition/);
+
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("--new-edition loads it, and never reports it in the same words as a first load", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    const res = load(scratchArgs(write("e2-declared", nextEditionLines()), "--new-edition"));
+    expect(res.code).toBe(0);
+    expect(res.out).toMatch(/NEW EDITION fixture-3as-math @ 2023-09/);
+    expect(res.out).toMatch(/already held: 2022-09 — none was modified/);
+    expect(res.out).toMatch(/current is now 2023-09/);
+    expect(res.out).toMatch(/action=new-edition/);
+
+    const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
+    expect(docs).toHaveLength(2);
+    expect(docs.filter((d) => d.current === true).map((d) => d.edition)).toEqual(["2023-09"]);
+  });
+
+  test("--correct with --new-edition is refused before a connection is even opened", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    const args = scratchArgs(write("e2-both", nextEditionLines()), "--correct", "--new-edition");
+    const res = load(args);
+    expect(res.code).toBe(1);
+    expect(res.out).toMatch(/two different version axes/);
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+
+    // "Before a connection" is the claim, so point it at a port nothing is listening on:
+    // a contradiction the tool has to connect in order to notice is a contradiction it
+    // reports as a Mongo timeout.
+    let offline;
+    try {
+      execFileSync("node", [SCRIPT, ...args], {
+        encoding: "utf8",
+        env: { ...process.env, MONGO_URL: "mongodb://127.0.0.1:1" },
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      offline = { code: 0, out: "" };
+    } catch (err) {
+      offline = { code: err.status ?? -1, out: `${err.stdout ?? ""}${err.stderr ?? ""}` };
+    }
+    expect(offline.code).toBe(1);
+    expect(offline.out).toMatch(/two different version axes/);
+    expect(offline.out).not.toMatch(/ECONNREFUSED|ServerSelection/);
+  });
+
+  test("--correct alone cannot bring an edition into being — it exits 5, not 0", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    const res = load(scratchArgs(write("e2-correct", nextEditionLines()), "--correct"));
+    expect(res.code).toBe(5);
+
+    const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
+    expect(docs).toHaveLength(1);
+    expect(docs[0].edition).toBe("2022-09");
+    expect(docs[0].transcriptionRev).toBe(1);
+    expect(await db.collection("programme_revisions").countDocuments({})).toBe(0);
+  });
+
+  test("THE CASE THIS EXISTS FOR: a mistyped edition is a FILE error, not a third document", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    // `2022-9` for `2022-09`. It used to insert, take `current`, and exit 0 reporting
+    // `inserted` — a typo indistinguishable from the ministry revising the programme.
+    const res = load(scratchArgs(write("e2-typo", nextEditionLines("2022-9"))));
+    expect(res.code).toBe(1);
+    expect(res.out).toMatch(/edition "2022-9" must be YYYY-MM/);
+    expect(res.out).toMatch(/action=rejected/);
+
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+    expect((await db.collection("programmes").findOne({})).current).toBe(true);
+  });
+
+  test("--dry-run on a new edition decides and writes nothing", async () => {
+    expect(load(scratchArgs(seed("valid"))).code).toBe(0);
+
+    const res = load(
+      scratchArgs(write("e2-dry", nextEditionLines()), "--new-edition", "--dry-run"),
+    );
+    expect(res.code).toBe(0);
+    expect(res.out).toMatch(/DRY-RUN/);
+    expect(res.out).toMatch(/weeks=0 rows=0/);
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("--new-edition changes nothing about a single-edition corpus", async () => {
+    // The flag is inert where there is no second edition: insert, then idempotent no-op.
+    const file = seed("valid");
+    expect(load(scratchArgs(file, "--new-edition")).out).toMatch(/inserted fixture-3as-math/);
+    expect(load(scratchArgs(file)).out).toMatch(/unchanged/);
+    expect(load(scratchArgs(file, "--new-edition")).out).toMatch(/unchanged/);
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("the usage line offers --new-edition", () => {
+    const res = load([]);
+    expect(res.code).toBe(1);
+    expect(res.out).toMatch(/\[--new-edition\]/);
+  });
+});
+
 describe("be-2 · perimeter", () => {
   test("teacher_saas is untouched by this suite", async () => {
     // RE-BASELINED (be-9). This asserted a fixed four-collection list, which was true

@@ -383,12 +383,19 @@ describe("be-1 · upsertProgramme — the loader state table", () => {
     expect(await db.collection("programmes").countDocuments({})).toBe(0);
   });
 
+  /**
+   * RE-ORACLED (be-11, QA's B2). This clause used to load a second edition with no flag and
+   * assert it demoted the first. That silent path is the defect: a first load and a whole
+   * new ministry edition printed the same word, so a MISTYPED edition entered the corpus and
+   * took `current` while exiting 0. The demotion itself is still the contract and is still
+   * asserted here — what changed is that reaching it is now a declared act.
+   */
   test("loading a newer edition demotes the older one — one current per docKey", async () => {
     probe("upsert", { lines: lines() });
     const next = F.clone(lines());
     next[0].edition = "2023-09";
     for (const l of next) if (l.type === "week") l.hours = 7;
-    probe("upsert", { lines: next });
+    probe("upsert", { lines: next, opts: { newEdition: true } });
 
     const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
     expect(docs).toHaveLength(2);
@@ -403,6 +410,244 @@ describe("be-1 · upsertProgramme — the loader state table", () => {
 
   test("getProgramme returns null for a docKey that was never loaded", () => {
     expect(probe("get", { docKey: "no-such-doc" }).value).toBeNull();
+  });
+});
+
+/**
+ * be-11 — QA's B2: the edition axis.
+ *
+ * SEED §3.1 keeps two version axes apart on purpose: `edition` is the MINISTRY revising the
+ * programme, `transcriptionRev` is US fixing our own reading of an unchanged page. The SEED's
+ * words: collapsing them "would make 'the syllabus changed' indistinguishable from 'we
+ * misread a number'". These clauses pin every way the two could still run together.
+ *
+ * What QA reported — that no code path could create a second edition, and that `--correct`
+ * absorbed a new edition into the old document — did NOT reproduce: the lookup was already
+ * keyed on `{docKey, edition}`. Two real defects were behind the concern, both reproduced
+ * against a scratch database before anything was written:
+ *
+ *   1. `current` followed the LAST LOAD, not the greatest edition. Correcting a typo in the
+ *      2022-09 transcription while 2023-09 was current handed `current` back to 2022-09 and
+ *      exited 0 — a transcription fix silently rewinding the syllabus.
+ *   2. A new edition was an unannounced insert with no format rule, so `2022-9` for
+ *      `2022-09` created a third document, took `current`, and reported `inserted` in the
+ *      same words as a first load.
+ */
+describe("be-11 · a new edition is a new document, and a declared one", () => {
+  const lines = () => F.variant("valid");
+
+  /** The same document at a later edition — content differs, as a real revision would. */
+  function nextEdition(edition = "2023-09") {
+    const next = F.clone(lines());
+    next[0].edition = edition;
+    for (const l of next) if (l.type === "week") l.hours = 7;
+    return next;
+  }
+
+  beforeEach(async () => {
+    await db.dropDatabase();
+  });
+
+  test("a second edition is REFUSED without newEdition, and nothing is written", async () => {
+    probe("upsert", { lines: lines() });
+    const res = probe("upsert", { lines: nextEdition() });
+
+    expect(res.ok).toBe(true);
+    expect(res.value.action).toBe("refused-new-edition");
+    // A refusal that does not say what is already there cannot be acted on.
+    expect(res.value.storedEditions).toEqual(["2022-09"]);
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+    expect(await db.collection("programme_revisions").countDocuments({})).toBe(0);
+  });
+
+  test("with newEdition it becomes a NEW document — the previous one keeps its own record", async () => {
+    const first = probe("upsert", { lines: lines() });
+    const res = probe("upsert", { lines: nextEdition(), opts: { newEdition: true } });
+
+    expect(res.value.action).toBe("new-edition");
+    expect(res.value.transcriptionRev).toBe(1);
+    expect(res.value.currentEdition).toBe("2023-09");
+
+    const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
+    expect(docs).toHaveLength(2);
+
+    // The old document is untouched apart from `current`: same rev, same hash, same content.
+    const old = docs.find((d) => d.edition === "2022-09");
+    expect(old.transcriptionRev).toBe(1);
+    expect(old.contentHash).toBe(first.value.contentHash);
+    expect(old.current).toBe(false);
+    // A new edition is not a supersession of OUR reading, so it writes no revision row.
+    expect(await db.collection("programme_revisions").countDocuments({})).toBe(0);
+  });
+
+  test("THE DEFECT: correcting the OLD edition does not steal current from the newer one", async () => {
+    probe("upsert", { lines: lines() });
+    probe("upsert", { lines: nextEdition(), opts: { newEdition: true } });
+
+    // A transcription fix to 2022-09 — our reading of an unchanged page.
+    const fixed = F.clone(lines());
+    fixed[0].frontMatter.intro = `${fixed[0].frontMatter.intro} (تصحيح نسخ)`;
+    const res = probe("upsert", { lines: fixed, opts: { correct: true } });
+
+    expect(res.value.action).toBe("corrected");
+    expect(res.value.edition).toBe("2022-09");
+    expect(res.value.transcriptionRev).toBe(2);
+    // `current` follows the greatest EDITION, never the last load.
+    expect(res.value.currentEdition).toBe("2023-09");
+
+    const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
+    expect(docs.filter((d) => d.current === true)).toHaveLength(1);
+    expect(docs.find((d) => d.current === true).edition).toBe("2023-09");
+    expect(probe("get", { docKey: "fixture-3as-math" }).value.edition).toBe("2023-09");
+  });
+
+  test("correct and newEdition together is refused — they name the two different axes", () => {
+    probe("upsert", { lines: lines() });
+    const res = probe("upsert", {
+      lines: nextEdition(),
+      opts: { correct: true, newEdition: true },
+    });
+
+    expect(res.ok).toBe(false);
+    expect(res.error.name).toBe("ContradictoryAxesError");
+  });
+
+  test("correct can never change a document's edition — it is keyed on {docKey, edition}", async () => {
+    const first = probe("upsert", { lines: lines() });
+    // `--correct` alone, on a file whose edition moved: the new-edition branch refuses first,
+    // so the correction path is unreachable and 2022-09 is not rewritten to 2023-09.
+    const res = probe("upsert", { lines: nextEdition(), opts: { correct: true } });
+
+    expect(res.value.action).toBe("refused-new-edition");
+    const docs = await db.collection("programmes").find({ docKey: "fixture-3as-math" }).toArray();
+    expect(docs).toHaveLength(1);
+    expect(docs[0].edition).toBe("2022-09");
+    expect(docs[0].transcriptionRev).toBe(1);
+    expect(docs[0].contentHash).toBe(first.value.contentHash);
+  });
+
+  test("newEdition never rewrites an edition that is already stored — that is a correction", async () => {
+    probe("upsert", { lines: lines() });
+    const changed = F.clone(lines());
+    changed[0].frontMatter.intro = `${changed[0].frontMatter.intro} (تغيير)`;
+    // Same edition, changed content: declaring a new edition does not make it one.
+    const res = probe("upsert", { lines: changed, opts: { newEdition: true } });
+
+    expect(res.value.action).toBe("refused");
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+    expect((await db.collection("programmes").findOne({})).transcriptionRev).toBe(1);
+  });
+
+  test("newEdition on a first-ever load is not an error, and is still an ordinary insert", async () => {
+    const res = probe("upsert", { lines: lines(), opts: { newEdition: true } });
+    expect(res.value.action).toBe("inserted");
+    expect(res.value.storedEditions).toBeUndefined();
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("dryRun on a new edition decides and writes nothing", async () => {
+    probe("upsert", { lines: lines() });
+    const res = probe("upsert", { lines: nextEdition(), opts: { newEdition: true, dryRun: true } });
+
+    expect(res.value.action).toBe("new-edition");
+    expect(res.value.currentEdition).toBe("2023-09");
+    expect(await db.collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("an edition EARLIER than the current one loads, and does not take current", async () => {
+    // Backfilling an older edition must not rewind the syllabus either — the rule is the
+    // greatest edition, not the newest arrival, in both directions.
+    probe("upsert", { lines: nextEdition("2023-09") });
+    const res = probe("upsert", { lines: lines(), opts: { newEdition: true } });
+
+    expect(res.value.action).toBe("new-edition");
+    expect(res.value.currentEdition).toBe("2023-09");
+    expect(probe("get", { docKey: "fixture-3as-math" }).value.edition).toBe("2023-09");
+  });
+});
+
+describe("be-11 · edition is YYYY-MM, so a typo cannot read as a syllabus revision", () => {
+  /** The problems `validateProgrammeLine` reports for a given edition string. */
+  function editionProblems(edition) {
+    const line = F.programmeLine({ legend: true });
+    line.edition = edition;
+    return probe("validateProgrammeLine", { line }).value.filter((p) => p.includes("edition"));
+  }
+
+  test("the pattern is exported, so the loader and the seed cannot drift", () => {
+    expect(probe("constants").value.EDITION_PATTERN).toBe("^\\d{4}-(0[1-9]|1[0-2])$");
+  });
+
+  test("2022-09 — the corpus's own edition — is accepted", () => {
+    expect(editionProblems("2022-09")).toEqual([]);
+  });
+
+  test.each([
+    ["2022-9", "unpadded — THE CASE THIS EXISTS FOR: it used to load as a third document"],
+    ["2022-13", "not a month"],
+    ["2022-00", "not a month"],
+    ["2022", "no month at all"],
+    ["2022-09-01", "a date, not an edition"],
+    ["septembre 2022", "free-form"],
+    [" 2022-09", "leading space — a different string, a different document"],
+  ])("%s is refused (%s)", (edition) => {
+    const problems = editionProblems(edition);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/YYYY-MM/);
+  });
+});
+
+/**
+ * be-11 — QA's B1: the maths legend must keep the page's squash.
+ *
+ * PDF p18 prints `هوملّون` as ONE cluster — no space, and the shadda on the LAM. The corpus
+ * stored `هو ملوّن`: a space inserted and the shadda moved to the WAW. That is the same
+ * source-squash class the corpus deliberately PRESERVED for تقني رياضي
+ * (`الأحمرلعدم تناولهفي`), so normalising it here was a fidelity loss, not a tidy-up.
+ *
+ * Confirmed twice before the seed was touched, and the two instruments agree: the PDF's own
+ * text layer decodes the cluster as U+0647 U+0648 U+0645 U+0644 U+0651 U+0648 U+0646 with a
+ * −0.09pt junction against 3.0pt for every real space on that line, and a 600 dpi render
+ * shows the shadda sitting over the lam. The independent layer-2 re-read had it right all
+ * along — `--compare` went 112 → 111 discrepancies with the l2 file untouched.
+ *
+ * This clause reads the SHIPPED seed, not a fixture: the thing that can regress is the
+ * corpus, and a future transcription pass would re-normalise it exactly as this one did.
+ */
+describe("be-11 · the maths legend keeps the page's squash", () => {
+  const SEED = path.resolve(__dirname, "..", "..", "..", "..", "data", "programmes", "tadarroj-3as-math.jsonl");
+
+  /** ه و م ل ّ و ن — what page 18 prints. */
+  const AS_PRINTED = "هوملّون";
+  /** ه و SPACE م ل و ّ ن — what the corpus stored: a space in, the shadda moved. */
+  const NORMALISED = "هو ملوّن";
+
+  let head;
+  let week24;
+
+  beforeAll(() => {
+    const lines = fs.readFileSync(SEED, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    head = lines[0];
+    week24 = lines.find((l) => l.type === "week" && l.week === 24);
+  });
+
+  test("the legend stores the cluster as printed, not as normalised", () => {
+    expect(head.emphasisLegend.text).toContain(AS_PRINTED);
+    expect(head.emphasisLegend.text).not.toContain(NORMALISED);
+  });
+
+  test("week 24 row 0's guidance carries the SAME string — the legend is printed in that cell", () => {
+    expect(week24.rows[0].guidance[0]).toBe(head.emphasisLegend.text);
+  });
+
+  test("the rest of the legend is untouched, including the year as printed (2022-2021)", () => {
+    // Verified from pixels at 600 dpi while fixing the squash: the page really does print
+    // the years in that order, so the l2 file's `2021-2022` is the l2 reader's own
+    // normalisation and the seed is right. Nothing else on the line changed.
+    expect(head.emphasisLegend.text).toBe(
+      `تم ادراج ما ${AS_PRINTED} باللون الأحمر لعدم تناوله في السنة الدراسية 2022-2021`,
+    );
+    expect(head.emphasisLegend.pdfPage).toBe(18);
   });
 });
 
