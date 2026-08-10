@@ -240,6 +240,90 @@ and C) · bacdz (streams and specialities).
 
 ---
 
+## 6c. Candidate next work — a collection, not a plan
+
+Nothing here is committed or provisioned. This is the shelf: things we know enough about to
+scope, kept so the reasoning isn't re-derived each time. Ordered by what they'd change, not by
+effort.
+
+### A · The two units we already owe our own teachers
+
+**Smallest, and it affects existing users.** The topic dropdown is missing **الحساب التكاملي**
+and **الأعداد والحساب** — both confirmed units of the programme for شعبة الرياضيات, the one
+stream we serve (§6b). A teacher cannot ask for either today.
+
+No new streams, no profile, no data-model change. Add the entries and let the existing
+curriculum file carry them. The only subtlety: الأعداد والحساب is stream-specific, so adding it
+as a flat entry silently assumes a single stream forever — worth writing down even if we do
+the flat version now.
+
+### B · Teacher profile + the three scientific streams
+
+**The largest, and the one that turns "who is this teacher" into product behaviour.** Sign-up
+collects what a teacher teaches and their school; generation uses it; the printed sheet carries
+the school name instead of leaving a blank for them to fill in by hand.
+
+**Precondition, not a component: a stream selector without a per-stream curriculum file is a
+lie.** `exam-subject` reads `agent/curriculum/<file>.md` and only `3as-mathematiques.md`
+exists. Offering a stream with no file generates ungrounded content — silently breaking the
+on-syllabus constraint, in a way only a practising teacher catches, months later, in class. So
+the curriculum files land with the selector or before it, never after.
+
+What §6b makes cheap: تقني رياضي's unit list is **identical** to رياضيات, and علوم تجريبية is
+the same **minus** الأعداد والحساب. Two derivable files, both ✎.
+
+Deliberately excluded, each because it looks helpful and isn't:
+- **The تقني رياضي speciality** — all four share one maths programme. A field that means
+  nothing today gets mistaken for one that means something later.
+- **Wilaya, years teaching, class size** — nothing acts on them, and the `teacherId` is still a
+  bearer value that never expires and cannot be revoked. Every personal field sits behind it.
+  School name is personal data, not decoration.
+
+Open, and **not** to be assumed: does a teacher teach **one** stream or several? Algerian lycée
+teachers commonly cover more than one. One-versus-many changes the data model, the sign-up
+form and every default — the cheap answer and the correct one may differ. Also unresolved:
+whether the school belongs to the teacher or to the exam (a teacher who moves, or writes for
+two schools, breaks the first model), and what a real Algerian exam header actually carries.
+
+### C · Weekly exercise series (سلاسل التمارين)
+
+**Roadmap item 3, and the brief's own answer to the frequency problem** (§5): exams are needed
+3–6 times a trimester, series *weekly*. If only one thing gets added, this is it.
+
+The progressive-generation work made it unusually cheap. A series is the same
+plan → fan-out → fill shape with the exam envelope removed: no summing to 20, no duration
+budget, one chapter. `exercise-one` needs no change; the plan skill is simpler than the exam's;
+the progressive UI, per-exercise retry and one-writer registry are all reusable as-is.
+
+### D · Multiple versions of one exam (نماذج متعددة)
+
+Roadmap item 2, and now nearly free: it wanted exercise-level regeneration, which shipped as
+`POST /subjects/:id/exercises/:exerciseId/regenerate`. Same questions, different numbers,
+shuffled — anti-cheating in crowded rooms. Cheap, but it does not move usage frequency, which
+is the number that matters.
+
+### E · Obtain the official programme documents
+
+The **التدرج السنوي** from المفتشية العامة للبيداغوجيا, per stream — the document that actually
+defines what is examinable and how deeply. Everything in §6b is ✎ inference from teaching
+sites agreeing at unit level: enough to offer a topic, **not** enough to claim any file
+transcribes the programme.
+
+Not an engineering task. It needs the PDFs (behind Drive links on eddirasa,
+education-onec-dz, DzExams) and ideally a teacher confirming what is examinable this year. It
+is the cheapest item here in build time and the one that most raises confidence in everything
+else, and it is a prerequisite to ever dropping the ✎ marks.
+
+### Not on the shelf, and why
+
+**تسيير واقتصاد and the two literary streams** — different textbooks, genuinely different
+content, and the literary streams have a reduced programme with a low coefficient. Weakest
+value-per-teacher against the build cost.
+
+**Anything student-facing, lesson plans, slides, other subjects** — see §7; still out.
+
+---
+
 ## 7. Scoping decisions
 
 - **Standalone product.** Not merged with the separate student-facing BAC e-learning idea. May share curriculum-grounding thinking, built independently.
