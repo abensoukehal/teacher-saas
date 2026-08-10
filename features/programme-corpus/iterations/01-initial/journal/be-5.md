@@ -150,3 +150,22 @@ single-pass transcription of the remaining documents.
    D2 (week 4 guidance → «أولير»). D3 optional.
 2. Record conventions 1–5 above in the transcription contract before the next four documents
    are attempted — every one of them is a trap this document merely happened to survive.
+
+---
+
+## ⚠ Cross-document challenge raised by be-7 (علوم تجريبية) — for be-10 to adjudicate
+
+be-7 proved, on a line whose surrounding Arabic fixes the order, that **two `$…$` runs on one
+line read right-to-left** in these documents, and applied that reading throughout its own
+transcription.
+
+It then flagged that `tadarroj-3as-math` stores **`sin ، cos`** on a bullet whose page prints
+`cos` to the *right* — i.e. the maths seed may have the pair in the wrong order.
+
+**This layer-2 pass did not catch it.** be-7 declined to harmonise to a reading it believes is
+wrong, which is the correct call — a cross-document "consistency" fix would have buried a
+defect rather than resolved it.
+
+**be-10 must decide this from the page, not from either seed**, and correct whichever document
+is wrong. If the maths seed is wrong, it needs a `--correct` pass and a `programme_revisions`
+entry like the week-25 inversion.
