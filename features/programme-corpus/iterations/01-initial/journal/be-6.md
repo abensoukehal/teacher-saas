@@ -258,3 +258,24 @@ Beyond the table above, everything below is printed as shown and stored as print
 `tools/ci be --slug programme-corpus` from the job worktree: **`gate PASS`, 97/97, twice.**
 The four perimeter assertions be-9 reported as red were re-baselined for the corpus
 collections in `337644c`, before this pass ran.
+
+**The promoted `be` net against the JOB checkout: 19 suites, 364/364, 0 failed** — the
+SEED §6.3 baseline, unchanged, as it must be (be-6 touches no be-repo file).
+
+> ⚠ Reproducing that run needs more environment than be-9's journal records. `tools/ci`
+> cannot be asked for the promoted net from a feature branch (mode is derived from the
+> branch), so jest is invoked directly — but `run_layer` also exports the **lane**:
+>
+> ```
+> CHAR_ROOTDIR=<job>/stacks/teacher-be   CHAR_TESTDIR=<job>/tests/be
+> CHAR_GUARD=<clone>/tools/tests/guard.js
+> CHAR_LANE_SLOT=<slot>  CHAR_BE_URL=http://localhost:<port>  CHAR_BE_LOG=/tmp/teacher-backend.s<slot>.log
+> npx jest -c tools/tests/jest.characterization.config.js
+> ```
+>
+> with the slot/port/log read back from `tools/lanes.sh` (`lane_slot`, `lane_port`,
+> `lane_log`) and a lane actually up. Omitting `CHAR_BE_URL`/`CHAR_BE_LOG` produces **5
+> failures in 3 suites** — `auth-bounds`, `runlog-subject`, `persistence-gaps/revisions` —
+> which read exactly like product regressions and are not: the black-box halves throw
+> `CHAR_BE_LOG is unset` or grep an empty run log. I hit this before spotting it. It is the
+> hollow-lane failure `tools/ci`'s own comment warns about, arriving from the other side.
