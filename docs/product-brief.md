@@ -613,6 +613,42 @@ Two corrections to earlier entries in this brief, from actually reading all five
   الأعداد المركبة, no هندسة في الفضاء, no أعداد وحساب. Its shape is closer to the literary
   document than to the scientific ones.
 
+### Currency check — verified 2026-08-10, before committing
+
+**September 2022 is still the current official version.** Searched for a newer ministry
+تدرجات for 3AS mathematics and found none; sources continue to reference the Sept 2022 set as
+what is in force. The corpus we archived is not stale.
+
+**But "2025–2026" documents do circulate, and they are a different kind of document.** The
+education-onec-dz postings advertised as 2025–2026 are **التوزيع السنوي** prepared by an
+individual teacher (الأستاذ مساهل بلال), not by المفتشية. They are not a newer programme —
+they are the same programme mapped onto this year's calendar.
+
+| | issued by | how often it changes | what it carries |
+|---|---|---|---|
+| **التدرجات السنوية** | المفتشية العامة للتربية الوطنية | rarely — Sept 2022 still current | المحاور · الكفاءات · المحتويات · السير المنهجي · الحجم الساعي |
+| **التوزيع السنوي** | a teacher or inspector | **every school year** | the same content against this year's dates, holidays and exam windows |
+
+**This splits the schema in §F.2, and the split is load-bearing:**
+
+```
+programme        ← التدرجات. Content, order, scope. Versioned by ministry document (2022-09).
+                   Changes rarely. Shared by every teacher of that stream.
+school_year      ← التوزيع. week 1..N → real dates, holidays, exam windows, trimester bounds.
+                   Changes EVERY YEAR. Not authored by the ministry.
+teacher_progress ← where THIS teacher actually is. Changes weekly.
+```
+
+Conflating the first two would mean re-transcribing the whole programme every September to
+change some dates — and would make a ministry revision indistinguishable from a calendar
+shift. Keep them separate and the annual work is a small calendar file, not a 73-page
+re-transcription.
+
+**Consequence for the tracker:** we can build on the 2022 programme with confidence, and the
+per-year calendar is a small, separate artifact we may not even need for v1 — a teacher who
+marks their own position needs no calendar at all. The calendar is what makes *defaults* good
+("you're probably around week 12"), not what makes the tracker correct.
+
 ### Sequencing — this is four jobs, and the order is forced
 
 Nothing here is optional-order: each step is unusable without the one before it.
