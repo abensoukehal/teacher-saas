@@ -644,6 +644,38 @@ change some dates — and would make a ministry revision indistinguishable from 
 shift. Keep them separate and the annual work is a small calendar file, not a 73-page
 re-transcription.
 
+**A real example is archived** at `docs/reference/curriculum/EXAMPLE-tawzi3-3as-math-2024-2025.pdf`
+(3 pages, شعبة الرياضيات, by الأستاذ مساهل بلال). Its columns are:
+
+`الأشهر · الأسبوع · رقم الأسبوع · المحور · المحتويات · الحجم الساعي`
+
+The content is the ministry's, unchanged. What the distribution adds is the **calendar**, and
+it carries more than dates:
+
+```
+ديسمبر  أسبوع 3   ← الأسبوع 11 · معالجة بيداغوجية
+ديسمبر  أسبوع 4   ← اختبارات الفصل الأول      ⟵ the composition is DUE here
+ديسمبر  أسبوع 5   ← عطلة الشتاء
+جانفي   أسبوع 1   ← (عطلة)
+جانفي   أسبوع 2   ← الأسبوع 12 resumes
+…
+مارس    أسبوع 3   ← اختبارات الفصل الثاني     ⟵ and here
+مارس    أسبوع 4   ← عطلة الربيع
+```
+
+**The assessment windows and the holidays are in the document.** That is the piece that turns
+the tracker from a passive checklist into something that acts: in early December the product
+knows اختبارات الفصل الأول is two weeks away and that the exam may cover weeks 1–11 and nothing
+after — because the class will not have reached it. It can offer the composition before the
+teacher goes looking for it. Holidays matter for the same reason: they are why week 11 and
+week 12 are five calendar weeks apart, so any naive date arithmetic would be wrong.
+
+⚠ **Caution on these documents.** The blog post advertises this file as 2025–2026; the file's
+own header reads **السنة الدراسية 2024–2025**. They are teacher-made, informally published, and
+not always labelled accurately. Treat a distribution as a *calendar suggestion to confirm*,
+never as authority — the authority is the ministry's تدرجات, and the teacher's own marked
+position beats both.
+
 **Consequence for the tracker:** we can build on the 2022 programme with confidence, and the
 per-year calendar is a small, separate artifact we may not even need for v1 — a teacher who
 marks their own position needs no calendar at all. The calendar is what makes *defaults* good
