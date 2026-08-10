@@ -115,7 +115,7 @@ kind: sub-issue
 id: be-1
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: []
 estimate: L
 ---
@@ -123,7 +123,7 @@ estimate: L
 
 ### be-1 — the class spine, observable from its first write
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** Classes exist — creatable, listable, owner-scoped, stream-validated against
 the corpus — and the SEED's observability blind spot closes with the very first
