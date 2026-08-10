@@ -67,14 +67,19 @@ let db;
 const PLANTED_CLASSES = []; // ObjectIds this suite created, removed in afterAll
 const MINTED_TEACHERS = []; // anonymous rows this suite minted, removed in afterAll
 
-async function call(method, p, { body, teacher, raw } = {}) {
+async function call(method, p, { body, teacher } = {}) {
+  // GET and HEAD carry no body — fetch throws outright rather than ignoring one, and the
+  // identity-gate table below shares its cases between POST and GET on purpose. Dropping
+  // it here keeps that table a single list of one fact ("no valid header -> 401") instead
+  // of two divergent copies.
+  const bodyless = method === "GET" || method === "HEAD";
   const res = await fetch(`${BE}${p}`, {
     method,
     headers: {
       "content-type": "application/json",
       ...(teacher ? { "x-teacher-id": teacher } : {}),
     },
-    ...(raw !== undefined ? { body: raw } : body === undefined ? {} : { body: JSON.stringify(body) }),
+    ...(bodyless || body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   return { status: res.status, body: await res.json() };
 }
