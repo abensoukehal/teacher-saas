@@ -1,0 +1,25 @@
+{
+  "schoolYear": "2026/2027",
+  "source": "teacher-made",
+  "expectedWeekNow": 12,
+  "assessmentWindows": [
+    {
+      "label": "اختبارات الفصل الأول",
+      "aroundWeek": 12
+    },
+    {
+      "label": "اختبارات الفصل الثاني",
+      "aroundWeek": 21
+    }
+  ],
+  "holidays": [
+    {
+      "label": "عطلة الشتاء",
+      "weeks": 2
+    },
+    {
+      "label": "عطلة الربيع",
+      "weeks": 2
+    }
+  ]
+}
