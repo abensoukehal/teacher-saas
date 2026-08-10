@@ -369,3 +369,25 @@ All confirmed at 600 dpi or in the text layer, and stored as printed:
    it is worth settling for the corpus as a whole.
 4. **Weeks 16, 18 and 22's reconstructed math sentences** (A4) — the only strings in this
    file whose word order is not directly attested by the layout.
+
+---
+
+## Transcription note added after layer-2 (be-10), weeks 16 and 18
+
+be-10's independent re-read confirmed this document is **faithful**, with one real defect
+(week 24's dropped `انطلاقاً`, since corrected — `transcriptionRev` 2).
+
+It also raised a **policy call worth recording rather than rewriting**. In the two cells where
+the PDF's equation objects are mis-anchored, the page prints the tokens with **no `و` between
+them** — `تتضمن ln x  x^n` (week 16, plus a stray floating `x`) and `x^n  e^x` (week 18). The
+seed rendered readable sentences: it inserted the conjunction and dropped the stray `x`.
+
+That is **meaning-preserving reconstruction, and strictly non-verbatim** — the same class of
+edit as the maths document's normalised Euler spelling, which was logged as a defect.
+
+**Left as transcribed, and recorded here instead of silently "fixed" again**, because the
+printed token order in those cells is not a sentence in any reading: the objects are certain,
+their order is not. A future reader comparing seed to page will see a difference in these two
+cells; this note is why. If the corpus is ever regenerated, the honest options are to mark
+these rows as reconstructed or to store the raw token sequence — not to keep quietly inserting
+conjunctions.
