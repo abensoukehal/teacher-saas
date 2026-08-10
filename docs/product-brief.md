@@ -265,7 +265,7 @@ the textbook — is what a curriculum file must encode.
 | **الأعداد المركبة والتحويلات النقطية** | 3 (مدمجان) | 3 (مدمجان) | 3 + 1½ (منفصلان) |
 | الهندسة في الفضاء | 3 | 3 | 3½ |
 | معالجة بيداغوجية (×3) | 3 | 3 | 3 |
-| **المجموع** | **181 ساعة / 27 أسبوعا** | **162 ساعة / 27 أسبوعا** | **135 ساعة / 31 أسبوعا** |
+| **المجموع** | **189 ساعة / 27 أسبوعا** | **162 ساعة / 27 أسبوعا** | **135 ساعة / 27 أسبوعا** |
 
 **تقني رياضي's unit list is identical to رياضيات** — only the hourly budget differs (6 h/week
 against 7). **علوم تجريبية** drops الأعداد والحساب entirely, splits الأعداد المركبة from
@@ -598,8 +598,8 @@ Two consequences the decision names explicitly:
 | رياضيات | 181 | 11 | 19 |
 | تقني رياضي | 162 | 11 | 19 |
 | علوم تجريبية | 135 | 11 | 17 |
-| تسيير واقتصاد | 128 | 9 | 10 |
-| آداب وفلسفة + لغات أجنبية (one document) | 44 | 4 | 8 |
+| تسيير واقتصاد | **108** | 12 | 10 |
+| آداب وفلسفة + لغات أجنبية (one document) | **54** | 10 | 8 |
 
 **73 pages, 5 documents, 6 streams.**
 
@@ -612,6 +612,67 @@ Two corrections to earlier entries in this brief, from actually reading all five
 - **تسيير واقتصاد is smaller than assumed** — 9 units, 10 pages, and it carries no
   الأعداد المركبة, no هندسة في الفضاء, no أعداد وحساب. Its shape is closer to the literary
   document than to the scientific ones.
+
+### The documents do NOT share one schema — 2026-08-10
+
+The brief asserted every document had the same sections. Checked, and it is false in ways that
+change the data model:
+
+| | math | techmath | sciences | gestion | lettres |
+|---|---|---|---|---|---|
+| **الكفاءات المستهدفة** | ✓ 6 domains | ✓ 6 | ✓ **5** | **absent** | **absent** |
+| ملامح التخرج | ✓ | ✓ | ✓ | ✓ | **absent** |
+| **مذكرة منهجية** | ✓ | ✓ | ✓ | ✓ | ✓ ← *not in the brief at all* |
+
+- **تسيير واقتصاد and آداب وفلسفة carry no competencies section.** `competencies` must be
+  nullable — absent and empty mean different things.
+- **Domain sets differ per document.** علوم تجريبية drops الحساب entirely. Domains are data,
+  never an enum.
+- **There is no trimester grouping in any document.** `الفصول` is one merged cell spanning
+  every row. The `trimester` field in §F.2 has **no source** and is dropped — inferring it from
+  معالجة positions would be invention.
+- **Weeks are not integers** — `أسبوع ونصف`, `أسبوعان ونصف`, `3 أسابيع ونصف` appear.
+- **Units repeat and are non-contiguous** — علوم تجريبية lists المتتاليات العددية twice;
+  لغات أجنبية splits الحساب / الحساب تابع. A `unitId` cannot be derived from a name or a position.
+- **Column headers differ** — lettres heads its weeks column `الحجم الأسبوعي` where the others
+  use `عدد الأسابيع`; gestion drops the hamza. Store headers verbatim, do not normalise.
+
+### ⚠ RED TEXT IS SEMANTIC, in all five documents
+
+The most consequential finding, and it was in none of our reading until the pages were rendered.
+
+تسيير واقتصاد and آداب وفلسفة carry an on-page legend:
+**«تم إدراج العناصر الملونة بالأحمر لعدم تناولها في السنة الدراسية 2021-2022»** — post-COVID
+catch-up content, marked in red because it was *not covered* the previous year.
+
+**The mathematics document also contains red blocks with no legend on the page where they
+appear.**
+
+A plain-text transcription silently destroys a distinction the ministry made deliberately.
+Emphasis must be a **required field on every row**, never a default — so "I forgot the colour"
+becomes a hard error instead of a silent loss. And the maths document's unlegended red needs its
+meaning found or its absence recorded, never guessed.
+
+### Verified from the pages — 2026-08-10, and two more figures were wrong
+
+Every summary table re-read from PNGs and re-summed. **Two of the five hours figures published
+in this brief were wrong**, both from text extraction:
+
+| stream | weeks | hours | was published as |
+|---|---|---|---|
+| شعبة الرياضيات | 27 | **189** | ~~181~~ |
+| تقني رياضي | 27 | **162** | 162 ✓ |
+| علوم تجريبية | 27 | **135** | 135 ✓ |
+| تسيير واقتصاد | 27 | **108** | ~~128~~ |
+| آداب وفلسفة + لغات أجنبية | 27 | **54** | ~~44~~ |
+
+**A free oracle nobody had used: every total is exactly `weekly hours × 27`.**
+189 = 7×27 · 162 = 6×27 · 135 = 5×27 · 108 = 4×27 · 54 = 2×27. All three errors were
+detectable by arithmetic alone — 181/27, 128/27 and 44/27 are not integers. Every stream's
+figure is now gated on this.
+
+**Note the shape of the errors: each was off by one digit** (181/189, 128/108, 44/54). That is
+the dangerous kind — it reads as plausible and no reviewer would blink at it.
 
 ### Currency check — verified 2026-08-10, before committing
 
