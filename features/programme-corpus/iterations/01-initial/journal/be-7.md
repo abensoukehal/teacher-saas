@@ -342,9 +342,19 @@ promoted be net against the JOB checkout                        19 suites, 364/3
 ```
 
 The promoted net needs the lane environment, not just `CHAR_ROOTDIR` — be-6's journal records
-the recipe. One correction to it: `lane_log be <slot>` yields `/tmp/teacher-backend<slot>.log`,
-but the file the lane actually writes is **`/tmp/teacher-backend.s<slot>.log`**. Passing the
-former silently gives an empty log and the black-box suites fail as if the product regressed.
+the recipe. Two corrections to it:
+
+- `lane_log be <slot>` yields `/tmp/teacher-backend<slot>.log`, but the file the lane actually
+  writes is **`/tmp/teacher-backend.s<slot>.log`**. Passing the former silently gives an empty
+  log and the black-box suites fail as if the product regressed.
+- **Run it with `-w 1`.** The default parallel run gave me **363/364**, the one failure being
+  `persistence-gaps/auth-recover` → "the code resets the password and returns the SAME
+  teacherId". That is a **rate-limit flake, not a regression**: the suite's own header says a
+  429 is expected because it exercises recovery far more often than a human would, and it
+  already retries up to 8 times before giving up (`still 429 after 8 attempts`). Under a
+  parallel run — with a second agent working the same lane — 8 retries are not enough. The
+  test passes in isolation and the whole net passes single-worker. Recorded because the
+  failure reads exactly like an auth regression and is not one.
 
 Freeze audit clean: `git status --short -- docs/reference/curriculum/` empty, both stack repos
 empty, `data/programmes/tadarroj-3as-sciences.jsonl` the only project-repo file I touched.
