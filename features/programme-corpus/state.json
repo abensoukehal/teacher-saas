@@ -51,19 +51,27 @@
           }
         },
         "be-4": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-2",
             "be-3"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-5": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "be-4"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-6": {
           "status": "todo",
@@ -87,11 +95,15 @@
           ]
         },
         "be-9": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-5"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-10": {
           "status": "todo",
