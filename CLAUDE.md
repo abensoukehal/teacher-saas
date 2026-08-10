@@ -9,13 +9,25 @@
 > at the harness clone root. What belongs here: architecture, repos, data model,
 > deployments, integrations. See [`workflow/PROFILE.md`](../workflow/PROFILE.md) item 6.
 
-**teacher-saas** is an AI exam-prep tool for **Algerian lycée BAC mathematics teachers**.
-A teacher describes what they want, gets a full draft exam subject in seconds, then
-drills into individual exercises and refines them in plain Arabic until it matches what
-they'll actually hand their class. Then they print it.
+**teacher-saas** is the **prep platform for Algerian lycée mathematics teachers** — it makes
+the day-to-day easier and keeps the teacher on the official programme.
 
-The value sold is **time** — an evening's work compressed into minutes. Not more
-material, not better pedagogy: the same exam the teacher would have written, faster.
+Grounded in the ministry's own التدرج السنوي, it knows what each class's stream teaches, in
+what order, and where that class has actually reached, and produces what the teacher needs
+next: the week's exercise series, a devoir, a trimester composition, the model correction.
+They refine anything in plain Arabic, then print it.
+
+**Two values, and the first is the pitch:**
+
+- **Conformity to the official programme.** The right unit, the right level, within the ministry's stated limits, and never material the class has not been taught. This is the failure a teacher cannot afford — it is discovered in front of the class — and the one claim nothing else in their world makes.
+- **Time.** An evening's work compressed into minutes, across the whole week's prep. Real, and second: speed is a convenience anyone can copy; being demonstrably on-programme is the moat.
+
+> **Repositioned 2026-08-10** (brief §2, §6d–§6h). This file described an *exam generator*;
+> exam generation is now one surface of a prep companion built on the programme. Also decided
+> that day: the **course layer is in** (reversing the lesson-content exclusion below),
+> **progress belongs to a class, not a teacher**, and **one generator serves four scopes**
+> (course ⊂ week ⊂ unit ⊂ progress-to-date). See `docs/product-description.md` §5b for the
+> domain model and the design-facing version.
 
 Full reasoning — thesis, business model, roadmap, validation plan — is in
 [`docs/product-brief.md`](docs/product-brief.md), which is the source of record. This
@@ -67,10 +79,13 @@ why latency and partial-result UX matter more here than anywhere else.
 
 Deliberately excluded. Building any of these is scope error, not initiative:
 
-- **Lesson plans, course content, lesson summaries** — teachers have the textbook and
-  their own notes. Explicitly skipped.
+- ~~**Lesson plans, course content, lesson summaries**~~ — **exclusion REVERSED 2026-08-10**
+  (brief §6g). Courses are in: each content item in a programme week gets an authored course
+  with a sheet. Gated on an unsettled question — *what is the accuracy bar, and who verifies
+  it?* Authored material is stored separately from the transcribed corpus and is visibly ours.
 - **Anything student-facing** — that is a separate e-learning project. Mixing them
-  muddies both.
+  muddies both. ⚠ The course sheet sits on this line: it is the teacher's own prep, never a
+  student handout.
 - **Slides and presentations** — most Algerian lycée classrooms have no projector.
 - **Subjects other than mathematics** — math first; others later.
 

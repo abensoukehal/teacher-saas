@@ -14,9 +14,27 @@
 
 ---
 
-# AI Exam Prep Platform for Algerian BAC Math Teachers
+# The prep platform for Algerian lycée maths teachers
+
+**Makes the day-to-day easier, and keeps the teacher on the official programme.**
 
 *Project document, last updated after the pricing and services discussion.*
+
+> **Title changed 2026-08-10.** It read *"AI Exam Prep Platform for Algerian BAC Math Teachers"*
+> for the same reason §2 read as an exam generator — the implementation had narrowed the thesis,
+> and the title kept it narrow. Two things are wrong with the old one. **"Exam prep"** names one
+> artifact when the product is the whole week's preparation. **"AI"** names the mechanism, not the
+> value; the teacher does not want AI, they want their evening back and a paper they can defend to
+> an inspector.
+>
+> The new line carries **two** values, not one. Time was always there. **Staying on the official
+> programme is the second, and it is the more defensible** — a faster exam is a convenience, an
+> exam that provably matches what the ministry says and what the class has actually reached is
+> something no textbook, no Facebook group and no generic chatbot can give them. It is also why
+> the programme corpus is the backbone (§6d) rather than a feature.
+>
+> **The boundary did not move.** "Day-to-day" means the prep work done outside official hours —
+> §2's boundary section still binds, and administration is still a different product.
 
 ---
 
@@ -45,8 +63,16 @@ trimester composition, the correction that goes with it.
 Exam generation is now **one surface of the product, not the product**. It remains the sharpest
 one, and it is what ships today.
 
-The value is still time. An evening's work compressed into minutes — but across the week's
-prep, not only the three-to-six evenings a trimester when an exam is due.
+**Two values — and conformity to the programme is the one we lead with.**
+
+- **Staying on the official programme.** ← **the pitch.** Everything the product makes is grounded in the ministry's own التدرج and in where the class has actually reached: the right unit, the right level, within the stated limits, and never material the class has not been taught. This is the failure a teacher cannot afford — it is discovered in front of the class, or at the BAC — and it is the one claim nothing else in their world makes: not the textbook (which is not the syllabus), not a colleague's old papers, not a Facebook group, and not a generic chatbot, which will produce confident off-syllabus mathematics without knowing it did.
+- **Time.** An evening's work compressed into minutes — across the week's prep, not only the three-to-six evenings a trimester when an exam is due. Real, and second: speed is a convenience anyone can eventually copy.
+
+**Conformity is the moat, which is why the programme corpus is the backbone** (§6d) and not a
+grounding detail bolted onto a generator. It also sets a standard the product must meet rather
+than merely claim: **conformity has to be shown** — the source named on the artifact, the
+ministry's own السير المنهجي visible where the teacher works, the covered scope stated *and the
+excluded scope stated with it*, and anything we authored or derived marked as ours.
 
 ### The boundary — prep, not performance
 
@@ -179,15 +205,16 @@ Ranked:
 
 ### Deliberately skipped
 
-- **Course content and lesson summaries — ⚠ REOPENED 2026-08-10, not yet decided.** The
-  original reason was "teachers have the textbook and their own notes", and that reasoning was
-  sound *for an exam generator*. Two things have changed it. First, the repositioning above
-  puts lesson preparation squarely inside the boundary. Second, the official programmes carry
-  a **السير المنهجي لتدرج التعلمات** column — per-week teaching guidance from the ministry that
-  is in neither the textbook nor a teacher's notes, and that no teacher currently has in a
-  usable form. That is a concrete reason to revisit, not merely an ambition.
-  **Still a decision to take deliberately**, and it should be taken once rather than approached
-  in increments.
+- ~~**Course content and lesson summaries**~~ — **EXCLUSION REVERSED 2026-08-10. Courses are
+  IN.** Reopened earlier the same day and decided the same day; recorded here in writing because
+  §6f.4 required the reversal to be deliberate rather than arrived at by increments. See
+  **§6g** for the decision and its terms.
+  The original reason was "teachers have the textbook and their own notes", and that reasoning
+  was sound *for an exam generator*. Two things changed it. First, the repositioning above puts
+  lesson preparation squarely inside the boundary. Second, the official programmes carry a
+  **السير المنهجي لتدرج التعلمات** column — per-week teaching guidance from the ministry that is
+  in neither the textbook nor a teacher's notes, and that no teacher currently has in a usable
+  form.
 - Anything student-facing. That's the separate e-learning project; mixing them muddies both
 - Slides and presentations. Most Algerian lycée classrooms don't run on projectors — a
   hardware fact, unaffected by the repositioning
@@ -870,21 +897,133 @@ never the whole programme.
 - **J2 becomes mandatory, not optional** — six streams cannot be served without asking which
   one a teacher teaches.
 - **J3 is the product's spine**, not a feature on the side.
-- **The course layer is DEFERRED (2026-08-10).** Every corpus item enhanced with material
-  detailing the topic remains the intended direction, but it is **not** in the current plan and
-  **§5's exclusion is not reversed yet** — it stands until the layer is actually taken up.
-  Two things must be settled first, and neither is settled by building the corpus:
-  **who authors it, and what is the accuracy bar?** Transcription is bounded and verifiable
-  against a source; authoring is neither, which makes "is this correct and on-syllabus" the
-  central risk rather than a side concern.
-  **What the corpus must do meanwhile:** leave room for it. The structure hangs course material
-  off `guidance` (السير المنهجي) per week, so adding the layer later is an attachment rather
-  than a reshaping.
+- **The course layer was DEFERRED here, and TAKEN UP later the same day — see §6g.** What this
+  entry got right and §6g does not relax: **the accuracy bar remains the central risk**, and it
+  is still unsettled. Transcription is bounded and verifiable against a source; authoring is
+  neither, which makes "is this correct and on-syllabus" the central question rather than a side
+  concern. Deciding to build the layer did not answer it.
+  **What the corpus must still do:** leave room. The structure hangs course material off
+  `guidance` (السير المنهجي) per week, so the layer attaches rather than reshapes.
 
 **Sequencing note:** شعبة الرياضيات is transcribed and checked **first** — as a method proof,
 not a scope limit. It is the hardest document (19 pages, 11 units, densest table, most
 mathematics). If the method survives it, the remaining four are largely mechanical; if it does
 not, we learn that after one document rather than five.
+
+## 6g · DECIDED — the domain model, courses in, progress per class
+
+**Decision, 2026-08-10**, taken while aligning the model for UX work. Three things settled
+together. The full design-facing version is `docs/product-description.md` §5b; this is the
+record of what was decided and why.
+
+### 1 · The course layer is IN — §5's exclusion is reversed
+
+Each **content item** (محتوى معرفي) inside a week gets an authored **course**, and each course
+gets a **sheet**: high-level explanation, demonstration, equations. Contents beyond that are not
+yet specified.
+
+§6f.4 required this reversal to be knowing and in writing rather than arrived at by increments.
+This is it. What it does **not** settle, and what must be settled before the sheet is designed:
+
+⚠ **The accuracy bar, and who verifies it.** Transcription is checkable against a page; authoring
+is not. **A wrong course is worse than no course**, because it carries our implied authority into
+a classroom — the same failure class as an off-syllabus exercise, but larger and harder to spot.
+
+Three terms the layer inherits and cannot negotiate away:
+
+- **Authored material is stored separately from transcribed material, and looks it.** Everything in `programme` is the ministry's words, verbatim, with provenance — that is the entire basis for claiming a paper is on-syllabus. A course is ours. Mixing the two destroys the one distinction that lets the product tell a teacher which text carries official authority.
+- **The week's السير المنهجي is binding on the course.** It states the level and the explicit prohibitions. A sheet that exceeds them is wrong.
+- **A sheet is the teacher's prep, never a student handout.** That is the line separating this from the student-facing e-learning project (§7). A sheet designed to be given to students means this product has quietly become that one.
+
+### 2 · Progress belongs to a CLASS, not to a teacher
+
+The schema in §F.2 keys `teacher_progress` by `(teacherId, stream, schoolYear)`. **That is wrong**,
+and the error is the same class as deriving a correction's staleness from the subject's `rev`: it
+merges two things that move independently.
+
+A teacher with two 3AS classes has **two positions in the same programme** — one class fell
+behind. A teacher covering رياضيات and علوم تجريبية runs two programmes at once. Keyed per
+teacher-stream, two classes three weeks apart silently collapse into one position, and the teacher
+discovers it when an exam covers material one class has never seen — which is precisely the damage
+J4 exists to prevent.
+
+**So: `progress` is keyed `(class, schoolYear)`, and a class carries a stream.** Consequences:
+sign-up collects classes rather than only streams; every generation answers "for which class?";
+the tracker shows one class at a time; home needs a class switcher.
+
+**This also retires an open question.** §6c item B asked whether a teacher teaches one stream or
+several. It no longer needs an answer as posed — a teacher has classes, each with a stream, and
+one-or-many falls out. Still open, and *not* settled by this: whether the school belongs to the
+teacher or to the exam.
+
+### 3 · One generator, four scopes
+
+Exercises for a course, for a week, for a unit, and an exam from progress-to-date are **not four
+features**. They are one scope selector feeding one generator, with format (سلسلة · فرض ·
+اختبار · دعم) as a second, independent input.
+
+```
+scope = course ⊂ week ⊂ unit ⊂ programme-to-date
+```
+
+The scope also decides which slice of the corpus `be` injects into the prompt — which matters for
+the cost discipline §6f.3 already records, and means **narrower scope produces tighter grounding**.
+Per-course exercises should therefore be the most reliably on-syllabus output the product makes.
+
+### 4 · Three corrections to the model as previously written
+
+Found while aligning; each had a plausible-looking design resting on it.
+
+- **The week is the spine; the unit is a label on the row.** `unit → weeks` is a back-reference, never containment. Units repeat and are non-contiguous, and weeks are not integers (`أسبوع ونصف`). Already recorded in §6d; restated because a unit-first hierarchy keeps being drawn.
+- **A programme serves streams, plural** — five documents, six streams. Not 1:1.
+- **`competencies` is nullable, and domains are data** — two documents carry no competencies section at all, and علوم تجريبية has five domains where the others have six.
+
+## 6h · Pacing — «هل أنا متأخر؟»
+
+**Added 2026-08-10.** A teacher wants to know whether they are **behind or ahead of the
+programme**. Stated plainly, unprompted, which makes it worth recording as a named feature rather
+than a chart on the tracker.
+
+### Why it is more than a subtraction
+
+It is the first thing the product would say that the teacher **cannot easily work out themselves**.
+Position is something they already know; *pacing* requires holding the official week budget, the
+real calendar, the holidays and their own drift in their head at once. That is exactly the kind of
+arithmetic a teacher does badly at 9pm and worries about all trimester.
+
+It is also what converts the tracker from a record into an advisor. «متأخرون بأسبوعين» is a fact
+with consequences: the composition is in three weeks, two units are unfinished, and the exam scope
+has to reflect that. **Pacing is the input to every recommendation the product makes.**
+
+### What it needs — and the cheap version that ships earlier
+
+Pacing = *marked position* compared against *where the schedule says you'd be*. The second half is
+a reference schedule, which is J6.
+
+| version | needs | quality |
+|---|---|---|
+| **crude** — ships with J3 | school-year start date + holiday list | good enough to say ±N weeks |
+| **proper** — J6 | the التوزيع السنوي: weeks → real dates, holidays, assessment windows | knows *why* week 11 and 12 are five calendar weeks apart, and what is due next |
+
+Naive date arithmetic is wrong: holidays are why consecutive programme weeks can be far apart on
+the calendar. Any crude version must hold at least the holiday list or it will report drift that
+does not exist.
+
+### Three rules, and they are not stylistic
+
+1. **The comparison is informational; the teacher's marked position stays the truth.** §6d already
+   binds this: scope-to-date is derived from marked progress, never assumed from the calendar.
+   Pacing must never quietly re-point a class to where the schedule says it should be.
+2. **The reference is not authoritative.** التوزيع السنوي is **teacher-made**, informally published,
+   and sometimes mislabelled — the archived example is advertised as 2025–2026 and its own header
+   reads 2024–2025. It is a calendar suggestion to confirm. Being "behind" it is a comparison
+   against one teacher's plan, not against the ministry.
+3. **Never nag.** Falling behind is the normal condition of Algerian lycée teaching — lost weeks,
+   crowded programmes, real life. A product that scolds gets closed. State it neutrally, then be
+   useful: adjust the exam scope, propose what to compress, show which units are still ahead.
+
+**Ahead matters too, and is easy to forget.** A teacher running early wants the next unit's
+material now — pacing should offer that as readily as it flags a delay.
 
 ## 6e · The job map
 
@@ -893,10 +1032,17 @@ material clustered into jobs, with what each needs before it can start. Ordered 
 not by preference.
 
 ```
-J1 programme-corpus ─┬─→ J2 teacher-profile ─→ J3 progress-tracker ─┬─→ J4 aligned-exams ─→ J5 weekly-series
-                     │                                              └─→ J6 school-year-calendar
+J1 programme-corpus ─┬─→ J2 profile+classes ─→ J3 progress-tracker ─┬─→ J4 aligned-exams ─→ J5 weekly-series
+                     │                                              ├─→ J6 school-year-calendar
+                     │                                              │      └─ carries PACING (§6h)
+                     │                                              └─→ J8 course-layer ─→ per-course exercises
                      └─→ (J7 exam-versions — independent, any time)
 ```
+
+**Revised 2026-08-10 by §6g and §6h.** J2 collects **classes** (each with a stream), not streams
+alone. **J8** is new — the course layer, gated on its accuracy bar being settled, not on J3
+finishing. **J6 is no longer a deferred nicety**: pacing (§6h) is the teacher's own question and
+the calendar is what answers it properly.
 
 ### J1 · `programme-corpus` — the backbone  ·  **provisioned 2026-08-10**
 
@@ -915,9 +1061,10 @@ shelf that fixes something for teachers we already have.
 
 ### J2 · `teacher-profile` — who the teacher is  ·  needs J1
 
-Shelf item **B**.
+Shelf item **B**. **Revised by §6g: it collects CLASSES, each carrying a stream** — not streams
+alone. Progress is per class, so classes are what the rest of the product hangs off.
 
-- Sign-up collects **stream** (all six, from the five documents) and **school name**
+- Sign-up collects the teacher's **classes** (each with its stream, all six available from the five documents) and **school name**
 - Per-stream topic list read from the corpus — the taxonomy stops being one global constant
 - Generation uses the teacher's stream instead of the hardcoded `STREAM`
 - The printed sheet carries the school
@@ -960,9 +1107,30 @@ is what distinguishes it from a small exam.
 
 ### J6 · `school-year-calendar` — التوزيع السنوي  ·  needs J3
 
-Deferred here deliberately (§6d). Weeks → real dates, holidays, and the **assessment windows**
-that let the product act rather than record: *the composition is due in two weeks and may cover
-weeks 1–11*. Annual, teacher-made, confirm-don't-trust.
+Weeks → real dates, holidays, and the **assessment windows** that let the product act rather than
+record: *the composition is due in two weeks and may cover weeks 1–11*. Annual, teacher-made,
+confirm-don't-trust.
+
+> **Re-prioritised 2026-08-10.** §6d deferred this on the grounds that "the calendar improves
+> *defaults*, not correctness" — which is still true, and no longer the whole story. **Pacing
+> (§6h) is a question the teacher asks unprompted**, and answering it needs a reference schedule
+> to compare the marked position against. A crude version ships with J3 (start date + holidays);
+> the good version is this job.
+
+### J8 · `course-layer` — الدروس  ·  needs J1, and an accuracy bar
+
+New with §6g, which reversed §5's exclusion. Each content item in a week gets an authored course
+with a sheet — explanation, demonstration, equations. Per-course exercise generation is the
+narrowest and best-grounded scope in the product.
+
+**Gated on a decision, not on a dependency:** ⚠ *what is the accuracy bar, and who verifies it?*
+A wrong course carries our implied authority into a classroom. Do not start this job before that
+is answered.
+
+**Structurally cheap because the corpus already left room** — courses hang off `guidance` per week
+(§6f.4). **Structurally strict:** authored material is stored separately from transcribed
+material and is visibly ours, the week's السير المنهجي is binding on it, and a sheet is the
+teacher's prep, never a student handout.
 
 ### J7 · `exam-versions` — نماذج متعددة  ·  independent
 
