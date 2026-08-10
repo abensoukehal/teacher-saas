@@ -163,6 +163,83 @@ Beyond "is this useful":
 
 ---
 
+## 6b. The curriculum ground truth — streams, books, and what we actually cover
+
+Researched 2026-08-09. This section exists because two questions kept being answered from
+memory and getting answered wrong: *which streams are there*, and *what is actually on the
+programme*. It is the market side of the on-syllabus hard constraint.
+
+### The six official 3AS streams, and the three maths textbooks
+
+| شعبة | specialities | maths textbook |
+|---|---|---|
+| **رياضيات** | — | **A** — scientific |
+| **علوم تجريبية** | — | **A** — scientific |
+| **تقني رياضي** | هندسة كهربائية · مدنية · ميكانيكية · هندسة الطرائق | **A** — scientific |
+| **تسيير واقتصاد** | — | **B** — its own |
+| **آداب وفلسفة** | — | **C** — literary |
+| **لغات أجنبية** | — | **C** — literary |
+
+Book A is published as one volume for all three scientific streams. Book C serves both
+literary streams. **تقني رياضي's four specialities share one maths programme** — they diverge
+in their technology subject, not in mathematics, so four specialities cost nothing extra.
+
+**Sharing a book is not sharing a syllabus.** Each stream has its own التدرج السنوي from
+المفتشية العامة للبيداغوجيا defining what is examinable and how deeply. That document — not
+the textbook — is what a curriculum file must encode.
+
+### Unit-level coverage across Book A's three streams
+
+| محور | رياضيات | تقني رياضي | علوم تجريبية |
+|---|:--:|:--:|:--:|
+| الدوال العددية | ✓ | ✓ | ✓ |
+| الدوال الأسية واللوغاريتمية | ✓ | ✓ | ✓ |
+| **الأعداد والحساب** | ✓ | ✓ | — |
+| الهندسة في الفضاء | ✓ | ✓ | ✓ |
+| الأعداد المركبة | ✓ | ✓ | ✓ |
+| المتتاليات العددية | ✓ | ✓ | ✓ |
+| **الحساب التكاملي** | ✓ | ✓ | ✓ |
+| الاحتمالات | ✓ | ✓ | ✓ |
+
+**تقني رياضي's unit list is identical to شعبة الرياضيات.** علوم تجريبية is the same minus
+الأعداد والحساب. That is the only structural difference between the three.
+
+### What this says about the product as it stands
+
+The product serves **شعبة الرياضيات only** — `teacher-fe/src/lib/taxonomy.ts` hardcodes it and
+there is no stream selector. Against the table above, its eight-topic dropdown is **missing two
+whole units of the programme for the one stream it does serve**:
+
+- **الحساب التكاملي** — its own محور in all three streams. A teacher cannot select it today.
+- **الأعداد والحساب** — present for رياضيات and تقني رياضي, absent for علوم تجريبية.
+
+Both were recorded as open questions in `teacher-be/agent/curriculum/3as-mathematiques.md`
+("unconfirmed", "do not generate until confirmed"). They are now answered, and the second is
+answered *per stream* — which is precisely why a stream selector cannot be added without
+per-stream curriculum files.
+
+### Expansion order this implies
+
+1. **Fix the stream we already sell to** — add the two missing units. Affects teachers today.
+2. **تقني رياضي** — nearly free: same book, same unit list as رياضيات.
+3. **علوم تجريبية** — same book, one unit fewer.
+4. **تسيير واقتصاد** — Book B, genuinely different content. Separate effort.
+5. **The literary streams** — Book C, reduced programme, low coefficient. Weakest
+   value-per-teacher for the build cost; probably never.
+
+### Provenance — do not overstate this
+
+The unit lists come from **mathonec**, a teaching-resource site, not from المفتشية directly.
+Three independently-published stream pages agreeing at unit level is decent evidence — good
+enough to add topics a teacher may choose, **not** good enough to claim any file transcribes
+the official programme. The official التدرج السنوي documents are still the thing to obtain,
+and they sit behind Google Drive PDFs on eddirasa, education-onec-dz and DzExams.
+
+Sources: mathonec (three stream lesson indexes) · ency-education (Book A) · eddirasa (Books B
+and C) · bacdz (streams and specialities).
+
+---
+
 ## 7. Scoping decisions
 
 - **Standalone product.** Not merged with the separate student-facing BAC e-learning idea. May share curriculum-grounding thinking, built independently.
