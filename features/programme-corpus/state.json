@@ -74,21 +74,29 @@
           }
         },
         "be-6": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-5"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-7": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-5"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-8": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-5"
