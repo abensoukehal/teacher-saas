@@ -670,6 +670,29 @@ after — because the class will not have reached it. It can offer the compositi
 teacher goes looking for it. Holidays matter for the same reason: they are why week 11 and
 week 12 are five calendar weeks apart, so any naive date arithmetic would be wrong.
 
+**Which is more detailed? Measured, because the impression misleads.** التوزيع *looks* richer
+— it is dense, every line is signal, and it adds months, holidays and exam windows. But:
+
+| | pages | extracted text | الكفاءات | السير المنهجي |
+|---|---|---|---|---|
+| التدرجات السنوية | 19 | 113,178 chars | ✓ | ✓ |
+| التوزيع السنوي | 3 | 27,554 chars | **absent** | **absent** |
+
+**التوزيع drops two whole columns.** It keeps `المحور · المحتويات · الحجم الساعي` and discards
+the competencies and the methodological guidance — so it carries **none of the prohibitions and
+none of the level constraints**. «لا تُختار مسألة البحث في إثبات استمرارية دالة» and «الدوال
+الناطقة: حاصل قسمة كثير حدود من الدرجة 2 أو 3 على كثير حدود من الدرجة 1 أو 2» exist only in the
+تدرجات.
+
+It reads as more detailed for three reasons, none of them content: it is **denser** (27 weeks in
+3 pages), it is **finer on scheduling** (hours per content line rather than per week-block), and
+it **adds a dimension the تدرجات lacks entirely** (the calendar).
+
+**So: التوزيع is more detailed about *when*; التدرجات is four times richer about *what and how*
+— and the part التوزيع drops is precisely what keeps generation on-syllabus.** Transcribing the
+distribution instead of the progression would look like a shortcut and would silently discard
+the most valuable column in the corpus.
+
 ⚠ **Caution on these documents.** The blog post advertises this file as 2025–2026; the file's
 own header reads **السنة الدراسية 2024–2025**. They are teacher-made, informally published, and
 not always labelled accurately. Treat a distribution as a *calendar suggestion to confirm*,
