@@ -360,6 +360,120 @@ as needed. Nobody has confirmed with a practising teacher that they are what is 
 this year. Worth asking one of the two teacher friends at the same time as the core-loop
 validation (§6).
 
+### F · Programme progress tracker — the documents used beyond exams
+
+**The idea.** Guide a teacher through the official programme and let them track where they
+are: the ministry's own week-by-week table, rendered as something a teacher works with rather
+than a PDF they lose. Later, real prepared course material attaches under
+السير المنهجي لتدرج التعلمات.
+
+**Why this may be the most important thing on the shelf.** §5 names the strategic problem:
+exam generation is 3–6 uses a trimester, which is a weak habit loop for a subscription. A
+progress tracker is touched **weekly or more** — it is the teacher's working calendar. That is
+a stronger answer to the frequency problem than the weekly exercise series (item C), and it
+does something the series cannot: it gives the product a reason to be open on a day nobody is
+setting an exam.
+
+It also makes exam generation **contextual** rather than manual. A teacher at week 12 wants a
+devoir on what has actually been taught by week 12. Today they carry that calendar in their
+head and pick topics by hand. With the programme stored, the product knows — and knows what it
+must *not* include because the class has not reached it yet. That is also what makes roadmap
+item 4 (devoirs vs compositions) real: the difference is scope-to-date, not just duration.
+
+**⚠ It reverses a recorded scoping decision, and that should be deliberate.** §7 and the scope
+section exclude *"lesson plans, course content, lesson summaries — teachers have the textbook
+and their own notes. Explicitly skipped."*
+
+- The **tracker itself does not collide** with that. It is the official programme plus the
+  teacher's own position in it — reference data and state, not authored content.
+- **"Prepared courses under السير المنهجي" does collide**, squarely. That is course content.
+  Reversing the exclusion may well be right — the reasoning behind it was "teachers have their
+  own notes", and a course attached to the official progression is a different proposition —
+  but it should be reversed **knowingly and in writing**, not arrived at by increments.
+
+### F.1 · What the documents actually contain
+
+Verified across all five archived files. Every stream's document has the same shape:
+
+1. **Cover** — الجمهورية الجزائرية… → وزارة التربية الوطنية → المفتشية العامة للتربية الوطنية →
+   مديرية التعليم الثانوي العام والتكنولوجي · المادة · المستوى · الشعبة · سبتمبر 2022
+2. **مقدمة** — what التدرجات السنوية are, and that they are revised as needed
+3. **الكفاءات المستهدفة في شعبة X** — stream-level competencies, grouped by domain
+   (الحساب · التحليل · الهندسة · الإحصاء والاحتمالات · تكنولوجيات الإعلام والاتصال ·
+   المنطق والبرهان الرياضياتي)
+4. **Summary table** — المحور · عدد الأسابيع · الحجم الساعي, grouped by الفصول
+5. **The main table — التدرج السنوي لبناء التعلمات**, one row per week:
+
+   `الأسبوع · المحور · الكفاءات المستهدفة · المحتويات المعرفية · السير المنهجي لتدرج التعلمات · الحجم الساعي`
+
+**The السير المنهجي column is the richest thing in the whole document** and is what makes both
+this item and item A worth doing properly. It carries precise level and explicit prohibitions —
+real examples from شعبة الرياضيات:
+
+> «الدوال الناطقة (حاصل قسمة كثير حدود من الدرجة 2 أو 3 على كثير حدود من الدرجة 1 أو 2)»
+> «الدوال المثلثية: cos(ax+b) ، sin(ax+b) ، tan x»
+> «حل معادلات تفاضلية من الشكل: y'=f(x) ، y'=f(x)y»
+> «لا تُختار مسألة البحث في إثبات استمرارية دالة»
+> «نقتصر على الأمثلة البسيطة سهلة الحساب»
+
+Nothing in the product can currently express any of that.
+
+### F.2 · How to store it — the design, before anyone builds it
+
+**The spine is `(stream, week)`.** Everything hangs off it, the way `ex1…exN` is the join key
+the exam loop turns on. A week is the unit a teacher thinks in, the unit the ministry
+publishes in, and the unit progress is tracked in.
+
+```
+programme                       ← OFFICIAL. Immutable reference data, versioned by document.
+  stream        شعبة · level 3AS
+  source        { authority, title, date: "2022-09", file }   ← provenance, always
+  competencies  [ { domain, statements[] } ]        ← الكفاءات المستهدفة (stream-level)
+  totals        { weeks, hours }
+  units         [ { id, name, weeks, hours, trimester } ]     ← المحاور (summary table)
+  weeks         [ { week, unitId,
+                    competencies[],    ← الكفاءات المستهدفة (row level)
+                    contents[],        ← المحتويات المعرفية
+                    guidance[],        ← السير المنهجي   ← course material attaches HERE
+                    hours } ]
+
+teacher_progress                ← THE TEACHER'S. Separate collection, separate lifetime.
+  teacherId · stream · schoolYear
+  programmeVersion              ← which document their plan was built from
+  entries [ { week, status: planned|done|skipped, note, completedAt } ]
+```
+
+Four rules that should not be negotiated away later:
+
+1. **Store the official text VERBATIM. Never paraphrased, never summarised.** The same rule
+   `subjects.subject` already follows. Paraphrasing السير المنهجي makes us the author of the
+   programme, silently — and the whole value of these files is that we are not.
+2. **The official programme and the teacher's progress are different collections with
+   different lifetimes.** The programme is reference data revised by the ministry; progress is
+   per-teacher, per-year. Mixing them means a programme update destroys progress.
+3. **`programmeVersion` on the progress record.** The documents state plainly that they are
+   revised («يتوجب مراجعتها وتحيينها عند الاقتضاء»). When 2024's arrive, a teacher mid-year
+   must not have their plan silently re-pointed.
+4. **Anything derived is marked as derived.** Weights inferred from hours, topic mappings onto
+   the product's own taxonomy, trimester boundaries — all useful, none of them the ministry's
+   words. The existing ✎ discipline extends here.
+
+### F.3 · The hard part is extraction, and it is not a parsing job
+
+The extracted text is faithful to a reader and treacherous to a program: digits reverse
+(`2022` renders `2222`), Arabic ligatures drop characters (`الحجم` → `الح�م`), and the
+six-column table interleaves so that a row's cells are not adjacent in the text stream.
+
+So transcription needs a model or a person **reading with judgement, then verifying against
+the PDF** — not a regex pass. Done badly it is *worse* than the ✎ inference it replaces,
+because it would carry official authority while being wrong. Budget it as careful work on
+about 19 pages × 3 streams, with a verification pass that is separate from the transcription
+pass and does not trust it.
+
+**Do one stream end to end first** (شعبة الرياضيات — the one we serve), prove the shape, then
+the other two. The three scientific streams share a structure, so the second and third are
+mostly mechanical once the first is right.
+
 ### Not on the shelf, and why
 
 **تسيير واقتصاد and the two literary streams** — different textbooks, genuinely different
