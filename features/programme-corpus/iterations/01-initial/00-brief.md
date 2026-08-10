@@ -1,68 +1,95 @@
 # Brief — J1 · the programme corpus
 
-> **This is a starting claim, not a spec.** DISCOVERY's first duty is to falsify it against
-> the real system. Every previous job's brief was wrong about something load-bearing.
+> **This is a starting claim, not a fact.** DISCOVERY's first duty is to falsify it against the
+> real system. Every previous job's brief was wrong about something load-bearing — including
+> the first version of this one, which quoted an hours figure that text extraction had
+> corrupted.
 
 The product is repositioning from an exam generator to the teacher's prep companion, built on
-the official programme (brief §2). **This job is the foundation the rest stands on**: the
-ministry's التدرجات السنوية, stored so the product can reason about them.
+the official programme, serving **all six 3AS streams** (brief §2, §6f). This job builds the
+foundation everything else stands on.
 
-It also delivers the only thing on the shelf that fixes something for teachers we already
-have — see §3.
+## 1 · The source — already obtained and archived
 
-## 1 · What exists today
+`project/docs/reference/curriculum/`, five official **التدرجات السنوية**
+(وزارة التربية الوطنية · المفتشية العامة للتربية الوطنية · سبتمبر 2022 — verified current,
+brief §6d):
 
-**The corpus is already obtained and archived** at `project/docs/reference/curriculum/`:
+| document | stream(s) | pages |
+|---|---|---|
+| `tadarroj-3as-math-2022.pdf` | شعبة الرياضيات | 19 |
+| `tadarroj-3as-techmath-2022.pdf` | تقني رياضي | 19 |
+| `tadarroj-3as-sciences-2022.pdf` | علوم تجريبية | 17 |
+| `tadarroj-3as-gestion-2022.pdf` | تسيير واقتصاد | 10 |
+| `tadarroj-3as-lettres-2022.pdf` | آداب وفلسفة **+** لغات أجنبية | 8 |
 
-| document | stream(s) | hours/yr | units | pages |
-|---|---|---|---|---|
-| `tadarroj-3as-math-2022.pdf` | رياضيات | 181 | 11 | 19 |
-| `tadarroj-3as-techmath-2022.pdf` | تقني رياضي | 162 | 11 | 19 |
-| `tadarroj-3as-sciences-2022.pdf` | علوم تجريبية | 135 | 11 | 17 |
-| `tadarroj-3as-gestion-2022.pdf` | تسيير واقتصاد | 128 | 9 | 10 |
-| `tadarroj-3as-lettres-2022.pdf` | آداب وفلسفة **+** لغات أجنبية | 44 | 4 | 8 |
-
-Extracted `.txt` sits beside each. **September 2022 is verified current** — no newer ministry
-progression exists (brief §6d).
-
-Every document has the same shape: cover (authority chain · مادة · مستوى · شعبة · date) →
-مقدمة → الكفاءات المستهدفة في شعبة X (grouped by domain) → summary table (المحور · عدد الأسابيع ·
-الحجم الساعي, grouped by الفصول) → **the main table, one row per week**:
+**73 pages, 6 streams.** Every document: cover (authority · مادة · مستوى · شعبة · date) →
+مقدمة → الكفاءات المستهدفة (grouped by domain) → summary table (المحور · عدد الأسابيع ·
+الحجم الساعي, grouped by الفصول) → the main table, one row per week:
 
 `الأسبوع · المحور · الكفاءات المستهدفة · المحتويات المعرفية · السير المنهجي لتدرج التعلمات · الحجم الساعي`
 
-**Today the product has none of this.** `teacher-be/agent/curriculum/3as-mathematiques.md` is a
-hand-written ✎ file with a topic list and inferred notes, for one stream, and
-`teacher-fe/src/lib/taxonomy.ts` hardcodes `STREAM = "شعبة الرياضيات"` with eight topics.
+> ⚠ The `.txt` files beside the PDFs are **text extraction and are not to be trusted** — see §2.
+> They are kept only as a search aid.
 
-## 2 · The target shape (brief §F.2)
+## 2 · The method — deep OCR, page by page. Not text extraction.
+
+**Text extraction is rejected on evidence.** `pdftotext` reported شعبة الرياضيات's annual total
+as **181 ساعة**. The rendered page reads **189**, and the column sums confirm it
+(7+14+14+7+14+14+7+21+21+14+7+21+21+7 = 189 over 27 weeks). That wrong figure was published in
+the product brief and in `project/CLAUDE.md` before anyone looked at the page.
+
+- **`pdftoppm` → PNG, read page by page.** Renders clean and correctly ordered. Reading the PDF
+  directly comes out letter-reversed — verified, do not use it.
+- **Arabic prose VERBATIM.** Never paraphrased, reordered or summarised.
+- **Mathematics as LaTeX** in `$…$` — what the product already renders through KaTeX, so the
+  corpus is directly usable. Converting `f ( x) � k` to `$f(x) = k$` recovers what the page
+  says; rewriting a sentence does not, and remains forbidden.
+- **Every summary table has a total — check the arithmetic.** It is a free correctness oracle
+  and it is what caught the 181/189 error. A total that does not sum means the page needs a
+  closer read.
+- **Only علوم تجريبية's figure is independently verified** (135 = 5 h × 27 weeks). Every other
+  number in brief §6b came from text extraction and is **untrusted until re-read from a PNG** —
+  including the hours, the unit counts, and the per-stream unit tables.
+
+## 3 · Storage — structured, and the skills stop reading files
+
+**Today** four skills read `curriculum/` off disk at generation time — `exam-subject`,
+`refine-exercise`, `solution-one`, `solution-sheet` — because the CLI is a subprocess with
+`<repo>/agent` as cwd. `teacher-fe/src/lib/taxonomy.ts` separately hardcodes
+`STREAM = "شعبة الرياضيات"` and eight topics.
+
+**Target (brief §6f):** the corpus is a **structured store**, and **`be` queries it and injects
+the relevant slice into the prompt**. The skills stop reading curriculum files entirely.
+
+Chosen over keeping a generated file projection because two artifacts that must not drift is
+the exact failure class this project keeps hitting. Injection is also strictly better later:
+`be` knows the teacher's stream, and after J3 their week, so it can pass *exactly* what is in
+scope instead of a skill guessing which file to open.
+
+Shape (brief §F.2), one record per stream:
 
 ```
-programme                       ← OFFICIAL. Immutable reference data, versioned by document.
-  stream · level                  (one record per stream; lettres covers TWO streams)
-  source        { authority, title, date: "2022-09", file }   ← provenance, always
-  competencies  [ { domain, statements[] } ]        ← الكفاءات المستهدفة (stream level)
-  totals        { weeks, hours }
-  units         [ { id, name, weeks, hours, trimester } ]     ← المحاور
-  weeks         [ { week, unitId, competencies[], contents[], guidance[], hours } ]
+programme
+  stream · level              (the lettres document covers TWO streams)
+  source   { authority, title, date: "2022-09", file, page }   ← provenance, always
+  competencies [ { domain, statements[] } ]     ← الكفاءات المستهدفة (stream level)
+  totals   { weeks, hours }                     ← and they MUST sum from the units
+  units    [ { id, name, weeks, hours, trimester } ]
+  weeks    [ { week, unitId, competencies[], contents[], guidance[], hours } ]
+                                                  ↑ guidance is where a course layer
+                                                    attaches later — leave room, build nothing
 ```
 
-Four rules that must not be negotiated away:
+**Cost discipline binds.** `agent/CLAUDE.md`: context is charged on every invocation and refine
+is the most-repeated action. The current curriculum file is 5,189 bytes; the maths programme is
+~113k characters of extracted text. **The injected slice must be scoped — never the whole
+programme.**
 
-1. **Official text stored VERBATIM.** Never paraphrased, never summarised. Paraphrasing
-   السير المنهجي makes us the author of the programme, silently — and not being that is the
-   whole value.
-2. **Anything derived is marked as derived.** Mappings onto the product's own taxonomy,
-   inferred weights, trimester boundaries — useful, none of them the ministry's words. The ✎
-   discipline extends here.
-3. **Programme and teacher state are separate collections with separate lifetimes.** No
-   `teacher_progress` in this job — but the schema must not make it awkward to add.
-4. **`source` on every record.** A claim about the programme must be traceable to a page.
+## 4 · The gap this closes for existing teachers
 
-## 3 · The gap this closes for existing teachers
-
-Against the official programme, the product's eight-topic list is **missing roughly a quarter
-of the teaching year** for شعبة الرياضيات — the one stream it serves:
+The product's eight-topic list is missing roughly a quarter of the teaching year for
+شعبة الرياضيات — the one stream it serves today:
 
 | missing | official weight |
 |---|---|
@@ -70,64 +97,46 @@ of the teaching year** for شعبة الرياضيات — the one stream it ser
 | **الأعداد والحساب** | 3 أسابيع · 21 ساعة |
 | **التحويلات النقطية** | inside a 3-week unit with الأعداد المركبة |
 
-**6 of 27 teaching weeks a teacher cannot ask for**, plus part of a seventh.
+Two mismatches to design around, not paper over: the product's topic *cuts* differ from the
+programme's, and **the taxonomy is no longer one global list** — الأعداد والحساب exists for two
+streams and not a third; التحويلات النقطية is bundled in two and standalone in another.
 
-Two mismatches to design around rather than paper over:
-- **Granularity.** The product splits «الدوال العددية والنهايات» from «الاشتقاق ودراسة الدوال»;
-  the programme splits الاشتقاقية والاستمرارية / النهايات / التزايد المقارن. The product's names
-  are the teacher-facing taxonomy and need not match word for word — they must **cover** the
-  programme.
-- **The taxonomy is no longer one global list.** الأعداد والحساب exists for two streams and not
-  the third; التحويلات النقطية is bundled in two and standalone in the third.
+## 5 · Scope
 
-## 4 · Scope
+**In:** the store and its schema · deep-OCR transcription of all five documents, **شعبة
+الرياضيات end to end FIRST and checked with the user before the other four** (a method proof,
+not a scope limit — it is the hardest document) · a verification pass **separate from the
+transcription pass that does not trust it** · `be` injecting scoped curriculum into the four
+skills · the missing units added for شعبة الرياضيات.
 
-**In:**
-- The `programme` schema and its storage
-- Transcription of all five **تدرجات** — **شعبة الرياضيات end to end FIRST**, verified, and
-  shown to the user before the other four are touched
-- **A verification pass separate from the transcription pass, which does not trust it**
-- The missing units added to the product's topic list for شعبة الرياضيات
-- `exam-subject` grounds in the corpus instead of the hand-written file
+**Out:** the **course layer** (deferred, brief §6f — leave room, build nothing) · التوزيع
+السنوي / calendar (J6) · teacher profile and stream selector (J2) · progress tracking (J3) ·
+levels other than 3AS · subjects other than maths.
 
-**Out:**
-- **التوزيع السنوي / the calendar** — deferred to J6 by decision (§6d). Different source,
-  different authority, different lifecycle.
-- Teacher profile, stream selector (J2) · progress tracking (J3) · any new UI beyond the topic list
-- Levels other than 3AS; subjects other than maths
+## 6 · Open questions for DISCOVERY — do not assume answers
 
-## 5 · Open questions for DISCOVERY — do not assume answers
+- **How many pages can be transcribed reliably per pass, and what does failure look like on a
+  dense page?** Decides whether 73 pages is one job or must be split.
+- **Do all five documents really share one schema?** The literary one is 8 pages / 4 units; the
+  management one has no الأعداد المركبة and no هندسة. **A single counter-example matters more
+  than four confirmations.**
+- **What is the smallest independently verifiable unit** — a week, a محور, a page?
+- **What does `be` inject, exactly, for each of the four skills?** They differ:
+  `exam-subject` needs a topic's scope; `refine-exercise` needs it only when content moves;
+  the solution skills only when checking a method is on-syllabus.
+- **How do the product's topics map onto the programme's محاور**, name by name, and where do
+  they genuinely not correspond?
+- **Where does the structured store live** — Mongo (queryable, matches the tracker's needs
+  later) or versioned files in the repo (diffable, reviewable, which a 73-page manual
+  transcription arguably needs)? **Both have a real claim; decide it with evidence.**
 
-- **Where does the corpus live — files in the repo, or MongoDB?** The existing curriculum file
-  is read from disk by the CLI at generation time (`config.cwd` → `<repo>/agent`). A database
-  record is not reachable that way without a change. **Verify how the skill actually reads it
-  before choosing.**
-- **Does `exam-subject` need the whole programme, or a per-stream slice?** Its prompt budget
-  matters — the maths document is 113k characters and a skill reading all of it every run
-  would be absurd.
-- **What is the unit of transcription that can be verified?** Per week? Per unit? A verifier
-  must be able to hold the claim and the page side by side.
-- **Do the five documents really share one schema?** The literary document is 8 pages and 4
-  units; the management one has no الأعداد المركبة and no هندسة. **Check before generalising
-  from the maths document.**
-- **How should the product's topic list relate to the programme's محاور?** Same list, a
-  mapping, or the programme's names verbatim? This decides whether the dropdown changes for
-  existing teachers.
+## 7 · Constraints
 
-## 6 · Constraints
+**Arabic only, RTL** · **maths via KaTeX** · **LaTeX never visible to a teacher** — the corpus
+stores LaTeX, the teacher never sees it · **inside the official curriculum** — this job is that
+constraint's foundation · **don't over-engineer**.
 
-From `project/CLAUDE.md` → Hard constraints, all binding:
-
-- **Arabic only, RTL throughout** · **LaTeX never visible** · **inside the official curriculum**
-  — this job *is* that constraint's foundation · **don't over-engineer**
-
-Plus:
-
-- **The extraction is a transcription job, not a parsing job.** Digits reverse (`2022`→`2222`),
-  ligatures drop characters (`الحجم`→`الح�م`), and the six-column table interleaves so a row's
-  cells are not adjacent in the text stream. A regex pass will produce confident garbage. Read
-  with judgement, then verify against the PDF.
-- **Never call a real generation from a test** — ~110 s and real quota. Record and replay.
-- `/api/generate` is frozen; `POST /api/exams` is the progressive path.
-- Suites take their lane from `CHAR_BE_URL`/`CHAR_BE_LOG` and keep fixtures beside themselves.
-- Where a behaviour can race or repeat, write the concurrency clause from the start.
+Plus: never call a real generation from a test (~110 s and real quota — record and replay) ·
+`/api/generate` is frozen · suites take their lane from `CHAR_BE_URL`/`CHAR_BE_LOG` and keep
+fixtures beside themselves · where a behaviour can race or repeat, write the concurrency clause
+from the start.
