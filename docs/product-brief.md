@@ -529,6 +529,66 @@ would be confidently wrong for most real classrooms — the same class of error 
 correction's staleness from the subject's `rev` instead of the statement it answers. The
 teacher's marked position is the truth; the calendar is at best a default.
 
+## 6d · DECIDED — the programme is the backbone
+
+**Decision, 2026-08-10.** Everything grounds in the official documents. Not as a reference the
+exam skill consults, but as the structure the product is built on: which streams exist, what
+each teaches, in what order, and where a given teacher currently is.
+
+Two consequences the decision names explicitly:
+
+- **The teacher profile carries a stream, and all six streams are offered** — the five archived
+  documents cover them (آداب وفلسفة and لغات أجنبية share one).
+- **The weekly exercise series is scoped by the teacher's tracked progress**, so it knows what
+  *this week* may contain — not merely which chapter, but where the class has actually reached.
+
+### The corpus we are committing to
+
+| stream(s) | hours/year | units | pages |
+|---|---|---|---|
+| رياضيات | 181 | 11 | 19 |
+| تقني رياضي | 162 | 11 | 19 |
+| علوم تجريبية | 135 | 11 | 17 |
+| تسيير واقتصاد | 128 | 9 | 10 |
+| آداب وفلسفة + لغات أجنبية (one document) | 44 | 4 | 8 |
+
+**73 pages, 5 documents, 6 streams.**
+
+Two corrections to earlier entries in this brief, from actually reading all five:
+
+- **The literary streams are cheap, not expensive.** §6b called them "probably never" on
+  value-per-teacher. Commercially that stands — 44 hours a year at 2 h/week is a thin
+  programme. But at 8 pages and 4 units they are the *cheapest* thing in the corpus, so
+  excluding them saves almost nothing while leaving two of six streams unserved.
+- **تسيير واقتصاد is smaller than assumed** — 9 units, 10 pages, and it carries no
+  الأعداد المركبة, no هندسة في الفضاء, no أعداد وحساب. Its shape is closer to the literary
+  document than to the scientific ones.
+
+### Sequencing — this is four jobs, and the order is forced
+
+Nothing here is optional-order: each step is unusable without the one before it.
+
+**1 · The programme corpus.** Transcribe all five documents into the structure in §F.2, and
+fix شعبة الرياضيات's missing quarter (item A) as the same pass through the same document.
+Delivers item A, proves the schema on the stream we already serve, and is the foundation for
+everything after. *Nothing else can start until this exists.*
+
+**2 · Teacher profile + all six streams** (item B). Sign-up learns what a teacher teaches; the
+topic taxonomy per stream comes from the corpus rather than a hardcoded constant; the printed
+sheet carries the school. Needs 1.
+
+**3 · Progress tracking + progress-aligned exams** (item F). The teacher marks where they are;
+exam scope is derived from it. Needs 1 and 2 — progress is meaningless without knowing which
+programme the teacher is following.
+
+**4 · Weekly exercise series, scoped by progress** (item C). Needs 3 for "this week's scope" to
+mean anything. Without it the series is just a smaller exam.
+
+**Do step 1 on شعبة الرياضيات end to end first**, before the other four documents. It is the
+stream we serve, it is the largest and most complex document, and if the structure survives it
+the rest are mostly mechanical. A schema proven on the easy documents would be a schema proven
+on the wrong thing.
+
 ### Not on the shelf, and why
 
 **تسيير واقتصاد and the two literary streams** — different textbooks, genuinely different
