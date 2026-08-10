@@ -328,6 +328,12 @@ two schools, breaks the first model), and what a real Algerian exam header actua
 
 ### C · Weekly exercise series (سلاسل التمارين)
 
+> **Compounds with F.** A weekly series is exactly the artifact a teacher needs *at* a given
+> week, so progress alignment scopes it for free — and the frequency argument for C and for F
+> is the same argument. If both are built, build the programme storage once and let both read
+> it.
+
+
 **Roadmap item 3, and the brief's own answer to the frequency problem** (§5): exams are needed
 3–6 times a trimester, series *weekly*. If only one thing gets added, this is it.
 
@@ -337,6 +343,10 @@ budget, one chapter. `exercise-one` needs no change; the plan skill is simpler t
 the progressive UI, per-exercise retry and one-writer registry are all reusable as-is.
 
 ### D · Multiple versions of one exam (نماذج متعددة)
+
+> Unaffected by F, and the only shelf item that is — versions are a transformation of an exam
+> that already exists, so progress alignment adds nothing to it.
+
 
 Roadmap item 2, and now nearly free: it wanted exercise-level regeneration, which shipped as
 `POST /subjects/:id/exercises/:exerciseId/regenerate`. Same questions, different numbers,
@@ -473,6 +483,51 @@ pass and does not trust it.
 **Do one stream end to end first** (شعبة الرياضيات — the one we serve), prove the shape, then
 the other two. The three scientific streams share a structure, so the second and third are
 mostly mechanical once the first is right.
+
+### F.4 · The payoff — exams aligned to where the teacher actually is
+
+This is why F is worth more than the sum of a tracker and a topic list. Once the programme is
+stored and the teacher's position in it is known, **exam generation stops being a blank form**.
+
+**Today.** The teacher picks topic, difficulty, exercise count and duration from scratch, every
+time, carrying the school calendar in their head. The product has no idea what month it is,
+what has been taught, or what the class has never seen.
+
+**With F.** The teacher is at week 12. The product knows which محاور weeks 1–12 covered, the
+hours spent on each, and which units are still ahead. So it can:
+
+- **Propose the exam instead of asking for it** — «اختبار الفصل الأول» becomes a single choice
+  whose scope is derived, not typed.
+- **Weight it honestly.** Hours-per-unit to date give a defensible split of the 20 points. A
+  unit that took 21 of 181 hours has a claim on roughly 12% of the paper.
+- **Exclude what has not been taught yet** — and this is the half that matters most. An exam
+  containing material the class has never seen is not a style problem; it is the single most
+  damaging thing this product could hand a teacher, because they would only discover it in
+  front of the class. Today nothing prevents it. **The programme is the only source that can.**
+- **Make devoir vs composition real** (roadmap item 4). The difference is scope-to-date and
+  weight, not just a duration label: a devoir covers the recent stretch, a composition the
+  trimester.
+- **Aim remediation** (roadmap item 5) at units the teacher marked as struggled-through, rather
+  than asking them to name the weakness.
+
+**The chain, end to end:**
+
+```
+official programme stored verbatim  →  teacher's progress tracked by week
+        →  scope-to-date derived    →  exam generated within it, and only within it
+```
+
+Each link is useful alone: the programme improves grounding for the exams we already generate
+(item A), the tracker earns weekly opens on its own (F). But the chain is what turns a
+generator into something that knows the teacher's year — and it is the difference between
+"write me an exam about logarithms" and "write my first-trimester composition".
+
+**One constraint this inherits, stated so it is not lost:** scope-to-date is *derived* from the
+teacher's own tracked progress, never assumed from the calendar. Classes fall behind, schools
+lose weeks, teachers reorder units. A product that assumes week 12 means the week-12 syllabus
+would be confidently wrong for most real classrooms — the same class of error as deriving a
+correction's staleness from the subject's `rev` instead of the statement it answers. The
+teacher's marked position is the truth; the calendar is at best a default.
 
 ### Not on the shelf, and why
 
