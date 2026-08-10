@@ -181,3 +181,14 @@ Debt, chargeable here jointly with be-3:
    `createdAt/updatedAt`) are invisible to the guard — a hand-flipped `current` or a
    `transcriptionRev: 999` reads back `unchanged` (demonstrated). Acceptable consequence of
    the exclusion list; recorded so it is inherited knowingly.
+
+### debt closed (micro-loop)
+
+1. **`week.hours` now has an owner.** Fixed in the verifier as A4's second clause, not in the
+   schema — the seam is loader = shape, verifier = arithmetic, and `totals.hours` (A3) sits on
+   the same side. Record and mutation run in be-3's journal. Nothing in the corpus moved: all
+   135 stored weeks were already correct, which is exactly what made the gap latent.
+2. Still open, still accepted: hand-edits to the hash-excluded fields (`current`,
+   `transcriptionRev`, `createdAt/updatedAt`) remain invisible to the guard. That is what the
+   exclusion list is for — a rev bump must not change the content hash — and narrowing it
+   would make the loader's own writes look like tampering.

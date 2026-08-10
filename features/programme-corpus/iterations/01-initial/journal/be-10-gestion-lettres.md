@@ -185,3 +185,10 @@ the weeks-16/18 reconstruction policy is recorded only in be-8's journal appendi
 marker in the data itself. Additionally, sciences S2 (dot at the wrong end, ×2 rows)
 remains unapplied — explicitly deferred as batchable, which is a recorded disposition, so
 this is a note, not a defect.
+
+### debt closed (micro-loop)
+
+The techmath/sciences journal carries the record: **T4 is applied** (techmath rev 2 → 3) and
+**sciences S2 is deliberately not** — one page, two rows, cosmetic, batched into whatever
+`--correct` sciences next needs. It is now a written decision instead of a silence. The
+`<docKey>.l2-report.md` debt is untouched: this journal is still the disposition of record.

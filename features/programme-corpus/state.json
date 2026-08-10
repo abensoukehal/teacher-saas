@@ -25,7 +25,7 @@
           "tag": "happy-path",
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-2": {
@@ -36,7 +36,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-3": {
@@ -47,7 +47,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-4": {
@@ -59,7 +59,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-5": {
@@ -70,7 +70,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-6": {
@@ -81,7 +81,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-7": {
@@ -92,7 +92,7 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-8": {
@@ -100,7 +100,11 @@
           "tag": "happy-path",
           "depends_on": [
             "be-5"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          }
         },
         "be-9": {
           "status": "done",
@@ -110,18 +114,22 @@
           ],
           "derived_from": {
             "seed": "65f49684f2ef9a01",
-            "contracts": "961b8a0644f45062"
+            "contracts": "782f21e17080b64d"
           }
         },
         "be-10": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "be-6",
             "be-7",
             "be-8",
             "be-9"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          }
         }
       }
     }

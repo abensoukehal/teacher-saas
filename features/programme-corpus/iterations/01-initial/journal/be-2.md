@@ -116,3 +116,17 @@ Debt:
    the same token still sets dryRun — but it is a silent misparse.
 3. Exit 1 is overloaded: invalid seed, missing file, and any unexpected error (Mongo down)
    all exit 1. The contract's "exit 1 = fix the file" is not always true.
+
+### debt closed (micro-loop)
+
+2. **`--db` followed by another flag is refused, not consumed.** Both CLIs now share one
+   parse (`scripts/lib/db-arg.mjs`), so `--db --correct` exits 1 naming the problem instead of
+   quietly targeting a database called `--correct`. The mutation run showed this was not a
+   wart: with the old parse restored, that command really did create a MongoDB database named
+   `--correct` holding `programmes` and `programme_revisions`. Dropped afterwards. Full record
+   in be-3's journal.
+
+Items 1 and 3 stand as recorded knowledge. **1** — the loader does no arithmetic — is the
+seam, not an oversight: A3 and A4 both live in the verifier, and moving arithmetic into the
+loader is a design change, not a debt fix. **3** — exit 1 being overloaded (invalid seed ·
+missing file · Mongo down) — is real and untouched.

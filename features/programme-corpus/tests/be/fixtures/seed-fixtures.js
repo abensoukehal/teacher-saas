@@ -212,6 +212,29 @@ const VARIANTS = {
     l[12].rows[3].hours = 1; // week 12: 2+2+1+2 = 7 → 2+2+1+1 = 6
     return l;
   },
+  // A week line states its hours TWICE — the `hours` field and the rows that sum to it.
+  // These three are the ways the two can disagree; before the A4 fix only the row sum was
+  // ever read, so `a4-week-declares-999` passed every assertion (REVIEW's repro).
+  "a4-week-declares-999": () => {
+    const l = clone(baseLines());
+    l[7].hours = 999; // rows still sum to 7 — nothing else in the file notices
+    return l;
+  },
+  "a4-week-hours-absent": () => {
+    const l = clone(baseLines());
+    delete l[7].hours; // the field the schema.yaml assigns to A4, simply not there
+    return l;
+  },
+  "a4-week-consistent-but-wrong": () => {
+    const l = clone(baseLines());
+    // Week 12 is internally consistent — declared 6, rows 2+2+1+1 = 6 — and still wrong,
+    // because the document's weeklyHours is 7. A check of the field against its own rows
+    // would call this green.
+    l[12].rows[3].hours = 1;
+    l[12].hours = 6;
+    return l;
+  },
+
   "a5-week-missing": () => {
     const l = clone(baseLines());
     l.splice(14, 1); // week 14's line is gone; weeks run 1..13,15..27

@@ -299,6 +299,32 @@ describe("be-2 · CLI surface", () => {
       expect(load(args).out).toMatch(/^load-programmes: file=\S+ db=/m);
     }
   });
+
+  /**
+   * `--db` names the database in BOTH corpus CLIs or it is refused — one parse, shared with
+   * the verifier (`scripts/lib/db-arg.mjs`). The loader's half of that is the misparse
+   * be-2's review found: `--db --correct` silently targeted a database literally named
+   * "--correct". The argument that decides WHERE to write never resolves out of sight.
+   */
+  test("--db followed by a flag is refused, not used as the database name", async () => {
+    const res = load(["--file", seed("valid"), "--db", "--correct"]);
+    expect(res.code).toBe(1);
+    expect(res.out).toMatch(/--db needs a database name/);
+    // The database that used to be created is not there.
+    const dbs = (await mongo.db("admin").admin().listDatabases()).databases.map((d) => d.name);
+    expect(dbs).not.toContain("--correct");
+  });
+
+  test("--db-name with no value is refused too", () => {
+    const res = load(["--file", seed("valid"), "--db-name"]);
+    expect(res.code).toBe(1);
+    expect(res.out).toMatch(/--db-name needs a database name/);
+  });
+
+  test("every report line says which database, and where the name came from", () => {
+    const out = load(scratchArgs(seed("valid"))).out;
+    expect(out).toMatch(new RegExp(`db=${SCRATCH} db-from=--db `));
+  });
 });
 
 describe("be-4 · the live-database guard", () => {

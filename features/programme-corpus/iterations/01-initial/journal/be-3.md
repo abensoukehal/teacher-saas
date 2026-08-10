@@ -198,3 +198,93 @@ Debt, ranked:
 4. Anchor windows make `--compare` exit 0 unreachable on real documents (112/34/33/19
    irreducible artifact flags), so the contract's "exit 0 after disposition" oracle was
    quietly abandoned in favour of bulk prose adjudication — see be-5/be-10 reviews.
+
+### debt closed (micro-loop) — 1, 2 and 3
+
+Three of the four are fixed here; item 4 is left as recorded knowledge, for the reason at the
+bottom. **The gate went 97 → 116 clauses**, and every mutant of the new code is killed
+(19/19, listed at the end).
+
+**1 · A4 now has two clauses.** The week line states its hours twice — the `hours` field and
+the rows that sum to it — and A4 read only the rows. It now checks both against
+`weeklyHours`:
+
+```
+A4  FAIL  1 week-hours problem(s) against weeklyHours 7
+      week 7: the week line declares hours 999, but weeklyHours is 7 and its rows sum to 7
+```
+
+Two clauses and not three: with the rows pinned to `weeklyHours` and the field pinned to
+`weeklyHours`, the field equals the row sum by transitivity, so checking it against its own
+rows as well would report one fact twice. **It stays in the verifier, not the loader** —
+that is the existing seam (loader = shape, verifier = arithmetic), the same seam that leaves
+A3's `totals.hours` unchecked at load time, and be-2's review already accepted it as
+contract-conformant. Moving arithmetic into the loader is a bigger decision than a debt fix.
+
+All 135 stored weeks were already correct, so nothing in the corpus moved; the five documents
+are still A1–A8 green from `--db`.
+
+**2 · `--compare` has a coverage floor.** It now reports what it compared, every run:
+
+```
+compare coverage: weekNumberPrinted 27 weeks · unitLabel 0 weeks (27 not seen) ·
+                  rowCount 27 weeks · rowHours 97 rows · rowEmphasis 97 rows ·
+                  anchors 274 cells (17 not seen)
+verify-programmes: --compare … — 27 seed week(s), 27 l2 week(s), 32 discrepancy(ies),
+                   0 coverage gap(s)
+```
+
+and REVIEW's hollow file — `rowEmphasis`, `anchors` and `unitLabelSeen` stripped — is now
+**81 coverage gaps and exit 1** instead of `0 discrepancies` and exit 0.
+
+The line the design turns on is **absent is not null**. A null is a recorded reading — "the
+rotated محور cell showed no label", "that cell is empty" — and the real sciences and techmath
+files carry 27 null labels and 12–17 null anchors each; failing those would fail the corpus
+for being honest. An absent key is a field the l2 pass never produced. So nulls are counted
+and printed as `not seen`, and absences are gaps.
+
+Two layers, because either alone is escapable. Per line kills the strip. Per file — a class
+that compared **zero** cells across the whole file — kills the same attack respelled as
+all-null or empty-arrays. `unitLabel` is deliberately exempt from the per-file floor: two of
+the five documents legitimately show no label on any of 27 weeks.
+
+All five real l2 files pass the floor with **0 gaps**, which is the check that the floor is a
+floor and not a fence.
+
+**3 · `--db <name>` means one thing.** Both CLIs now share `scripts/lib/db-arg.mjs`:
+
+```
+verify --db programme_corpus_nonexistent --docKey tadarroj-3as-math
+  before   8 passed, 0 failed          ← about teacher_saas, which nobody asked for
+  after    no current document for docKey tadarroj-3as-math in db programme_corpus_nonexistent
+```
+
+`--db <a> --db-name <b>` is refused rather than resolved (guessing here is the bug wearing a
+different spelling), `--db` followed by a flag is refused rather than used as the name, and
+both scripts print `db-from=` so a default is never invisible. The bare `--db --db-name X`
+form still works — it is the verifier's documented mode selector.
+
+That last refusal also closes **be-2's debt 2** for free, and the mutation run proved that
+one was not cosmetic: with the old parse restored, `load --file … --db --correct` created a
+real MongoDB database named `--correct` holding `programmes` and `programme_revisions`. It
+was dropped afterwards.
+
+**4 · not closed, and not a defect.** The anchor window makes exit 0 unreachable on real
+documents, and widening it would trade one blind spot for hundreds of false flags — full-text
+equality is deliberately not compared because two honest verbatim reads of dense Arabic differ
+in whitespace. The protection against a word changed deep inside a cell is the human eye-pass
+layer 2 performs, not the tool. That is inherent to the method; recorded, not papered over.
+What the coverage floor adds is narrower and real: the tool can no longer claim agreement it
+never attempted.
+
+**Mutation run — 19/19 killed** (each mutant applied to the real script, whole gate re-run,
+script restored):
+
+| group | mutants | all killed by |
+|---|---|---|
+| A4 | drop the declared clause · check the field against its own rows · default an absent field to `weeklyHours` · check only the first week | the four new A4 clauses |
+| coverage floor | no audit · absent-reads-as-null · null-reads-as-absent · no per-file floor · gaps but exit 0 · no coverage line · accept short `rowHours` · accept short `anchors` · accept an empty anchor object | the eight new floor clauses |
+| `--db` | verifier ignores `--db`'s value · resolve ambiguity by preferring `--db` · loader accepts a bare `--db` · a flag token is a fine name · drop `db-from` from either report | the six new `--db` clauses |
+
+The two that matter most are the pure reversions — "the pre-fix code" for A4 and for the
+coverage audit — because they are the defects themselves, and both are red now.

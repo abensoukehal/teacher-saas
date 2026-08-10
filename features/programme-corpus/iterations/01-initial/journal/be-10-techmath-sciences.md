@@ -124,6 +124,15 @@ correct there.
   in the same pass. No attribution errors found; structure, hours, emphasis and the
   hazard cells (legend, red block, merged cells, formula bidi order, preserved source
   typos) are all right.
+
+  > ⚠ **CORRECTION (micro-loop, REVIEW debt 1).** That sentence overstated what shipped.
+  > The `--correct` pass folded in **T1, T2 and T3 only — T4 was never applied**, and
+  > nothing recorded it as deferred, so the verdict text and the file disagreed for the
+  > rest of the job. T4 is applied now: `tadarroj-3as-techmath` week 6 row 4 contents reads
+  > `". المستقيم المقارب المائل."` at **`transcriptionRev 3`**, with the `programme_revisions`
+  > row carrying the reason. sciences **S2 is still not applied** — same class, one page,
+  > two rows — and that deferral is now a recorded decision rather than a silence: see
+  > "Deliberately not applied" below.
 - **tadarroj-3as-sciences: faithful — build on it as-is.** S1/S2 are two micro items
   (one shadda position, one dot end) worth batching into any future `--correct`;
   nothing structural, nothing attributional.
@@ -153,3 +162,39 @@ Debt:
 2. The contract-named `<docKey>.l2-report.md` files were never created for either document;
    the 34/33 anchor flags were dispositioned in bulk in this journal (see be-5's review —
    same debt, same reasoning).
+
+### debt closed (micro-loop) — T4 applied
+
+```
+data/programmes/tadarroj-3as-techmath.jsonl · week 6 · row 4 · contents[0]
+  before  "المستقيم المقارب المائل ."      one dot, at the end this journal calls the wrong end
+  after   ". المستقيم المقارب المائل."     the stray dot at the RTL start + the attached period
+  bytes   …0644 0020 002e   →   002e 0020 0627…0644 002e
+```
+
+Reloaded with `--correct` and a note naming the adjudication; **rev 2 → 3**, superseded doc in
+`programme_revisions`, A1–A8 green from `--db`, seed `unchanged` against the store. It is the
+only occurrence of that string in any of the five seeds, so the edit was unambiguous.
+
+One consequence worth recording rather than tidying away: `--compare` still flags this cell
+(techmath stays at 32 discrepancies). My l2 line records the anchor as
+`"المستقيم المقارب المائل."` — the attached period only, read at 150 dpi — and the seed now
+carries the 300 dpi adjudication, which includes the leading dot. **The l2 file is not being
+edited to agree.** It is the independent reading; rewriting it to match the seed would destroy
+the only property that makes it worth comparing against. The flag is an adjudicated artifact,
+dispositioned here.
+
+### Deliberately NOT applied — recorded, not silent
+
+- **sciences S2** (`tadarroj-3as-sciences`, w6 r2 + w8 r2, the same stray-dot class as T4).
+  Left as-is on purpose. It is one page, two rows, cosmetic, and this micro-loop is closing
+  review debt rather than reopening layer 2 — applying it means another `--correct` on a
+  document nobody has flagged for anything else. Recorded here so the next `--correct` on
+  sciences batches it, which is what this journal originally proposed.
+- **The deep-in-cell-text survivor** — be-5's demonstration that a meaning-inverting word
+  injected at word 8 of a cell passes the loader, A1–A8 and `--compare` with zero added
+  discrepancies. That is **inherent to the method**, not a defect in it: `--compare` diffs
+  anchors and structure by design, because two honest verbatim reads of dense Arabic differ
+  in whitespace. The protection against that class is the human eye-pass layer 2 performs,
+  and widening the anchor window would trade one blind spot for hundreds of false flags.
+  Not fixable here, and not something to pretend is fixed.

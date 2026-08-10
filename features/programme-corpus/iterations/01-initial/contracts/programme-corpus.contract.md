@@ -135,7 +135,10 @@ node scripts/load-programmes.mjs --file <path>.jsonl [--db teacher_saas] [--corr
 ```
 
 Env: `MONGO_URL` (default `mongodb://127.0.0.1:27017`), `--db` overrides `MONGO_DB`
-(tests use a scratch db, **never** the real one). Requires `npm run build` first — it
+(tests use a scratch db, **never** the real one). `--db` must be followed by a NAME — a flag
+there (`--db --correct`) is refused with exit 1, not used as the name; the shared parse is
+`scripts/lib/db-arg.mjs` and the resolution is printed as `db-from=` on every report line.
+Requires `npm run build` first — it
 imports schema/hash/index code from `dist/store/programmes.js` so there is exactly one
 definition of the shape.
 
@@ -155,9 +158,16 @@ and the action taken. **Never touches `run-log.jsonl`; never carries teacher con
 
 ```
 node scripts/verify-programmes.mjs --file <path>.jsonl [--partial]
-node scripts/verify-programmes.mjs --db [--db-name teacher_saas] --docKey <k>
+node scripts/verify-programmes.mjs --db [<name>] --docKey <k>     # or --db --db-name <name>
 node scripts/verify-programmes.mjs --compare <seed>.jsonl <l2>.jsonl
 ```
+
+**`--db <name>` names the database in BOTH CLIs.** It used to be a bare mode selector here
+while the loader took a name, so `--db scratch --docKey k` ate the name as a flag and
+returned a green verdict about `teacher_saas` — a right-looking answer about the wrong
+database. One parse now serves both (`scripts/lib/db-arg.mjs`): `--db <a> --db-name <b>` is
+refused rather than resolved, `--db` followed by a flag is refused rather than used as a
+name, and both scripts print `db-from=` so the resolution is never out of sight.
 
 Exit 0 = every assertion green; exit 1 = any red; each assertion reported individually.
 
@@ -167,7 +177,9 @@ Exit 0 = every assertion green; exit 1 = any red; each assertion reported indivi
 A1  Σ units.hours  == totals.hours
 A2  Σ units.weeks  == totals.weeks == 27
 A3  totals.hours   == weeklyHours × 27        ← catches every §2.1 brief error
-A4  ∀ week: Σ rows.hours == weeklyHours
+A4  ∀ week: Σ rows.hours == weeklyHours  AND  week.hours == weeklyHours
+    ← BOTH clauses. The week states its hours twice and both are stored as truth; A4
+      summed the rows only, so `week.hours: 999` passed every check ever run over it
 A5  weeks are exactly 1..27, no gap, no repeat
 A6  ∀ w: w.unitId ∈ units.id ∪ {null}   ∧   ∀ u: ∃ w with w.unitId == u.id
 A7  structural: every row's emphasis in enum · every week's source.pdfPages non-empty ·
@@ -187,6 +199,16 @@ resume: next week k+1 · last pdfPage seen P · open unit uNN (M of its
 **`--compare` mode (layer 2's executable oracle):** field-by-field diff of the seed against
 an independent `l2` read, on the comparable subset ONLY (below). Prints one line per
 discrepancy (`week N · field · seed says X · page says Y`); exit 1 if any.
+
+**It also reports its own COVERAGE, and a run that compared nothing is red.** An l2 file
+stripped of `rowEmphasis`, `anchors` and `unitLabelSeen` used to print `0 discrepancy(ies)`
+and exit 0 — the WF-82 failure class (a check that verified nothing reading as a pass)
+inside this job's own tooling. Two layers: **per line**, a missing or short field is a named
+gap; **per file**, `rowHours`/`rowEmphasis`/`anchors` comparing zero cells is a gap however
+it was spelled. `unitLabel` is exempt — sciences and techmath show no محور label on any of
+their 27 weeks, and that is the page's doing. **Absent is not null**: a null is a recorded
+reading and is counted as not-seen, an absent key is a field nobody produced. Every run
+prints a `compare coverage:` line, green or red.
 
 ## The transcription pass protocol (binds be-4, be-6…be-9)
 

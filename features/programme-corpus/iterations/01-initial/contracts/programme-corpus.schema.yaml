@@ -46,7 +46,11 @@ jsonl:
         week: int                          # our ordinal 1..27
         weekNumberPrinted: int|null        # what the page shows; null when unprinted
         unitId: string|null                # ∈ units.id — assigned, never derived
-        hours: number                      # must equal weeklyHours (assertion A4)
+        hours: number                      # must equal weeklyHours AND Σ rows[].hours (A4).
+                                           # A4 had only ever summed the rows, so this field
+                                           # was stored as truth with no layer owning it —
+                                           # `hours: 999` passed the loader, A1-A8 and
+                                           # --compare. Both clauses are checked now.
         source: {pdfPages: [int], docPages: [int]}   # pdfPages REQUIRED non-empty
         rows:
           - competencies: [string]         # Arabic verbatim, maths in $…$
@@ -98,3 +102,15 @@ l2:
         - {competenciesFirst: string, contentsFirst: string, guidanceFirst: string}
   compare: "verify-programmes.mjs --compare <seed>.jsonl <l2>.jsonl — structure, hours,
             emphasis, attribution anchors. Full text deliberately NOT compared."
+  coverageFloor:                           # every run reports what it COMPARED, and a run
+                                           # that compared nothing is red, never `0
+                                           # discrepancies`. An l2 file stripped of
+                                           # rowEmphasis/anchors/unitLabelSeen used to exit 0.
+    absentIsNotNull: "a MISSING key is a gap; an explicit null is a recorded reading
+                      (`no label seen`, `empty cell`) and is counted as not-seen"
+    perLine: "each l2 line must carry weekNumberPrinted · unitLabelSeen · rowCount ·
+              rowHours · rowEmphasis · anchors, with the per-row arrays as long as rowCount
+              and each anchor holding at least one of the three keys"
+    perFile: "rowHours · rowEmphasis · anchors must each compare > 0 cells across the file.
+              unitLabel is EXEMPT: sciences and techmath legitimately show no محور label on
+              any of their 27 weeks"
