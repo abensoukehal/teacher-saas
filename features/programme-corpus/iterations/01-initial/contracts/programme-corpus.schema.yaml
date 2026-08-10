@@ -1,0 +1,116 @@
+# Machine-readable side of programme-corpus.contract.md
+# Seed-file line shapes (JSONL) and the assembled Mongo document.
+
+emphasis:
+  enum: [normal, added-2022, red-unlegended]
+  required: true            # loader REJECTS a row without it — never defaulted
+  guards:
+    added-2022: "document.emphasisLegend != null"
+    red-unlegended: "document.emphasisLegend == null (legend search performed, absence recorded)"
+
+jsonl:
+  file: "data/programmes/<docKey>.jsonl"   # project repo — the source of record
+  lines:
+    - type: programme       # exactly one, first line
+      fields:
+        docKey: string                     # stable across editions
+        edition: string                    # "2022-09" — the MINISTRY's version
+        streams: [string]                  # lettres holds TWO
+        level: string                      # "3AS"
+        source:
+          authority: string
+          title: string                    # verbatim cover title
+          file: string                     # pdf filename in docs/reference/curriculum/
+          pages: int
+          renderedAt: string
+        weeklyHours: {enum: [7, 6, 5, 4, 2]}
+        totals: {weeks: 27, hours: int, weeksText: string, hoursText: string}
+        frontMatter:
+          intro: string|null
+          methodNote: string|null          # مذكرة منهجية — exists in all five
+          graduateProfile: string|null     # ملامح التخرج — null for lettres
+        competencies:                      # NULLABLE — null for gestion, lettres. null != []
+          - {domain: string, statements: [string]}
+        emphasisLegend: {text: string, pdfPage: int} | null
+        units:
+          - id: string                     # u01, u02 … ASSIGNED, never derived
+            name: string
+            nameText: string               # verbatim cell (kashidas kept)
+            weeks: number                  # may be non-integer (1.5, 2.5, 3.5)
+            weeksText: string              # "أسبوع ونصف" — verbatim
+            hours: number
+            hoursText: string
+            sourcePdfPage: int
+    - type: week             # exactly 27, in order, lines 2..28
+      fields:
+        week: int                          # our ordinal 1..27
+        weekNumberPrinted: int|null        # what the page shows; null when unprinted
+        unitId: string|null                # ∈ units.id — assigned, never derived
+        hours: number                      # must equal weeklyHours AND Σ rows[].hours (A4).
+                                           # A4 had only ever summed the rows, so this field
+                                           # was stored as truth with no layer owning it —
+                                           # `hours: 999` passed the loader, A1-A8 and
+                                           # --compare. Both clauses are checked now.
+        source: {pdfPages: [int], docPages: [int]}   # pdfPages REQUIRED non-empty
+        rows:
+          - competencies: [string]         # Arabic verbatim, maths in $…$
+            contents: [string]
+            guidance: [string]             # where a course layer attaches later
+            hours: number
+            emphasis: {ref: emphasis}
+
+mongo:
+  db: teacher_saas
+  collections:
+    programmes:
+      doc: "programme line + weeks[] assembled, plus:"
+      extra:
+        transcriptionRev: int              # OUR version axis; starts 1, +1 per --correct
+        contentHash: string                # sha256, canonical JSON minus volatile fields
+        current: bool                      # exactly one true per docKey
+        createdAt: date
+        updatedAt: date
+      contentHashExcludes: [_id, contentHash, transcriptionRev, current, createdAt, updatedAt]
+      indexes:
+        - {keys: {docKey: 1, edition: 1}, unique: true}
+        - {keys: {streams: 1, current: 1}}                       # multikey
+        - {keys: {docKey: 1, current: 1}, partial: {current: true}}
+    programme_revisions:                   # append-only, mirrors exercise_revisions
+      fields:
+        docKey: string
+        edition: string
+        transcriptionRev: int              # the rev being SUPERSEDED
+        doc: object                        # the superseded document, verbatim
+        note: string|null
+        correctedAt: date
+      indexes:
+        - {keys: {docKey: 1, edition: 1, transcriptionRev: 1}}
+
+l2:
+  file: "features/programme-corpus/verification/<docKey>.l2.jsonl"
+  line:
+    type: l2-week
+    fields:
+      week: int
+      weekNumberPrinted: int|null
+      unitLabelSeen: string|null           # compared to seed unitId's nameText
+      pdfPages: [int]
+      rowCount: int
+      rowHours: [number]
+      rowEmphasis: [string]
+      anchors:
+        - {competenciesFirst: string, contentsFirst: string, guidanceFirst: string}
+  compare: "verify-programmes.mjs --compare <seed>.jsonl <l2>.jsonl — structure, hours,
+            emphasis, attribution anchors. Full text deliberately NOT compared."
+  coverageFloor:                           # every run reports what it COMPARED, and a run
+                                           # that compared nothing is red, never `0
+                                           # discrepancies`. An l2 file stripped of
+                                           # rowEmphasis/anchors/unitLabelSeen used to exit 0.
+    absentIsNotNull: "a MISSING key is a gap; an explicit null is a recorded reading
+                      (`no label seen`, `empty cell`) and is counted as not-seen"
+    perLine: "each l2 line must carry weekNumberPrinted · unitLabelSeen · rowCount ·
+              rowHours · rowEmphasis · anchors, with the per-row arrays as long as rowCount
+              and each anchor holding at least one of the three keys"
+    perFile: "rowHours · rowEmphasis · anchors must each compare > 0 cells across the file.
+              unitLabel is EXEMPT: sciences and techmath legitimately show no محور label on
+              any of their 27 weeks"

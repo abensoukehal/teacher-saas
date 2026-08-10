@@ -400,8 +400,8 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-**MongoDB, database `teacher_saas`, four collections: `subjects`, `teachers`,
-`exercise_revisions`, `solutions`.** Chosen because Mongo
+**MongoDB, database `teacher_saas`, six collections: `subjects`, `teachers`,
+`exercise_revisions`, `solutions`, `programmes`, `programme_revisions`.** Chosen because Mongo
 already runs as declared shared infra on this machine and `services.sh` had already
 reserved that db name — and because an exam subject *is* a JSON document, so the stored
 shape and the wire shape are the same object with no mapping layer to drift.
@@ -462,6 +462,34 @@ solutions                                    ← one CURRENT correction per exer
 index: { subjectId: 1, exerciseId: 1 } unique
 ```
 
+```
+programmes                    ← the official التدرجات السنوية, transcribed. ONE doc per source PDF.
+  docKey        string        ← "tadarroj-3as-math" — stable across editions
+  edition       "2022-09"     ← THE MINISTRY'S version
+  current       bool          ← exactly one true per docKey; derived from the GREATEST edition
+  streams       [string]      ← the lettres document carries TWO streams in one record
+  weeklyHours   7|6|5|4|2     ← the per-week oracle
+  totals        { weeks: 27, hours }        ← and totals.hours == weeklyHours × 27, always
+  competencies  [ {domain, statements[]} ] | null   ← NULL for gestion/lettres: they have no
+                                                      such section. Absent ≠ empty.
+  units         [ { id, name, weeks, hours } ]      ← المحاور, from the SUMMARY table
+                  ↑ id is ASSIGNED ("u1"…), NEVER derived from the name: units repeat and are
+                    non-contiguous. علوم تجريبية lists المتتاليات العددية twice.
+                  ↑ weeks may be .5 — `أسبوع ونصف` is real
+  weeks         [ { week, unitId, hours, source: {pdfPages[]},
+                    rows: [ {competencies[], contents[], guidance[], hours, emphasis}] } ]
+                  ↑ emphasis is REQUIRED on every row. Red text is SEMANTIC — it marks content
+                    not covered in 2021-2022. A missing value is a load error, never a default.
+  transcriptionRev int        ← OUR version — a correction to our own reading
+  contentHash      string     ← the loader's guard against a hand-edit in Mongo
+
+indexes: { docKey: 1, edition: 1 } unique · { streams: 1, current: 1 } · { docKey: 1, current: 1 } partial
+
+programme_revisions           ← append-only, mirroring exercise_revisions
+```
+
+**Corpus as it stands: 5 documents · 6 streams · 135 weeks · 379 rows · 648 hours.**
+
 **The rules that shape it:**
 
 - **`create` inserts. There is no upsert and no fixed key.** The defect this replaced
@@ -495,6 +523,20 @@ index: { subjectId: 1, exerciseId: 1 } unique
 - **Nothing is stored for a correction that could not be produced.** Absent, not a blank row:
   `solutions` holds the *current* correction, and an empty one is indistinguishable from a
   real answer that says nothing. Presence is therefore the only signal `fe` has.
+- **The programme corpus is versioned as TEXT and the database is its projection.** The
+  transcription lives in `project/data/programmes/*.jsonl`; `scripts/load-programmes.mjs` is the
+  **only** writer. A hand-edit in Mongo is refused, not overwritten — if `contentHash` fires,
+  the database is wrong and the file is right. A 73-page manual transcription with no diff
+  would be unauditable; git is the trust root.
+- **Two version axes, never collapsed.** `edition` is the ministry revising the programme;
+  `transcriptionRev` is us fixing our own reading of an unchanged page. A new edition is a new
+  document and must be asked for with `--new-edition`; a correction can never move a document
+  between editions. Collapsing them would make "the syllabus changed" indistinguishable from
+  "we misread a number".
+- **What a verifier green does NOT mean.** A1–A8 certify that the corpus is arithmetically and
+  structurally consistent and untampered relative to its own loader. **They certify nothing
+  about whether any Arabic string matches the printed page.** Page fidelity rests on the
+  independent human re-read and on sampling. Never quote a green as a fidelity certificate.
 - **`solutions` upserts** — one current correction per exercise. A history of corrections is
   deliberately out of scope; the exam's history is not.
 

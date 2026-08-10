@@ -1,0 +1,180 @@
+{
+  "slug": "programme-corpus",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-10",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "3abf5639b1a7a5f9"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "65f49684f2ef9a01"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "subissues": "d477d0ae92feaa3c"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "d477d0ae92feaa3c"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "subissues": "d477d0ae92feaa3c"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-2",
+            "be-3"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-5": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-4"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-6": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-5"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-7": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-5"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-8": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-5"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-9": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-5"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-10": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-6",
+            "be-7",
+            "be-8",
+            "be-9"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          },
+          "reviewed": "{\"contracts\": \"782f21e17080b64d\", \"seed\": \"65f49684f2ef9a01\"}"
+        },
+        "be-11": {
+          "status": "done",
+          "tag": "hardening",
+          "origin": "qa:01-initial:B1,B2",
+          "depends_on": [
+            "be-10"
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "782f21e17080b64d"
+          }
+        }
+      },
+      "summary": "The ministry's annual progressions for all six streams, read page by page and stored as a structured, versioned corpus"
+    }
+  }
+}
