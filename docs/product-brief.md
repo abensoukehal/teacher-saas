@@ -188,35 +188,65 @@ in their technology subject, not in mathematics, so four specialities cost nothi
 المفتشية العامة للبيداغوجيا defining what is examinable and how deeply. That document — not
 the textbook — is what a curriculum file must encode.
 
-### Unit-level coverage across Book A's three streams
+### Unit-level coverage — from the OFFICIAL programme
 
-| محور | رياضيات | تقني رياضي | علوم تجريبية |
+> **Superseded 2026-08-10.** This table first came from teaching-resource sites and was ✎
+> inference. The official **التدرجات السنوية** (وزارة التربية الوطنية · المفتشية العامة
+> للتربية الوطنية · مديرية التعليم الثانوي العام والتكنولوجي · سبتمبر 2022) have since been
+> obtained for all five 3AS streams and are archived at
+> `docs/reference/curriculum/` with extracted text alongside. **This table is now
+> transcription, not inference.**
+>
+> The inference was mostly right and wrong in one important way: it agreed that تقني رياضي
+> matches رياضيات and that علوم تجريبية lacks الأعداد والحساب — but it **missed التحويلات
+> النقطية entirely**, a unit no teaching site's lesson index listed. That is exactly the
+> failure mode this document existed to rule out.
+
+| المحور (official wording) | رياضيات | تقني رياضي | علوم تجريبية |
 |---|:--:|:--:|:--:|
-| الدوال العددية | ✓ | ✓ | ✓ |
-| الدوال الأسية واللوغاريتمية | ✓ | ✓ | ✓ |
-| **الأعداد والحساب** | ✓ | ✓ | — |
-| الهندسة في الفضاء | ✓ | ✓ | ✓ |
-| الأعداد المركبة | ✓ | ✓ | ✓ |
-| المتتاليات العددية | ✓ | ✓ | ✓ |
-| **الحساب التكاملي** | ✓ | ✓ | ✓ |
-| الاحتمالات | ✓ | ✓ | ✓ |
+| تقويم تشخيصي لمكتسبات التلاميذ | 1 أسبوع | 1 أسبوع | 1 أسبوع |
+| الدوال العددية (الاشتقاقية والاستمرارية) | 2 | 2 | 2 |
+| الدالتان الأسية واللوغاريتمية | 2 | 2 | 2 |
+| الدوال العددية (النهايات) | 1 | 1 | 3 (مع التزايد المقارن) |
+| التزايد المقارن ودراسة الدوال | 2 | 2 | ↑ |
+| المتتاليات العددية | 2 | 2 | 2 + 1 |
+| **الدوال الأصلية والحساب التكاملي** | 3 | 3 | 2½ |
+| **الأعداد والحساب** | 3 | 3 | **—** |
+| الإحصاء والاحتمالات | 2 | 2 | 2½ |
+| **الأعداد المركبة والتحويلات النقطية** | 3 (مدمجان) | 3 (مدمجان) | 3 + 1½ (منفصلان) |
+| الهندسة في الفضاء | 3 | 3 | 3½ |
+| معالجة بيداغوجية (×3) | 3 | 3 | 3 |
+| **المجموع** | **181 ساعة / 27 أسبوعا** | **162 ساعة / 27 أسبوعا** | **135 ساعة / 31 أسبوعا** |
 
-**تقني رياضي's unit list is identical to شعبة الرياضيات.** علوم تجريبية is the same minus
-الأعداد والحساب. That is the only structural difference between the three.
+**تقني رياضي's unit list is identical to رياضيات** — only the hourly budget differs (6 h/week
+against 7). **علوم تجريبية** drops الأعداد والحساب entirely, splits الأعداد المركبة from
+التحويلات النقطية into two units, and merges النهايات with التزايد المقارن.
 
 ### What this says about the product as it stands
 
 The product serves **شعبة الرياضيات only** — `teacher-fe/src/lib/taxonomy.ts` hardcodes it and
-there is no stream selector. Against the table above, its eight-topic dropdown is **missing two
-whole units of the programme for the one stream it does serve**:
+there is no stream selector. Against the official programme, its eight-topic dropdown is
+**missing roughly a quarter of the year** for the one stream it does serve:
 
-- **الحساب التكاملي** — its own محور in all three streams. A teacher cannot select it today.
-- **الأعداد والحساب** — present for رياضيات and تقني رياضي, absent for علوم تجريبية.
+| missing unit | official weight (رياضيات) |
+|---|---|
+| **الدوال الأصلية والحساب التكاملي** | 3 أسابيع · 21 ساعة |
+| **الأعداد والحساب** | 3 أسابيع · 21 ساعة |
+| **التحويلات النقطية** | bundled into a 3-week unit with الأعداد المركبة |
 
-Both were recorded as open questions in `teacher-be/agent/curriculum/3as-mathematiques.md`
-("unconfirmed", "do not generate until confirmed"). They are now answered, and the second is
-answered *per stream* — which is precisely why a stream selector cannot be added without
-per-stream curriculum files.
+That is **6 of 27 teaching weeks a teacher cannot ask for**, plus half of a seventh. Not a
+future-stream problem — a gap for the teachers we have today, and the sort a practising
+teacher notices immediately because it is where their trimester actually goes.
+
+Two further mismatches worth designing around rather than papering over:
+
+- **Granularity.** The product splits «الدوال العددية والنهايات» from «الاشتقاق ودراسة
+  الدوال»; the programme splits الاشتقاقية والاستمرارية / النهايات / التزايد المقارن. Close,
+  but not the same cuts. The product's names are the teacher-facing taxonomy and need not
+  match word for word — they do need to *cover* the programme.
+- **The taxonomy is no longer one global list.** الأعداد والحساب exists for two streams and
+  not the third; التحويلات النقطية is bundled in two and standalone in the third. Any stream
+  selector must carry a per-stream topic list, not a shared one with a filter bolted on.
 
 ### Expansion order this implies
 
@@ -227,16 +257,22 @@ per-stream curriculum files.
 5. **The literary streams** — Book C, reduced programme, low coefficient. Weakest
    value-per-teacher for the build cost; probably never.
 
-### Provenance — do not overstate this
+### Provenance — now official
 
-The unit lists come from **mathonec**, a teaching-resource site, not from المفتشية directly.
-Three independently-published stream pages agreeing at unit level is decent evidence — good
-enough to add topics a teacher may choose, **not** good enough to claim any file transcribes
-the official programme. The official التدرج السنوي documents are still the thing to obtain,
-and they sit behind Google Drive PDFs on eddirasa, education-onec-dz and DzExams.
+The unit tables above are transcribed from the ministry's own **التدرجات السنوية**, September
+2022, archived per stream in `docs/reference/curriculum/` (PDF plus extracted text) for
+رياضيات · تقني رياضي · علوم تجريبية · تسيير واقتصاد · الشعب الأدبية. The issuing chain is
+printed on each: الجمهورية الجزائرية الديمقراطية الشعبية → وزارة التربية الوطنية → المفتشية
+العامة للتربية الوطنية، مديرية التعليم الثانوي العام والتكنولوجي.
 
-Sources: mathonec (three stream lesson indexes) · ency-education (Book A) · eddirasa (Books B
-and C) · bacdz (streams and specialities).
+**What is still not settled:** these are the 2022 progressions. They are the current
+published ones we could obtain, but nobody has confirmed against a practising teacher that
+they are what is examinable *this* year, and the ministry revises them ("يتوجب مراجعتها
+وتحيينها عند الاقتضاء"). Treat the unit lists as authoritative and the currency as unverified
+— a teacher's confirmation is still worth having, and it is now a five-minute question rather
+than a research project.
+
+The stream/textbook grouping above remains sourced from ency-education, eddirasa and bacdz.
 
 ---
 
@@ -246,16 +282,21 @@ Nothing here is committed or provisioned. This is the shelf: things we know enou
 scope, kept so the reasoning isn't re-derived each time. Ordered by what they'd change, not by
 effort.
 
-### A · The two units we already owe our own teachers
+### A · The quarter of the programme our own teachers cannot ask for
 
-**Smallest, and it affects existing users.** The topic dropdown is missing **الحساب التكاملي**
-and **الأعداد والحساب** — both confirmed units of the programme for شعبة الرياضيات, the one
-stream we serve (§6b). A teacher cannot ask for either today.
+**Grew after item E.** It was "two missing units"; against the official programme it is
+**6 of 27 teaching weeks, plus part of a seventh** — الدوال الأصلية والحساب التكاملي (3
+أسابيع), الأعداد والحساب (3 أسابيع), and التحويلات النقطية (bundled with الأعداد المركبة).
+All for شعبة الرياضيات, the one stream we serve. A teacher cannot ask for any of them today.
 
-No new streams, no profile, no data-model change. Add the entries and let the existing
-curriculum file carry them. The only subtlety: الأعداد والحساب is stream-specific, so adding it
-as a flat entry silently assumes a single stream forever — worth writing down even if we do
-the flat version now.
+Still no new streams, no profile, no data-model change — but no longer a trivial patch, and
+the most defensible thing on this shelf: it is a gap for teachers we already have, measured
+against the ministry's own week budget.
+
+Two subtleties recorded so they are not rediscovered: **الأعداد والحساب is stream-specific**
+(absent for علوم تجريبية), so a flat entry silently assumes a single stream forever; and the
+product's topic *cuts* do not match the programme's — they need to **cover** it, not mirror
+its wording.
 
 ### B · Teacher profile + the three scientific streams
 
@@ -302,17 +343,22 @@ Roadmap item 2, and now nearly free: it wanted exercise-level regeneration, whic
 shuffled — anti-cheating in crowded rooms. Cheap, but it does not move usage frequency, which
 is the number that matters.
 
-### E · Obtain the official programme documents
+### E · Obtain the official programme documents — ✅ DONE 2026-08-10
 
-The **التدرج السنوي** from المفتشية العامة للبيداغوجيا, per stream — the document that actually
-defines what is examinable and how deeply. Everything in §6b is ✎ inference from teaching
-sites agreeing at unit level: enough to offer a topic, **not** enough to claim any file
-transcribes the programme.
+All five 3AS التدرجات السنوية (September 2022) are archived in
+`docs/reference/curriculum/`, PDF plus extracted text: رياضيات · تقني رياضي · علوم تجريبية ·
+تسيير واقتصاد · الشعب الأدبية. §6b is now transcription rather than inference.
 
-Not an engineering task. It needs the PDFs (behind Drive links on eddirasa,
-education-onec-dz, DzExams) and ideally a teacher confirming what is examinable this year. It
-is the cheapest item here in build time and the one that most raises confidence in everything
-else, and it is a prerequisite to ever dropping the ✎ marks.
+**It paid for itself immediately.** The inference it replaced had missed **التحويلات النقطية**
+— a whole unit that no teaching-site lesson index listed — and had the granularity of the
+functions units wrong. Item A's scope grew from two missing units to roughly a quarter of the
+teaching year as a direct result.
+
+**One thing remains open, and it is now a five-minute question rather than a research
+project:** these are the 2022 progressions, and the documents themselves say they are revised
+as needed. Nobody has confirmed with a practising teacher that they are what is examinable
+this year. Worth asking one of the two teacher friends at the same time as the core-loop
+validation (§6).
 
 ### Not on the shelf, and why
 
