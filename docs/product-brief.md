@@ -32,9 +32,42 @@ Other verticals with the same pattern, kept on file for later: lawyers (case pre
 
 ## 2. The product
 
-A teacher generates an exam subject fast. Start with a rough prompt, get a full draft in seconds, then drill down and refine exercise by exercise until it matches what they'll actually give their class.
+> **REPOSITIONED 2026-08-10: from an exam generator to the teacher's prep companion.**
+> Note what this is *not* — it is not a change of thesis. §1 has always said "the invisible
+> prep work done outside official hours". It was **this section** that narrowed the product to
+> one artifact. The repositioning widens it back to the thesis it was always written under.
 
-The value is time. An evening's work compressed into minutes.
+A companion for a teacher's day-to-day preparation, built on the official programme. It knows
+what their stream teaches, in what order, and where they have actually reached — and from that
+it produces what they need next: this week's exercises, a devoir over what has been covered, a
+trimester composition, the correction that goes with it.
+
+Exam generation is now **one surface of the product, not the product**. It remains the sharpest
+one, and it is what ships today.
+
+The value is still time. An evening's work compressed into minutes — but across the week's
+prep, not only the three-to-six evenings a trimester when an exam is due.
+
+### The boundary — prep, not performance
+
+Widening the product without widening the boundary is how scope becomes infinite. "Helps the
+teacher" has no edge; "the prep work done outside official hours" has one, and §1 already
+supplies it.
+
+**In scope** — solo preparation that precedes the live performance: planning against the
+programme, tracking progress through it, generating exams · series · corrections · remediation,
+and the material a teacher prepares in order to teach.
+
+**Out of scope, and each for its own reason:**
+- **Anything happening *in* the classroom.** That is the performance, not the prep.
+- **Anything student-facing.** Still the separate e-learning project; mixing them muddies both.
+- **Administration** — grades, attendance, parent communication, timetabling. Real day-to-day
+  work, genuinely burdensome, and *not prep*. It is a different product with different
+  competitors, and taking it on would abandon the one thing that makes this defensible: that
+  the hard part is judgment, not record-keeping.
+
+If "day-to-day" is ever read as including administration, that is a second product and should
+be decided as one — not arrived at because the phrase was loose.
 
 ### Core loop
 
@@ -121,6 +154,13 @@ Both figures are gross. Subtract payment processing, API costs (material at this
 
 **Strategic problem to solve:** exam generation is low-frequency. A teacher makes 3 to 6 real exams per trimester. That's a weak habit loop for a subscription. Most additions should raise usage frequency, not just add surface area.
 
+> **Largely answered by the 2026-08-10 repositioning (§2).** The frequency problem was a
+> symptom of the product being one low-frequency artifact. A prep companion built on the
+> programme is opened weekly at minimum — planning the week, tracking what was covered,
+> producing what comes next. The items below stop being "additions that raise frequency" and
+> become the product's ordinary surface. Read the ranking now as *what to build*, not as *how
+> to rescue the habit loop*.
+
 Ranked:
 
 **1. Solution sheets (التصحيح النموذجي)** — same engine, near-zero extra build, more tedious to write by hand than the exam itself. Include the grading scale (السلّم) with points per question. Should arguably be in the MVP.
@@ -139,9 +179,18 @@ Ranked:
 
 ### Deliberately skipped
 
-- Course content and lesson summaries. Teachers have the textbook and their own notes
+- **Course content and lesson summaries — ⚠ REOPENED 2026-08-10, not yet decided.** The
+  original reason was "teachers have the textbook and their own notes", and that reasoning was
+  sound *for an exam generator*. Two things have changed it. First, the repositioning above
+  puts lesson preparation squarely inside the boundary. Second, the official programmes carry
+  a **السير المنهجي لتدرج التعلمات** column — per-week teaching guidance from the ministry that
+  is in neither the textbook nor a teacher's notes, and that no teacher currently has in a
+  usable form. That is a concrete reason to revisit, not merely an ambition.
+  **Still a decision to take deliberately**, and it should be taken once rather than approached
+  in increments.
 - Anything student-facing. That's the separate e-learning project; mixing them muddies both
-- Slides and presentations. Most Algerian lycée classrooms don't run on projectors
+- Slides and presentations. Most Algerian lycée classrooms don't run on projectors — a
+  hardware fact, unaffected by the repositioning
 
 ---
 
