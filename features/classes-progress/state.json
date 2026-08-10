@@ -9,7 +9,7 @@
         "seed": {
           "status": "locked",
           "derived_from": {
-            "brief": "07338e00bc74ccdf"
+            "brief": "bcf4a14a707dd9f9"
           }
         },
         "contracts": {
@@ -19,7 +19,80 @@
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ]
+        },
+        "be-3": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ]
+        },
+        "be-4": {
+          "status": "todo",
+          "tag": "happy-path"
+        },
+        "be-5": {
+          "status": "todo",
+          "tag": "hardening",
+          "depends_on": [
+            "be-1",
+            "be-2",
+            "be-3"
+          ]
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ]
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "be-3"
+          ]
+        },
+        "fe-3": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "be-2"
+          ]
+        },
+        "fe-4": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-3",
+            "be-4"
+          ]
+        },
+        "fe-5": {
+          "status": "todo",
+          "tag": "hardening",
+          "depends_on": [
+            "fe-1",
+            "fe-2",
+            "fe-3",
+            "fe-4"
+          ]
+        }
+      }
     }
   }
 }
