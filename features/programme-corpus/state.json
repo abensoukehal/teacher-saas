@@ -21,22 +21,34 @@
       },
       "subissues": {
         "be-1": {
-          "status": "todo",
-          "tag": "happy-path"
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-1"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-3": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-1"
-          ]
+          ],
+          "derived_from": {
+            "seed": "65f49684f2ef9a01",
+            "contracts": "961b8a0644f45062"
+          }
         },
         "be-4": {
           "status": "todo",

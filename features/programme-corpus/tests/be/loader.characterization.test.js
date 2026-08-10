@@ -301,6 +301,93 @@ describe("be-2 · CLI surface", () => {
   });
 });
 
+describe("be-4 · the live-database guard", () => {
+  // A scratch database made to LOOK live — it holds a collection named `subjects` and
+  // nothing else. The guard keys on the collection names actually present, so this is
+  // indistinguishable from the real thing as far as the loader is concerned, and no test
+  // ever has to point at teacher_saas to prove the guard works.
+  const LOOKS_LIVE = "programme_corpus_ci_live";
+
+  /** Run the loader with MONGO_DB scrubbed, so the default really is the default. */
+  function loadNoDb(args) {
+    const env = { ...process.env, MONGO_URL: MONGO };
+    delete env.MONGO_DB;
+    try {
+      return { code: 0, out: execFileSync("node", [SCRIPT, ...args], { encoding: "utf8", env, stdio: ["ignore", "pipe", "pipe"] }) };
+    } catch (err) {
+      return { code: err.status ?? -1, out: `${err.stdout ?? ""}${err.stderr ?? ""}` };
+    }
+  }
+
+  beforeEach(async () => {
+    await mongo.db(LOOKS_LIVE).dropDatabase();
+    await mongo.db(LOOKS_LIVE).collection("subjects").insertOne({ marker: "not a real subject" });
+  });
+
+  afterAll(async () => {
+    await mongo.db(LOOKS_LIVE).dropDatabase();
+  });
+
+  test("a database holding the product's collections is refused, and nothing is written", async () => {
+    const file = seed("valid");
+    const res = load(["--file", file, "--db", LOOKS_LIVE]);
+    expect(res.code).toBe(4);
+    expect(res.out).toMatch(/REFUSED — database "programme_corpus_ci_live" holds the product's live collections: subjects/);
+    expect(res.out).toMatch(/--allow-live-db/);
+    expect(res.out).toMatch(/weeks=0 rows=0 rejected=0 action=refused-live-db/);
+
+    const names = (await mongo.db(LOOKS_LIVE).listCollections().toArray()).map((c) => c.name);
+    expect(names).toEqual(["subjects"]);
+  });
+
+  test("the guard fires under --dry-run too — a guard that trusts its own flag is not a guard", async () => {
+    const file = seed("valid");
+    const res = load(["--file", file, "--db", LOOKS_LIVE, "--dry-run"]);
+    expect(res.code).toBe(4);
+    expect(res.out).toMatch(/action=refused-live-db/);
+  });
+
+  test("--allow-live-db is the only way through, and it does let the load happen", async () => {
+    const file = seed("valid");
+    const res = load(["--file", file, "--db", LOOKS_LIVE, "--allow-live-db"]);
+    expect(res.code).toBe(0);
+    expect(res.out).toMatch(/action=inserted/);
+    expect(await mongo.db(LOOKS_LIVE).collection("programmes").countDocuments({})).toBe(1);
+  });
+
+  test("all four live collection names trip it, one at a time", async () => {
+    const file = seed("valid");
+    for (const name of ["subjects", "teachers", "exercise_revisions", "solutions"]) {
+      await mongo.db(LOOKS_LIVE).dropDatabase();
+      await mongo.db(LOOKS_LIVE).collection(name).insertOne({ marker: 1 });
+      const res = load(["--file", file, "--db", LOOKS_LIVE]);
+      expect(res.code).toBe(4);
+      expect(res.out).toContain(`live collections: ${name}`);
+    }
+  });
+
+  test("a scratch database with no live collections is not affected", async () => {
+    const file = seed("valid");
+    expect(load(scratchArgs(file)).code).toBe(0);
+  });
+
+  test("THE CASE THIS EXISTS FOR: a forgotten --db falls back to teacher_saas and is refused", async () => {
+    const before = (await mongo.db(REAL_DB).listCollections().toArray()).map((c) => c.name).sort();
+    const file = seed("valid");
+
+    const res = loadNoDb(["--file", file]);
+
+    expect(res.code).toBe(4);
+    expect(res.out).toMatch(/database "teacher_saas" holds the product's live collections/);
+    expect(res.out).toMatch(/action=refused-live-db/);
+
+    // The whole point: teacher_saas gained nothing — not a document, not a collection.
+    const after = (await mongo.db(REAL_DB).listCollections().toArray()).map((c) => c.name).sort();
+    expect(after).toEqual(before);
+    expect(after).toEqual(["exercise_revisions", "solutions", "subjects", "teachers"]);
+  });
+});
+
 describe("be-2 · perimeter", () => {
   test("teacher_saas is untouched by this suite", async () => {
     const names = (await mongo.db(REAL_DB).listCollections().toArray()).map((c) => c.name).sort();
