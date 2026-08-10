@@ -59,13 +59,19 @@ the product brief and in `project/CLAUDE.md` before anyone looked at the page.
 `<repo>/agent` as cwd. `teacher-fe/src/lib/taxonomy.ts` separately hardcodes
 `STREAM = "شعبة الرياضيات"` and eight topics.
 
-**Target (brief §6f):** the corpus is a **structured store**, and **`be` queries it and injects
-the relevant slice into the prompt**. The skills stop reading curriculum files entirely.
+**Target: the corpus is a structured store in MongoDB** (decided 2026-08-10 — the open
+question in §6 is closed; do not re-litigate it).
 
-Chosen over keeping a generated file projection because two artifacts that must not drift is
-the exact failure class this project keeps hitting. Injection is also strictly better later:
-`be` knows the teacher's stream, and after J3 their week, so it can pass *exactly* what is in
-scope instead of a skill guessing which file to open.
+**The consumers are OUT of this job.** Injection into the skills — `be` querying the corpus and
+passing a scoped slice into the prompt — remains the intended design (brief §6f), but it is
+**deferred**. The four skills keep reading their existing `curriculum/` file exactly as they do
+today; **that path is untouched by this job.**
+
+**One real cost of choosing Mongo, to be answered rather than ignored:** a 73-page manual
+transcription lands as database writes with no diff. Versioned files would have been reviewable
+and correctable-with-history for free. DISCOVERY must propose how a reviewer checks a page
+against its transcription, and how a correction six months from now is visible rather than
+silent.
 
 Shape (brief §F.2), one record per stream:
 
@@ -103,15 +109,23 @@ streams and not a third; التحويلات النقطية is bundled in two and
 
 ## 5 · Scope
 
-**In:** the store and its schema · deep-OCR transcription of all five documents, **شعبة
-الرياضيات end to end FIRST and checked with the user before the other four** (a method proof,
-not a scope limit — it is the hardest document) · a verification pass **separate from the
-transcription pass that does not trust it** · `be` injecting scoped curriculum into the four
-skills · the missing units added for شعبة الرياضيات.
+**J1 is exactly one thing: read the 73 pages properly and land them in Mongo as a faithful,
+verifiable, structured corpus.** No consumer, no rewiring, no product surface. Its correctness
+is the whole deliverable — it either transcribed the programme faithfully or it did not.
 
-**Out:** the **course layer** (deferred, brief §6f — leave room, build nothing) · التوزيع
-السنوي / calendar (J6) · teacher profile and stream selector (J2) · progress tracking (J3) ·
-levels other than 3AS · subjects other than maths.
+**In:** the Mongo collection and its schema · deep-OCR transcription of all five documents,
+**شعبة الرياضيات end to end FIRST and checked with the user before the other four** (a method
+proof, not a scope limit — it is the hardest document) · a verification pass **separate from
+the transcription pass that does not trust it** · a way for a human to review a page against
+its transcription.
+
+**Out — all deferred, none cancelled:**
+- **Exam-side enhancement** (deferred 2026-08-10): injecting curriculum into the skills, and
+  the missing units (الحساب التكاملي · الأعداد والحساب · التحويلات النقطية). The skills keep
+  reading their current file; `taxonomy.ts` is not touched.
+- **The course layer** (brief §6f) — leave room in the schema, build nothing.
+- التوزيع السنوي / calendar (J6) · teacher profile and stream selector (J2) · progress
+  tracking (J3) · levels other than 3AS · subjects other than maths.
 
 ## 6 · Open questions for DISCOVERY — do not assume answers
 
@@ -121,14 +135,12 @@ levels other than 3AS · subjects other than maths.
   management one has no الأعداد المركبة and no هندسة. **A single counter-example matters more
   than four confirmations.**
 - **What is the smallest independently verifiable unit** — a week, a محور, a page?
-- **What does `be` inject, exactly, for each of the four skills?** They differ:
-  `exam-subject` needs a topic's scope; `refine-exercise` needs it only when content moves;
-  the solution skills only when checking a method is on-syllabus.
-- **How do the product's topics map onto the programme's محاور**, name by name, and where do
-  they genuinely not correspond?
-- **Where does the structured store live** — Mongo (queryable, matches the tracker's needs
-  later) or versioned files in the repo (diffable, reviewable, which a 73-page manual
-  transcription arguably needs)? **Both have a real claim; decide it with evidence.**
+- **What is the Mongo schema?** The collection shape, and the indexes the known queries need —
+  "the units for stream X", "week N of stream X", and the tracker's future
+  "which units do weeks 1..N cover". How is a document's identity and version keyed, given the
+  ministry revises these?
+- **How does a human review a transcription against the page?** The reviewability cost of
+  choosing Mongo (§3). Not solved perfectly, but not ignored.
 
 ## 7 · Constraints
 
