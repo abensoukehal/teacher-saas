@@ -809,10 +809,16 @@ never the whole programme.
 - **J2 becomes mandatory, not optional** — six streams cannot be served without asking which
   one a teacher teaches.
 - **J3 is the product's spine**, not a feature on the side.
-- **A new job appears: the course layer** — every corpus item enhanced with material detailing
-  the topic. Gated on §5's exclusion being formally reversed, and carrying an open question
-  that must be answered before it starts: **who authors it, and what is the accuracy bar?**
-  Transcription is bounded and verifiable against a source; authoring is neither.
+- **The course layer is DEFERRED (2026-08-10).** Every corpus item enhanced with material
+  detailing the topic remains the intended direction, but it is **not** in the current plan and
+  **§5's exclusion is not reversed yet** — it stands until the layer is actually taken up.
+  Two things must be settled first, and neither is settled by building the corpus:
+  **who authors it, and what is the accuracy bar?** Transcription is bounded and verifiable
+  against a source; authoring is neither, which makes "is this correct and on-syllabus" the
+  central risk rather than a side concern.
+  **What the corpus must do meanwhile:** leave room for it. The structure hangs course material
+  off `guidance` (السير المنهجي) per week, so adding the layer later is an attachment rather
+  than a reshaping.
 
 **Sequencing note:** شعبة الرياضيات is transcribed and checked **first** — as a method proof,
 not a scope limit. It is the hardest document (19 pages, 11 units, densest table, most
