@@ -747,6 +747,78 @@ value-per-teacher against the build cost.
 
 ---
 
+## 6f · DECIDED — all streams, deep OCR, structured corpus
+
+**Decision, 2026-08-10.** Three things settled together; each changes the job map above.
+
+### 1 · All six streams, not one
+
+The product serves **every 3AS stream that studies mathematics** — رياضيات · تقني رياضي ·
+علوم تجريبية · تسيير واقتصاد · آداب وفلسفة · لغات أجنبية. Five documents, six streams.
+
+Note this is not a widening of the brief; it is the implementation catching up to it. §1 has
+always said *"Algerian lycée BAC mathematics teachers"* — all of them. `taxonomy.ts` hardcoding
+`STREAM = "شعبة الرياضيات"` is what narrowed it, the same way §2 narrowed the thesis to one
+artifact.
+
+> **Worth verifying before it drives priority:** شعبة الرياضيات is the specialist maths stream
+> and probably the **smallest** of the six by teacher population; علوم تجريبية is typically far
+> larger. If that holds, the product has been optimising for the narrowest slice of its own
+> audience, and علوم تجريبية is the bigger commercial prize. Enrolment figures not yet checked.
+
+### 2 · Deep OCR page-by-page, mathematics as LaTeX
+
+Text extraction is **rejected as a method**, on evidence: `pdftotext` reported شعبة الرياضيات's
+annual total as **181 ساعة**; the rendered page reads **189**, and the column sums confirm it
+(7+14+14+7+14+14+7+21+21+14+7+21+21+7 = 189 over 27 weeks). That figure had already been
+published in this brief and in `project/CLAUDE.md` before the page was ever looked at.
+
+**Method:** `pdftoppm` → PNG, read page by page. Reading the PDF directly comes out
+letter-reversed; PNG renders clean and correctly ordered. Arabic prose stays **verbatim**;
+mathematics is transcribed as **LaTeX** in `$…$`, which is what the product already renders
+through KaTeX — the corpus becomes directly usable rather than needing a second conversion.
+Converting `f ( x) � k` to `$f(x) = k$` recovers what the page says; rewriting a sentence does
+not, and is still forbidden.
+
+**Free verification oracle:** every summary table has a total. If the column does not sum, the
+page needs a closer read. علوم تجريبية checks out independently (135 = 5 h × 27 weeks); the
+other four figures in §6b came from text extraction and are **untrusted until re-verified**.
+
+### 3 · The corpus is a structured database, and the skills stop reading files
+
+The corpus is stored structured, with mathematics in LaTeX. That breaks how generation is
+grounded today: four skills (`exam-subject`, `refine-exercise`, `solution-one`,
+`solution-sheet`) read `curriculum/` off disk, because the CLI is a subprocess with
+`<repo>/agent` as its working directory and cannot reach a database.
+
+**Resolved in favour of injection:** `be` queries the corpus and passes the relevant slice into
+the prompt; the skills stop reading curriculum files. The alternative — keeping a file
+projection generated from the DB — means two artifacts that must not drift, which is the exact
+failure class this project keeps hitting. Injection is also strictly better later: `be` knows
+the teacher's stream, and after J3 their week, so it can pass *exactly* what is in scope
+instead of a skill guessing which file to open.
+
+Cost discipline still binds. `agent/CLAUDE.md` records that context is charged on every
+invocation and refine is the most-repeated action, so the injected slice must be scoped —
+never the whole programme.
+
+### 4 · Consequences for the job map
+
+- **J1 roughly doubles**: deep OCR of 73 pages, LaTeX conversion, the structured store, and
+  rewiring how four skills receive curriculum.
+- **J2 becomes mandatory, not optional** — six streams cannot be served without asking which
+  one a teacher teaches.
+- **J3 is the product's spine**, not a feature on the side.
+- **A new job appears: the course layer** — every corpus item enhanced with material detailing
+  the topic. Gated on §5's exclusion being formally reversed, and carrying an open question
+  that must be answered before it starts: **who authors it, and what is the accuracy bar?**
+  Transcription is bounded and verifiable against a source; authoring is neither.
+
+**Sequencing note:** شعبة الرياضيات is transcribed and checked **first** — as a method proof,
+not a scope limit. It is the hardest document (19 pages, 11 units, densest table, most
+mathematics). If the method survives it, the remaining four are largely mechanical; if it does
+not, we learn that after one document rather than five.
+
 ## 6e · The job map
 
 §6c is the *reasoning* shelf — why each thing matters. This is the *delivery* view: the same
