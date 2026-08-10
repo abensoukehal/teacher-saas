@@ -377,7 +377,15 @@ describe("be-3 · CLI surface + perimeter", () => {
   });
 
   test("teacher_saas is untouched by this suite", async () => {
+    // RE-BASELINED (be-9). This asserted a fixed four-collection list, which was true
+    // until be-4 loaded the corpus into teacher_saas — the deliverable of this very job.
+    // The clause's NAME was always the real intent: the product's collections are not
+    // disturbed. So it now asserts that, and tolerates the corpus collections this job
+    // exists to create. A product collection disappearing is still a hard failure.
+    const PRODUCT = ["exercise_revisions", "solutions", "subjects", "teachers"];
+    const CORPUS = ["programme_revisions", "programmes"];
     const names = (await mongo.db(REAL_DB).listCollections().toArray()).map((c) => c.name).sort();
-    expect(names).toEqual(["exercise_revisions", "solutions", "subjects", "teachers"]);
+    for (const c of PRODUCT) expect(names).toContain(c);
+    expect(names.filter((n) => !PRODUCT.includes(n) && !CORPUS.includes(n))).toEqual([]);
   });
 });
