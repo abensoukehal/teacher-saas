@@ -169,3 +169,16 @@ defect rather than resolved it.
 **be-10 must decide this from the page, not from either seed**, and correct whichever document
 is wrong. If the maths seed is wrong, it needs a `--correct` pass and a `programme_revisions`
 entry like the week-25 inversion.
+
+## ⚠ Second cross-document defect, raised by be-8 (تسيير واقتصاد) — also for be-10
+
+`tadarroj-3as-math` and `tadarroj-3as-techmath` store the intro's year separator as an
+**EN DASH**. It is **two TATWEELs**. All five PDFs extract that line byte-identically, and
+`sciences` and `lettres` store the tatweels correctly.
+
+be-8 correctly declined to `--correct` another document's seed. **be-10 adjudicates and fixes
+whichever is wrong**, with a `programme_revisions` entry.
+
+Note both cross-document challenges came from *transcribers of other documents*, not from this
+layer-2 pass — a reader who has read the same sentence elsewhere notices what a single-document
+verifier does not.
