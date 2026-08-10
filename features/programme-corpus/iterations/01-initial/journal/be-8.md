@@ -391,3 +391,18 @@ their order is not. A future reader comparing seed to page will see a difference
 cells; this note is why. If the corpus is ever regenerated, the honest options are to mark
 these rows as reconstructed or to store the raw token sequence — not to keep quietly inserting
 conjunctions.
+
+## review
+
+**Verdict: approve.**
+
+Re-verified from the live DB: A1–A8 green at `transcriptionRev 2` (the dropped `انطلاقاً`
+restored — verified present in the seed; revision row records the supersession), seed
+`unchanged`, totals 27/108, weeklyHours 4, `competencies: null` (not `[]`). The en-dash
+defect this journal raised against two other seeds was adjudicated by be-10 in be-8's
+favour and is fixed in both (verified: no U+2013 in any intro). The week-9 unitId call was
+independently confirmed by be-10 from the محور column's own rules. The A4 reconstruction
+(inserted `و`, dropped stray `x`) is the one deliberately non-verbatim reading in the
+corpus; it is recorded here in a post-hoc note rather than in the data, which is accepted —
+but note the seed itself carries no marker on those two rows, so the note's discoverability
+is this journal alone.

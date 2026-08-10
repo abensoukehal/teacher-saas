@@ -169,3 +169,19 @@ their page.
 - gestion's legend year order is `2021 - 2022` (spaced, wrapped); lettres' is `2022-2021`
   (unspaced, visually inverted). Any attempt to "harmonise" these across documents would
   be a defect.
+
+## review
+
+**Verdict: approve-with-debt.**
+
+The gestion fix is applied and audited: `انطلاقاً` is in the seed, gestion is at rev 2, and
+the revision row holds the superseded doc. Lettres needed nothing and is at rev 1 —
+consistent. The pixel-sweep-before-reading method makes the emphasis verification here the
+strongest in the job; the mid-week red boundaries (lettres wk 4, sciences wk 23) are
+exactly what a row-level `emphasis` field exists to capture and both seeds match.
+
+Debt (shared with the other be-10 journal): no `<docKey>.l2-report.md` disposition files;
+the weeks-16/18 reconstruction policy is recorded only in be-8's journal appendix, with no
+marker in the data itself. Additionally, sciences S2 (dot at the wrong end, ×2 rows)
+remains unapplied — explicitly deferred as batchable, which is a recorded disposition, so
+this is a note, not a defect.

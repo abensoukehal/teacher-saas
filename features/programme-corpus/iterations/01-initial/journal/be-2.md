@@ -90,3 +90,29 @@ it.
 - The state table needed nothing the store module could not express.
 
 **Status: done.**
+
+## review
+
+**Verdict: approve-with-debt.**
+
+Every row of the state table re-derived by execution: insert / `unchanged` on re-run /
+exit 1 whole-file reject (zero docs written) / exit 2 on a hand-edit, with `--correct`
+refusing to paper over it / exit 3 without `--correct` / `--dry-run` writes nothing / blank
+line mid-file rejected naming its line. The `--allow-live-db` guard (added in `bbdf7cc`)
+survived every bypass I tried: forgotten `--db` → exit 4; `MONGO_DB=teacher_saas` → exit 4;
+guard still fires under `--dry-run`; a db name smuggled into `MONGO_URL`'s path is ignored
+by `client.db(name)`; a scratch db that merely *contains* a `subjects` collection is
+refused, confirming the guard is a property of the target database, not of the arguments.
+This is the thing I most expected to break and could not.
+
+Debt:
+
+1. **The loader does no arithmetic.** `totals.hours: 44` loads clean (exit 0); corpus trust
+   depends on the verifier being run, and nothing couples the two. Contract-conformant
+   (arithmetic is layer 1's job) but worth one sentence wherever the loader is documented as
+   "what makes the projection trustworthy".
+2. `--db` followed by another flag consumes it as the db name (`--db --correct` targets a
+   database literally named `--correct`). Mild — `--db --dry-run` can never write because
+   the same token still sets dryRun — but it is a silent misparse.
+3. Exit 1 is overloaded: invalid seed, missing file, and any unexpected error (Mongo down)
+   all exit 1. The contract's "exit 1 = fix the file" is not always true.

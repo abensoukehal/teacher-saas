@@ -279,3 +279,15 @@ SEED §6.3 baseline, unchanged, as it must be (be-6 touches no be-repo file).
 > which read exactly like product regressions and are not: the black-box halves throw
 > `CHAR_BE_LOG is unset` or grep an empty run log. I hit this before spotting it. It is the
 > hollow-lane failure `tools/ci`'s own comment warns about, arriving from the other side.
+
+## review
+
+**Verdict: approve.**
+
+Re-verified from the live DB: A1–A8 green at `transcriptionRev 2`, seed `unchanged` against
+the store, totals 27/162, weeklyHours 6, 97 rows. The en-dash→tatweel correction adjudicated
+by be-10 is applied (no U+2013 remains in any seed intro; the tatweel pair is present), and
+T2 (`نتطّرق`) and T3 (`أعطيت`) are in the file. The gate claim reproduces: `tools/ci be
+--slug programme-corpus` → `gate PASS 97/97` at review time. Freeze clean. One loose end is
+charged to be-10's review (T4), not here. The clip-scan finding (A3) and the five false
+week boundaries are exactly the material a reviewer wants and could not have invented.

@@ -166,3 +166,35 @@ clause is the backstop, but that is a convention, not a guard. See the report.
 - Nothing in the contract proved wrong or unbuildable.
 
 **Status: done.**
+
+## review
+
+**Verdict: approve-with-debt.**
+
+The 40/40 code-mutant claim could not be re-derived literally (REVIEW may not modify product
+code), so it was re-derived behaviourally: for every L/V mutant class I constructed a data
+mutant or CLI scenario exercising the guarded behaviour. 21/21 killed where a defence
+exists — A1/A2/A3 (totals 44), A4 (row-hours drift), A5 full and `--partial` (gap at week
+5, duplicate week), A6 both halves (orphan id at load time, unreferenced unit at verify
+time), A7 (all emphasis variants), A8 (hand-edit red in `--db` mode), resume state (`next
+week 10 · open unit u03 (1 of 2)` on a truncated file), `--compare` on hours, emphasis,
+anchors and rowCount. The `--partial` gate and resume derivation are correct as claimed.
+
+Debt, ranked:
+
+1. **A4 never reads `week.hours`.** The schema.yaml assigns that field to A4; the
+   implementation sums `rows[].hours` only. `week.hours: 999` passes `--file` and `--db`
+   modes entirely (demonstrated). One-line fix; the stored corpus is currently correct.
+2. **`--compare` has no coverage accounting.** An l2 file stripped of `rowEmphasis`,
+   `anchors` and `unitLabelSeen` compares only structure and hours, and reports
+   `0 discrepancy(ies)`, exit 0 — a hollow L2 read produces a perfect green with no signal
+   that almost nothing was compared. This is the WF-82 failure class (a gate that verified
+   nothing reading as a pass) inside this job's own tooling. The real l2 files are full, so
+   the hole is latent; it matters the day someone regenerates an l2 file lazily.
+3. **The `--db`/`--db-name` asymmetry is not just a wart — it fails green.**
+   `verify-programmes.mjs --db <scratch> --docKey …` silently ignores the scratch name,
+   verifies the LIVE `teacher_saas`, and can return a green verdict about the wrong
+   database (demonstrated). be-2's journal flagged the asymmetry; this is its harm mode.
+4. Anchor windows make `--compare` exit 0 unreachable on real documents (112/34/33/19
+   irreducible artifact flags), so the contract's "exit 0 after disposition" oracle was
+   quietly abandoned in favour of bulk prose adjudication — see be-5/be-10 reviews.

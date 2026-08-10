@@ -261,3 +261,16 @@ about the corpus (A1–A8, loader, freeze, negative checks). What needs a decisi
 those four perimeter assertions should now expect the six-collection list, or whether the
 corpus belongs in a database other than `teacher_saas`. Note `state.json` still marks be-4
 and be-5 `todo`, which is consistent with the gate having been red since be-4.
+
+## review
+
+**Verdict: approve.**
+
+Re-verified from the live DB: A1–A8 green at `transcriptionRev 1` (no corrections needed —
+consistent with be-10 finding zero defects), seed `unchanged`, totals 27/54, weeklyHours 2,
+`streams` holding both values on ONE document (multikey queries return the same `_id`),
+`competencies` and `graduateProfile` both null. The blocked-exit finding (the four
+perimeter clauses hard-coding the pre-corpus collection list) was the correct stop-and-ask
+call and was resolved by re-baseline in `337644c` before be-6's passes; the gate reads
+PASS 97/97 at review time. The column-headers contract gap raised here is real and remains
+open — headers live only in journals.

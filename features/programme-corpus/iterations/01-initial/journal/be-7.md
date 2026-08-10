@@ -358,3 +358,15 @@ the recipe. Two corrections to it:
 
 Freeze audit clean: `git status --short -- docs/reference/curriculum/` empty, both stack repos
 empty, `data/programmes/tadarroj-3as-sciences.jsonl` the only project-repo file I touched.
+
+## review
+
+**Verdict: approve.**
+
+Re-verified from the live DB: A1–A8 green at `transcriptionRev 2` (S1 `نتطّرق` applied),
+seed `unchanged`, totals 27/135, weeklyHours 5, 81 rows, 5 competency domains, and u05/u07
+both named المتتاليات العددية with weeks referencing both — the duplicate-unit case exists
+in the data as required. This journal also raised the cross-document sin/cos challenge
+against the maths seed and correctly declined to harmonise; be-10 adjudicated it be-7's way
+and the maths fix is applied (verified cos-first in the maths seed). S2 (the dot-end
+micro-item) was explicitly deferred as batchable, which is recorded, not lost.

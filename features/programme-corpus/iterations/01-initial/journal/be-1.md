@@ -154,3 +154,30 @@ here and recorded rather than assumed:
    which is the right cost.
 
 **Status: done.**
+
+## review
+
+**Verdict: approve-with-debt.**
+
+Attacked by execution (scratch db `review_probe_corpus`, dropped after; nothing committed):
+canonical hash is key-order invariant (a fully key-shuffled but semantically identical file
+loads `unchanged`); the null/`[]`/absent trichotomy on `competencies` is enforced exactly as
+claimed (null loads, `[]` rejects, absent key rejects); both emphasis guards fire in both
+directions; unknown keys and `trimester` reject naming the path; 26 weeks, a duplicated week,
+an orphan `unitId` and empty `pdfPages` all reject whole-file. A hand-edit that also
+recomputes `contentHash` correctly cannot silently overwrite — it demotes exit 2 to exit 3
+and still refuses. Verified from git that this module was last touched 04:20, before the
+first transcription commit (05:06): the schema genuinely survived all five documents.
+
+Debt, chargeable here jointly with be-3:
+
+1. **`week.hours` (the week line's own top-level field) is validated as "positive number"
+   and nothing else.** The contract's schema.yaml says it "must equal weeklyHours
+   (assertion A4)", but A4 sums `rows[].hours` and never reads the field. A seed with
+   `week.hours: 999` loads clean and passes A1–A8 (demonstrated). All 135 stored weeks are
+   currently correct (audited), so the gap is latent — but the field is stored as truth and
+   no layer owns it.
+2. By design, hand-edits to the excluded fields (`current`, `transcriptionRev`,
+   `createdAt/updatedAt`) are invisible to the guard — a hand-flipped `current` or a
+   `transcriptionRev: 999` reads back `unchanged` (demonstrated). Acceptable consequence of
+   the exclusion list; recorded so it is inherited knowingly.

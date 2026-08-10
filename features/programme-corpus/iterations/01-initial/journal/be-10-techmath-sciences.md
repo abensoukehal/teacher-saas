@@ -133,3 +133,23 @@ Files: my independent readings are
 `…/tadarroj-3as-sciences.l2.jsonl`; compare runs:
 `node stacks/teacher-be/scripts/verify-programmes.mjs --compare data/programmes/<doc>.jsonl <l2>` —
 techmath 34 flags / sciences 33 flags, all adjudicated above.
+
+## review
+
+**Verdict: approve-with-debt.**
+
+Both adjudications verified as applied, not just decided: (a) the maths seed now stores
+cos-first on the wk-3 trig bullet (checked every cos+sin string in all three dense seeds —
+all cos-first) with `programme_revisions` rev-2→3 recording it; (b) no U+2013 remains in
+any of the five intros and the tatweel pair is present in all five. techmath is at rev 2
+with T2/T3 folded in as promised.
+
+Debt:
+
+1. **T4 was not applied.** The verdict says "fold in T2–T4 in the same pass"; the seed
+   still reads `المستقيم المقارب المائل .` (one dot, at the end this journal says is the
+   wrong end). T2 and T3 landed; T4 did not, and no note records deferring it — the verdict
+   text and the applied set disagree. One-line `--correct` or one sentence of deferral.
+2. The contract-named `<docKey>.l2-report.md` files were never created for either document;
+   the 34/33 anchor flags were dispositioned in bulk in this journal (see be-5's review —
+   same debt, same reasoning).

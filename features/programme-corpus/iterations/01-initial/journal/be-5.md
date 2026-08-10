@@ -182,3 +182,29 @@ whichever is wrong**, with a `programme_revisions` entry.
 Note both cross-document challenges came from *transcribers of other documents*, not from this
 layer-2 pass — a reader who has read the same sentence elsewhere notices what a single-document
 verifier does not.
+
+## review
+
+**Verdict: approve-with-debt.**
+
+Spot-audit (protocol ⑥): re-ran `--compare` on the current seed vs this l2 file — **112
+discrepancies, exactly the journal's figure**, and D1/D2 are confirmed applied in both the
+seed and the DB (`انتماء 4 نقط إلى` present; `programme_revisions` holds rev-1 superseded
+doc with the D1 note; rev 3 now carries be-10's sin/cos fix, also verified in the seed:
+cos-first on the wk-3 bullet). The journal's honesty about what the tool cannot see (D1/D2
+both beyond the anchor window) is accurate — I reproduced that class: a meaning-inverting
+word injected at word 8 of a cell passes the loader, A1–A8, and `--compare` with zero added
+discrepancies. Layer 2's protection against that class is the human eye-pass this sub-issue
+performed, not the tool.
+
+Debt:
+
+1. **`tadarroj-3as-math.l2-report.md` does not exist.** The contract names it as the
+   disposition artifact and the exit condition ("zero undispositioned discrepancies") lives
+   in it; this journal serves as the report de facto, and the 112 flags were dispositioned
+   in bulk ("all but a handful are anchor artifacts") rather than per-line. Defensible, but
+   it is a contract deviation, and it means no machine-checkable record separates the ~108
+   artifacts from the next real discrepancy a future re-run might add.
+2. **The user gate's "explicit yes" is not recorded in any artifact I can find.** be-6…be-9
+   proceeded, so it presumably happened; the exit protocol said to wait for it, and the
+   record should say it was given.
