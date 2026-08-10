@@ -747,6 +747,98 @@ value-per-teacher against the build cost.
 
 ---
 
+## 6e · The job map
+
+§6c is the *reasoning* shelf — why each thing matters. This is the *delivery* view: the same
+material clustered into jobs, with what each needs before it can start. Ordered by dependency,
+not by preference.
+
+```
+J1 programme-corpus ─┬─→ J2 teacher-profile ─→ J3 progress-tracker ─┬─→ J4 aligned-exams ─→ J5 weekly-series
+                     │                                              └─→ J6 school-year-calendar
+                     └─→ (J7 exam-versions — independent, any time)
+```
+
+### J1 · `programme-corpus` — the backbone  ·  **provisioned 2026-08-10**
+
+Covers shelf items **A** and the storage half of **F**.
+
+- The `programme` schema from §F.2 — official text stored **verbatim**, provenance on every record
+- Transcribe the five **تدرجات** into it: **شعبة الرياضيات end to end first** as the
+  schema proof, then the remaining four, which are largely mechanical once the first is right
+- A **verification pass that is separate from the transcription pass and does not trust it**
+- Fix شعبة الرياضيات's missing quarter: الحساب التكاملي · الأعداد والحساب · التحويلات النقطية
+- `exam-subject` grounds in the corpus rather than the hand-written curriculum file
+
+**Out:** التوزيع السنوي (→ J6), profile, tracker, any UI beyond the topic list.
+**Why first:** nothing else can start. Also delivers item A, which is the only thing on the
+shelf that fixes something for teachers we already have.
+
+### J2 · `teacher-profile` — who the teacher is  ·  needs J1
+
+Shelf item **B**.
+
+- Sign-up collects **stream** (all six, from the five documents) and **school name**
+- Per-stream topic list read from the corpus — the taxonomy stops being one global constant
+- Generation uses the teacher's stream instead of the hardcoded `STREAM`
+- The printed sheet carries the school
+- The ~4,000 existing accounts keep working: absent profile must mean something sane, read
+  through one helper, never `?? default` at call sites
+
+**Not collected, deliberately:** تقني رياضي speciality (all four share one maths programme),
+wilaya, years teaching, class size — nothing acts on them, and each sits behind a `teacherId`
+that never expires and cannot be revoked.
+**Open, verify don't assume:** does a teacher teach one stream or several?
+
+### J3 · `progress-tracker` — where the teacher is  ·  needs J1 + J2
+
+Shelf item **F**, product half.
+
+- `teacher_progress`, separate collection and separate lifetime from `programme`
+- `programmeVersion` on the record, so a ministry revision cannot silently re-point a
+  teacher mid-year
+- The guided programme view: الأسبوع · المحور · الكفاءات · المحتويات · السير المنهجي · الحجم
+- The teacher marks where they are — **their marked position is the truth**, never the calendar
+
+**Why it matters most commercially:** this is the weekly habit loop. §5's frequency problem is
+a symptom of the product being one low-frequency artifact; this is the fix.
+
+### J4 · `progress-aligned-exams` — the payoff  ·  needs J3
+
+Shelf item **F.4**, and it makes roadmap item 4 real.
+
+- Exam scope derived from tracked position — «اختبار الفصل الأول» becomes one choice
+- Weighting from hours actually spent
+- **Material not yet taught is excluded** — the half that matters most, and the one thing
+  nothing in the product can currently prevent
+- Devoir vs composition become distinct by scope-to-date, not just duration
+
+### J5 · `weekly-series` — سلاسل التمارين  ·  needs J4
+
+Shelf item **C**, roadmap item 3. Reuses the fan-out engine; the plan skill is simpler than the
+exam's (one chapter, no summing to 20, no duration budget). Scoped to *this week* by J3/J4, which
+is what distinguishes it from a small exam.
+
+### J6 · `school-year-calendar` — التوزيع السنوي  ·  needs J3
+
+Deferred here deliberately (§6d). Weeks → real dates, holidays, and the **assessment windows**
+that let the product act rather than record: *the composition is due in two weeks and may cover
+weeks 1–11*. Annual, teacher-made, confirm-don't-trust.
+
+### J7 · `exam-versions` — نماذج متعددة  ·  independent
+
+Shelf item **D**, roadmap item 2. Same questions, different numbers, shuffled. Nearly free since
+per-exercise regeneration shipped, and it depends on nothing here — droppable into any gap.
+
+### Not yet jobs
+
+- **Course material under السير المنهجي** — reverses a recorded scoping decision (§5
+  *Deliberately skipped*). Needs a deliberate yes or no before it becomes a job.
+- **Remediation sheets** (roadmap 5) — much stronger after J3, since "which chapter went badly"
+  becomes something the teacher has already recorded rather than something we ask them.
+- **Personal exercise library** (roadmap 6) — the raw material accumulates from day one:
+  insert-only storage, no delete route, and every superseded exercise already kept.
+
 ## 7. Scoping decisions
 
 - **Standalone product.** Not merged with the separate student-facing BAC e-learning idea. May share curriculum-grounding thinking, built independently.
