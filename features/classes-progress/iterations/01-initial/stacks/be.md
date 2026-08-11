@@ -505,7 +505,7 @@ kind: sub-issue
 id: be-7
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-6]
 estimate: S
 ---
@@ -513,7 +513,7 @@ estimate: S
 
 ### be-7 — the last English strings a teacher can reach
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** be-6 fixed the catch-all and found the same defect in six more places. One of
 them, `src/routes/subjects.ts:50`'s `"subject not found"`, is a **teacher-reachable 404
