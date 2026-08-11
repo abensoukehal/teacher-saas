@@ -81,6 +81,17 @@ Every attempt logs, win or loss — see [[cmp-be-mutation-log]]. A loss records 
 **caller** believed in, which is the useful half. Rejected writes (400/404) and every GET log
 nothing, so the log is a record of what happened and not of what was attempted.
 
+## Unchanged by the programme surface, and that is the shape of that slice
+
+The tracker's «تمّ ✓», «تخطٍّ ↷» and «وصلنا هنا» all drive this endpoint exactly as written.
+Nothing on the wire moved. Two consequences worth carrying:
+
+- **`409 conflict` stopped being an edge case.** The tracker makes many small writes where
+  the position card made one per session, so `cas_loss` frequency is now a real operational
+  signal — carried by the `progress.write` line that already existed.
+- **The week bound is now pinned against a mutant** — see [[mod-be-progress-store]]. A
+  hardcoded `27` fails five clauses here.
+
 ## Realizes
 - [[feat-classes-progress]] — where each class has reached
 

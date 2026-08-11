@@ -81,3 +81,6 @@ returning teacher on a wiped browser gets their classes back with no tab selecte
 
 ## Related
 - [[cmp-fe-class-position]] · [[cmp-fe-subject-list]] · [[flow-class-position-and-switch]]
+- [[cmp-fe-tracker]] — the other writer of the position this rail draws; one «تمّ ✓» moves the
+  band, the programme bar, hours-to-date and this rail together
+

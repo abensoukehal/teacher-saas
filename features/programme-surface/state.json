@@ -1,0 +1,156 @@
+{
+  "slug": "programme-surface",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-11",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "7e3362b6c4a0f798"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "36ef17a0c56716d0"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "acde88c8c11a7967",
+            "subissues": "eda22d6cc3fa73cc"
+          }
+        },
+        "staging": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "eda22d6cc3fa73cc"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "acde88c8c11a7967",
+            "subissues": "eda22d6cc3fa73cc"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "delta": [
+            "be/src/routes/programme.ts",
+            "be/src/store/programmes.ts",
+            "be/src/app.ts"
+          ],
+          "stack": "be",
+          "reviewed": "null"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-1"
+          ],
+          "delta": [
+            "features/programme-surface/tests/be/bound-pin.characterization.test.js"
+          ],
+          "stack": "be",
+          "reviewed": "null"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "delta": [
+            "fe/src/lib/programme.ts",
+            "fe/src/lib/api.ts"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1"
+          ],
+          "delta": [
+            "fe/src/components/ProgrammeBar.tsx"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "fe-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1"
+          ],
+          "delta": [
+            "fe/src/components/WeekCard.tsx"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "fe-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "fe-2"
+          ],
+          "delta": [
+            "fe/src/components/Tracker.tsx"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "fe-5": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-2",
+            "fe-3",
+            "fe-4"
+          ],
+          "delta": [
+            "fe/src/components/Nav.tsx",
+            "fe/src/App.tsx",
+            "fe/src/App.css"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "fe-6": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "fe-1",
+            "fe-2",
+            "fe-3",
+            "fe-4",
+            "fe-5"
+          ],
+          "delta": [
+            "features/programme-surface/tests/fe/guard-rails.characterization.test.tsx"
+          ],
+          "stack": "fe",
+          "reviewed": "null"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "hardening",
+          "reviewed": "null"
+        }
+      }
+    }
+  }
+}

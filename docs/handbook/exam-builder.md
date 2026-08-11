@@ -23,14 +23,17 @@ value is time: an evening's work compressed into minutes.
 - [The correction a teacher keeps](../feat-solution-sheets.md) — the model correction and its grading scale
 - [A teacher's exams follow them](../feat-teacher-accounts.md) — an account, so the exams follow the teacher
 - [A teacher's classes, and where each one has reached](../feat-classes-progress.md) — the teacher's classes, and where each one has reached
+- [The official programme, on screen](../feat-programme-surface.md) — the ministry's own programme, on screen
 - [Seeing the system you are running](../feat-admin-console.md) — the operator's view, not a teacher's
 
 ### Boundaries
 Mathematics only. Six streams can be declared for a class and every one resolves to its
-own programme document, but only شعبة الرياضيات has a curriculum reference for generation.
-Nothing student-facing. There is billing for nobody. Exams are kept and now belong to an
-account, but there is no search, no folders and no deleting — and a generated exam does not
-yet know which class it was made for.
+own programme document — and since 2026-08-11 that document is **readable on screen**, week
+by week, for whichever class is selected. Only شعبة الرياضيات has a curriculum reference for
+*generation*, though: the two are separate corpora and generation does not read the one the
+tracker shows. Nothing student-facing. There is billing for nobody. Exams are kept and now
+belong to an account, but there is no search, no folders and no deleting — and a generated
+exam does not yet know which class it was made for.
 
 ## Features
 
@@ -147,8 +150,10 @@ by one, and [Teacher accounts store](../mod-be-teacher-store.md), which now hold
   mistake is permanent. A name made only of invisible characters (a pasted RLM or ZWSP)
   passes both stacks' `trim()` and produces a permanently blank tab — reproduced live.
 - **`POST /api/classes` is not rate limited**, unlike the auth routes.
-- **Per-week entries** (`planned · done · skipped` + a note) are stored and validated, but
-  nothing in the UI writes one yet — only the marked week.
+- ~~**Per-week entries** have no client~~ — **closed.** The tracker
+  ([The official programme, on screen](../feat-programme-surface.md)) writes `done` and `skipped` from «تمّ ✓» and «تخطٍّ ↷»,
+  verified live including upsert-by-week and a forged client `completedAt` being discarded.
+  A **note** is still rendered and never authored, and `planned` is still written by nothing.
 - **Nothing is auto-selected.** A teacher returning on a wiped browser gets their classes
   back with no tab selected, and a newly created class does not become the current one.
 
@@ -156,6 +161,8 @@ by one, and [Teacher accounts store](../mod-be-teacher-store.md), which now hold
 - [A teacher's exams follow them](../feat-teacher-accounts.md) — the account these hang off; sign-up steps 3 and 4 run after it
 - [Keep every exam](../feat-subject-library.md) — the list a class switch re-scopes
 - [Generate a draft exam](../feat-exam-generation.md) — does not yet know about classes
+- [The official programme, on screen](../feat-programme-surface.md) — what a marked week now *means*, and the first client of the
+  per-week entries
 
 ## Making a class, telling it where it is, and switching to it
 
@@ -377,6 +384,188 @@ is: each refinement carries the current exercise with it, which is why refinemen
 compose naturally. The reworked exercise is then written back to the stored exam by
 id — see [Saving an exam and reopening it later](../flow-save-and-reopen.md).
 
+## The official programme, on screen
+
+### Product behavior (what the user gets)
+
+The ministry's التدرج السنوي for the selected class's stream, shown as the ministry wrote
+it. Two screens, reached from a new nav row: «هذا الأسبوع» — the marked week — and
+«البرنامج» — the whole year, week by week.
+
+The week card carries the unit, every row of the ministry's table for that week, and the
+السير المنهجي guidance verbatim with the printed page it came from. The tracker carries all
+27 bands with a segmented bar of the year above them, and the actions where the teacher is
+already looking: «تمّ ✓», «تخطٍّ ↷», «وصلنا هنا». One tap moves the band, the bar, the
+hours-to-date line and the class-bar rail together.
+
+Slice 1 gave a class a marked week. This gives that week a **meaning** — which unit it sits
+in, what the ministry says about it, and where it falls in the year.
+
+**Why this earns the conformity claim.** Until now the corpus was loaded and nothing served
+it: the product asserted it stays on-programme and the teacher had to take its word.
+Nothing on these screens is paraphrased or summarised. The provenance line
+(«وزارة التربية الوطنية — المفتشية العامة للتربية الوطنية», the document title, the page
+number) comes from the wire, not from a UI literal — an attribution written into markup is a
+claim nothing can check.
+
+### Implementation parallel
+
+| Node | Stack | Role |
+|---|---|---|
+| [Programme endpoint](../cmp-be-programme-api.md) | be | `GET /api/classes/:classId/programme` — the whole projected document, and its own 304 |
+| [The programme, as fe holds it](../cmp-fe-programme-lib.md) | fe | the types, the run derivation, the write builder — everything numeric |
+| [The year at a glance](../cmp-fe-programme-bar.md) | fe | the year as fifteen segments |
+| [«هذا الأسبوع» — the marked week](../cmp-fe-week-card.md) | fe | «هذا الأسبوع» |
+| [«البرنامج» — the whole year](../cmp-fe-tracker.md) | fe | «البرنامج» — the whole year, folded shut except where the teacher is |
+| [The nav row, and the three screens behind it](../cmp-fe-nav.md) | fe | the nav row, the view state, the hash, and every fetch behind both screens |
+| [Opening the tracker and marking a week done](../flow-mark-a-week.md) | — | end-to-end: open the tracker → mark a week → four surfaces follow |
+
+The corpus itself and its wire projection are [Programme corpus](../mod-be-programme-corpus.md). The writes reuse
+[Progress endpoints](../cmp-be-progress-api.md) unchanged — `be` gained one read route and nothing else.
+
+### Three absences that are the deliverable, not gaps
+
+- **No pacing marker and no pacing sentence.** The design draws an accent tick at
+  «متوقَّع — الأسبوع 12» and a line reading «متأخرون بأسبوعين». There is no calendar
+  anywhere in this product and **the corpus carries no date of any kind**, so that position
+  has no data source: in the prototype the "do we have a reference?" test is literally the
+  same expression as "does this class have a position?", with `12` written into the source.
+  Shipping it would dress an invented reference as the ministry's.
+- **No course link on a content item.** Contents render as inert plain strings. Courses are a
+  later slice, and the corpus has no stable id to address — a content item's position moves
+  the moment a transcription is corrected.
+- **«إعداد موضوع» and «مكتبتي» are absent from the nav, not greyed.** A disabled item is a
+  promise with a date on it.
+
+### States & edges
+
+- **A teacher with no classes** sees the app byte-for-byte as before: no nav row, no
+  programme request, nothing. Verified live with a real class-less teacher deep-linked to
+  `#/programme`.
+- **Classes but none selected.** The two per-class items are not offered, and a deep link to
+  either screen shows «اختر قسمًا من الشريط أعلاه» pointing at the bar. Never an error,
+  never an auto-selection.
+- **Week 0.** The week card is replaced by the question «أين وصل هذا القسم؟» and a way to
+  the tracker. The tracker draws the segmented year with **no fill node in any segment** and
+  offers «وصلنا هنا» on every row. The track is information — it is the ministry's own year;
+  what is absent at week 0 is the *comparison*.
+- **Two tabs writing one class.** The loser gets a 409 and the re-ask happens **at the row**
+  that lost. Fresh state renders across every band, the bar and the rail; nothing is
+  resubmitted. The tracker turns one write per session into many, so this is normal
+  operation rather than an edge.
+- **Datastore down.** Both screens say so in Arabic with a retry, local to the screen.
+- **A backend without the route** (an older `be` behind this `fe`) degrades to «الصفحة غير
+  موجودة» with a retry on both screens; the builder, the class bar and progress writes keep
+  working.
+
+### Honest limits
+
+- **Ministry text reaches three `title` attributes raw**, bypassing KaTeX — the bar's unit
+  name, and both emphasis markers' legend caption. Safe **only because today's data is
+  safe**: no unit name and no legend contains `$`. The rule these components state is that
+  the channel is chosen by who wrote the string, never by what this corpus happens to
+  contain, so this contradicts it. A future transcription with maths in a unit name would
+  show LaTeX source to a teacher.
+- **A `title` on a `div` is announced by nothing.** The fifteen unit names are a hover
+  affordance and are not reachable non-visually.
+- **`fe`'s types are narrower than `be`'s wire.** `emphasisLegend` and `weeks[].unitId` are
+  nullable on the backend and non-null in the frontend's types. All five corpus documents
+  carry a legend and every week has a unit, so it is unreachable today — but a legend-less
+  document would **crash** rather than degrade.
+- **The tracker's mount scroll centres the band.** On a tall week (1,878 px open) that puts
+  the week number, the status tag and both buttons above the fold, so the teacher lands
+  mid-paragraph. Everything is present and one small scroll away.
+- **No note input.** `entry.note` is rendered and never authored.
+- **Nothing here tags a generated exam with a class.** Two per-class screens now sit beside
+  a library that still shows every exam under every tab, which makes that gap sharper than
+  when [A teacher's classes, and where each one has reached](../feat-classes-progress.md) recorded it.
+
+### Related
+- [A teacher's classes, and where each one has reached](../feat-classes-progress.md) — the classes and positions this is built on; the writes are its
+  endpoints unchanged
+- [Generate a draft exam](../feat-exam-generation.md) — does not yet read the programme, or know which class it is for
+
+## Opening the tracker and marking a week done
+
+### Sequence
+
+1. [The nav row, and the three screens behind it](../cmp-fe-nav.md) — a class is selected; the teacher taps «البرنامج». The view follows, and
+   `#/programme` is written so refresh and Back land right
+2. Two reads fire: `GET /api/classes/:classId/programme` and `GET /api/progress/:classId`.
+   The programme is cached per class for the session
+3. [Programme endpoint](../cmp-be-programme-api.md) — `requireTeacher` → the id shape → `getOwned` → the class's own
+   stream → the whitelist projection. No mutation-log line: it is a read
+4. [The programme, as fe holds it](../cmp-fe-programme-lib.md) — the weeks become **unit runs** (15 on maths, from 14 units) and
+   a track total of Σ `weeks[].hours`
+5. [The year at a glance](../cmp-fe-programme-bar.md) — one segment per run, filled to the marked week
+6. [«البرنامج» — the whole year](../cmp-fe-tracker.md) — 27 bands, all collapsed except the current one, scrolled to the mark
+   on mount
+7. The teacher taps «تمّ ✓» on the current band. That row's controls disable →
+   `PUT /api/progress/:classId {rev, markedWeek: min(W+1, T), entry: {week: W, status: "done"}}`
+8. [Progress endpoints](../cmp-be-progress-api.md) — one atomic compare-and-set; the entry upserts by week;
+   `completedAt` is stamped server-side; `progress.write outcome:"win"` is logged →
+   `200 {progress}` and **no `programme`**
+9. Four surfaces follow one write, from the same fresh position and the programme already
+   held — no refetch: band W reads «منجز» and folds, band W+1 becomes current and opens, the
+   bar's fill advances, hours-to-date moves, and [The class switcher](../cmp-fe-class-bar.md)'s rail and tab label
+   follow
+
+```mermaid
+sequenceDiagram
+  participant FE
+  participant BE
+  participant DB
+  FE->>BE: GET /api/classes/:classId/programme
+  BE->>DB: getOwned(classId, teacherId)
+  BE->>DB: findOne({streams, current: true})
+  BE-->>FE: 200 {programme} | 304 (If-None-Match)
+  FE->>BE: GET /api/progress/:classId
+  BE-->>FE: 200 {progress, programme: {totalWeeks}}
+  FE->>BE: PUT /api/progress/:classId {rev, markedWeek, entry}
+  BE->>DB: CAS on rev, upsert entry by week
+  BE-->>FE: 200 {progress} | 409 conflict
+  FE->>BE: GET /api/progress/:classId (only after a 409)
+  BE-->>FE: 200 {progress}
+```
+
+Measured live: «تمّ ✓» on week 14 moved hours-to-date 98 → 105, the class rail 51.9% → 55.6%,
+the tab from «أسبوع 14» to «أسبوع 15» and the bar's filled segments 8 → 9. One PUT, two
+backend log lines, zero notices.
+
+### The two week totals never swap
+
+`progress.programme.totalWeeks` is the **write bound** — what week may be recorded.
+`programme.totals.weeks` is the **ministry's summary table** — header copy. The same number in
+every corpus document today, deliberately named apart. The tracker header reads the second and
+clamps against the first, and both are pinned in one render at a 30-week bound against a
+27-week document.
+
+### Failure modes
+
+- **`409 conflict`** — the position moved in another tab or on another device. The backend
+  logs `outcome:"cas_loss"` with the rev the loser believed in. The host re-reads **once** and
+  the **losing band** shows the fresh position and re-asks in Arabic. No banner, no
+  auto-resubmit, other bands untouched. The tracker makes many small writes where slice 1 made
+  one per session, so this is normal operation.
+- **`503 store_unavailable`** — Arabic retry state on the screen that called; the nav selection
+  stands. Recovery on retry, no reload.
+- **`404 class_not_found`** on the programme read — this class is gone from this session:
+  refetch the class list and drop the selection.
+- **`be` down mid-write** — the failure renders inside the losing band, the position does not
+  advance, and there is no phantom local state. The same tap succeeds after recovery.
+- **A `be` without this route** — both screens degrade to «الصفحة غير موجودة» with a retry.
+  The builder, the position card and progress writes keep working.
+
+### What this flow does not do
+
+Nothing here writes an `entry.note` — notes are rendered and never authored. Nothing generates
+anything: «سلسلة الأسبوع» is absent by contract, not disabled. And a generated exam still
+carries no `classId`, so the library beside these two per-class screens still shows every exam
+under every class.
+
+### Related
+- [Making a class, telling it where it is, and switching to it](../flow-class-position-and-switch.md) — the same write, from the position card on home
+
 ## The correction a teacher keeps
 
 ### Product behavior (what the user gets)
@@ -585,8 +774,8 @@ password does not, because pressing the button again would be a lie.
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Class store, Claude Code CLI wrapper, Progress store, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Class and progress mutation log, Class endpoints, Exam generation capability, Exam plan skill, Exercise refinement capability, Generation endpoint, One writer at a time, One-correction skill, One-exercise skill, Per-exercise corrections, Progress endpoints, Progressive exam endpoint, Subject endpoints and teacher identity, The solution-sheet skill, The teacher's school |
-| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, Sign-up steps 3 and 4, The class switcher, The correction pane and its printed sheet, The operator's console, The sign-in gate, Where this class has reached, «أقسامي» in the account panel |
+| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Class store, Claude Code CLI wrapper, Programme corpus, Progress store, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Class and progress mutation log, Class endpoints, Exam generation capability, Exam plan skill, Exercise refinement capability, Generation endpoint, One writer at a time, One-correction skill, One-exercise skill, Per-exercise corrections, Programme endpoint, Progress endpoints, Progressive exam endpoint, Subject endpoints and teacher identity, The solution-sheet skill, The teacher's school |
+| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, Sign-up steps 3 and 4, The class switcher, The correction pane and its printed sheet, The nav row, and the three screens behind it, The operator's console, The programme, as fe holds it, The sign-in gate, The year at a glance, Where this class has reached, «أقسامي» in the account panel, «البرنامج» — the whole year, «هذا الأسبوع» — the marked week |
 
 
 ## Map
@@ -602,6 +791,7 @@ flowchart TD
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
   cmp_be_inflight["cmp-be-inflight"]
   cmp_be_mutation_log["cmp-be-mutation-log"]
+  cmp_be_programme_api["cmp-be-programme-api"]
   cmp_be_progress_api["cmp-be-progress-api"]
   cmp_be_skill_exam_plan["cmp-be-skill-exam-plan"]
   cmp_be_skill_exam_subject["cmp-be-skill-exam-subject"]
@@ -618,22 +808,29 @@ flowchart TD
   cmp_fe_controls["cmp-fe-controls"]
   cmp_fe_exam_view["cmp-fe-exam-view"]
   cmp_fe_my_classes["cmp-fe-my-classes"]
+  cmp_fe_nav["cmp-fe-nav"]
+  cmp_fe_programme_bar["cmp-fe-programme-bar"]
+  cmp_fe_programme_lib["cmp-fe-programme-lib"]
   cmp_fe_refine["cmp-fe-refine"]
   cmp_fe_signup_classes["cmp-fe-signup-classes"]
   cmp_fe_solution_view["cmp-fe-solution-view"]
   cmp_fe_subject_list["cmp-fe-subject-list"]
+  cmp_fe_tracker["cmp-fe-tracker"]
+  cmp_fe_week_card["cmp-fe-week-card"]
   feat_admin_console["feat-admin-console"]
   feat_classes_progress["feat-classes-progress"]
   feat_exam_generation["feat-exam-generation"]
   feat_exam_print["feat-exam-print"]
   feat_exercise_history["feat-exercise-history"]
   feat_exercise_refinement["feat-exercise-refinement"]
+  feat_programme_surface["feat-programme-surface"]
   feat_solution_sheets["feat-solution-sheets"]
   feat_subject_library["feat-subject-library"]
   feat_teacher_accounts["feat-teacher-accounts"]
   flow_class_position_and_switch["flow-class-position-and-switch"]
   flow_generate_correction["flow-generate-correction"]
   flow_generate_exam["flow-generate-exam"]
+  flow_mark_a_week["flow-mark-a-week"]
   flow_refine_exercise["flow-refine-exercise"]
   flow_save_and_reopen["flow-save-and-reopen"]
   flow_sign_in_and_recover["flow-sign-in-and-recover"]
@@ -641,6 +838,7 @@ flowchart TD
   mod_be_agent_workspace["mod-be-agent-workspace"]
   mod_be_class_store["mod-be-class-store"]
   mod_be_claude_wrapper["mod-be-claude-wrapper"]
+  mod_be_programme_corpus["mod-be-programme-corpus"]
   mod_be_progress_store["mod-be-progress-store"]
   mod_be_revision_store["mod-be-revision-store"]
   mod_be_solution_store["mod-be-solution-store"]
@@ -674,6 +872,9 @@ flowchart TD
   cmp_be_generate_endpoint -.-> mod_be_claude_wrapper
   cmp_be_inflight -.-> mod_be_claude_wrapper
   cmp_be_mutation_log -.-> mod_be_progress_store
+  cmp_be_programme_api -->|depends_on| mod_be_class_store
+  cmp_be_programme_api -->|depends_on| mod_be_programme_corpus
+  cmp_be_programme_api -.-> mod_be_programme_corpus
   cmp_be_progress_api -->|depends_on| cmp_be_mutation_log
   cmp_be_progress_api -->|depends_on| mod_be_class_store
   cmp_be_progress_api -->|depends_on| mod_be_progress_store
@@ -703,6 +904,15 @@ flowchart TD
   cmp_fe_my_classes -->|depends_on| cmp_be_classes_api
   cmp_fe_my_classes -->|depends_on| cmp_be_progress_api
   cmp_fe_my_classes -.-> mod_fe_exam_builder
+  cmp_fe_nav -->|depends_on| cmp_be_programme_api
+  cmp_fe_nav -->|depends_on| cmp_be_progress_api
+  cmp_fe_nav -->|depends_on| cmp_fe_tracker
+  cmp_fe_nav -->|depends_on| cmp_fe_week_card
+  cmp_fe_nav -.-> mod_fe_exam_builder
+  cmp_fe_programme_bar -->|depends_on| cmp_fe_programme_lib
+  cmp_fe_programme_bar -.-> mod_fe_exam_builder
+  cmp_fe_programme_lib -->|depends_on| cmp_be_programme_api
+  cmp_fe_programme_lib -.-> mod_fe_exam_builder
   cmp_fe_refine -->|depends_on| cmp_fe_exam_view
   cmp_fe_refine -.-> mod_fe_exam_builder
   cmp_fe_signup_classes -->|depends_on| cmp_be_classes_api
@@ -712,6 +922,13 @@ flowchart TD
   cmp_fe_solution_view -->|depends_on| mod_be_solution_store
   cmp_fe_solution_view -.-> mod_fe_exam_builder
   cmp_fe_subject_list -.-> mod_fe_exam_builder
+  cmp_fe_tracker -->|depends_on| cmp_be_progress_api
+  cmp_fe_tracker -->|depends_on| cmp_fe_programme_bar
+  cmp_fe_tracker -->|depends_on| cmp_fe_programme_lib
+  cmp_fe_tracker -.-> mod_fe_exam_builder
+  cmp_fe_week_card -->|depends_on| cmp_be_progress_api
+  cmp_fe_week_card -->|depends_on| cmp_fe_programme_lib
+  cmp_fe_week_card -.-> mod_fe_exam_builder
   feat_admin_console -->|realized_by| cmp_be_admin_api
   feat_admin_console -->|realized_by| cmp_fe_admin_console
   feat_admin_console -->|realized_by| mod_be_teacher_store
@@ -751,6 +968,14 @@ flowchart TD
   feat_exercise_refinement -->|realized_by| cmp_fe_refine
   feat_exercise_refinement -->|realized_by| flow_refine_exercise
   feat_exercise_refinement -.-> prod_exam_builder
+  feat_programme_surface -->|realized_by| cmp_be_programme_api
+  feat_programme_surface -->|realized_by| cmp_fe_nav
+  feat_programme_surface -->|realized_by| cmp_fe_programme_bar
+  feat_programme_surface -->|realized_by| cmp_fe_programme_lib
+  feat_programme_surface -->|realized_by| cmp_fe_tracker
+  feat_programme_surface -->|realized_by| cmp_fe_week_card
+  feat_programme_surface -->|realized_by| flow_mark_a_week
+  feat_programme_surface -.-> prod_exam_builder
   feat_solution_sheets -->|realized_by| cmp_be_corrections_endpoint
   feat_solution_sheets -->|realized_by| cmp_be_inflight
   feat_solution_sheets -->|realized_by| cmp_be_skill_solution_one
@@ -787,6 +1012,13 @@ flowchart TD
   flow_generate_exam -->|step| cmp_be_skill_exercise_one
   flow_generate_exam -->|step| cmp_fe_controls
   flow_generate_exam -->|step| cmp_fe_exam_view
+  flow_mark_a_week -->|step| cmp_be_programme_api
+  flow_mark_a_week -->|step| cmp_be_progress_api
+  flow_mark_a_week -->|step| cmp_fe_class_bar
+  flow_mark_a_week -->|step| cmp_fe_nav
+  flow_mark_a_week -->|step| cmp_fe_programme_bar
+  flow_mark_a_week -->|step| cmp_fe_programme_lib
+  flow_mark_a_week -->|step| cmp_fe_tracker
   flow_refine_exercise -->|step| cmp_be_claude_runner
   flow_refine_exercise -->|step| cmp_be_generate_endpoint
   flow_refine_exercise -->|step| cmp_be_skill_refine_exercise
@@ -805,6 +1037,7 @@ flowchart TD
   mod_be_agent_workspace -.-> svc_teacher_be
   mod_be_class_store -.-> svc_teacher_be
   mod_be_claude_wrapper -.-> svc_teacher_be
+  mod_be_programme_corpus -.-> svc_teacher_be
   mod_be_progress_store -.-> svc_teacher_be
   mod_be_revision_store -.-> svc_teacher_be
   mod_be_solution_store -.-> svc_teacher_be
@@ -817,6 +1050,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_classes_api,cmp_be_claude_runner,cmp_be_corrections_endpoint,cmp_be_exams_endpoint,cmp_be_generate_endpoint,cmp_be_inflight,cmp_be_mutation_log,cmp_be_progress_api,cmp_be_skill_exam_plan,cmp_be_skill_exam_subject,cmp_be_skill_exercise_one,cmp_be_skill_refine_exercise,cmp_be_skill_solution_one,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_be_teacher_school,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_class_bar,cmp_fe_class_position,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_my_classes,cmp_fe_refine,cmp_fe_signup_classes,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_classes_progress,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_class_position_and_switch,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_class_store,mod_be_claude_wrapper,mod_be_progress_store,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_classes_api,cmp_be_claude_runner,cmp_be_corrections_endpoint,cmp_be_exams_endpoint,cmp_be_generate_endpoint,cmp_be_inflight,cmp_be_mutation_log,cmp_be_programme_api,cmp_be_progress_api,cmp_be_skill_exam_plan,cmp_be_skill_exam_subject,cmp_be_skill_exercise_one,cmp_be_skill_refine_exercise,cmp_be_skill_solution_one,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_be_teacher_school,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_class_bar,cmp_fe_class_position,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_my_classes,cmp_fe_nav,cmp_fe_programme_bar,cmp_fe_programme_lib,cmp_fe_refine,cmp_fe_signup_classes,cmp_fe_solution_view,cmp_fe_subject_list,cmp_fe_tracker,cmp_fe_week_card,feat_admin_console,feat_classes_progress,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_programme_surface,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_class_position_and_switch,flow_generate_correction,flow_generate_exam,flow_mark_a_week,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_class_store,mod_be_claude_wrapper,mod_be_programme_corpus,mod_be_progress_store,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 

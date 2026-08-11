@@ -32,11 +32,14 @@ value is time: an evening's work compressed into minutes.
 - [[feat-solution-sheets]] — the model correction and its grading scale
 - [[feat-teacher-accounts]] — an account, so the exams follow the teacher
 - [[feat-classes-progress]] — the teacher's classes, and where each one has reached
+- [[feat-programme-surface]] — the ministry's own programme, on screen
 - [[feat-admin-console]] — the operator's view, not a teacher's
 
 ## Boundaries
 Mathematics only. Six streams can be declared for a class and every one resolves to its
-own programme document, but only شعبة الرياضيات has a curriculum reference for generation.
-Nothing student-facing. There is billing for nobody. Exams are kept and now belong to an
-account, but there is no search, no folders and no deleting — and a generated exam does not
-yet know which class it was made for.
+own programme document — and since 2026-08-11 that document is **readable on screen**, week
+by week, for whichever class is selected. Only شعبة الرياضيات has a curriculum reference for
+*generation*, though: the two are separate corpora and generation does not read the one the
+tracker shows. Nothing student-facing. There is billing for nobody. Exams are kept and now
+belong to an account, but there is no search, no folders and no deleting — and a generated
+exam does not yet know which class it was made for.
