@@ -294,7 +294,7 @@ kind: sub-issue
 id: fe-4
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-3, be-4]
 estimate: L
 ---
@@ -302,7 +302,7 @@ estimate: L
 
 ### fe-4 — sign-up learns steps 3 and 4, and the account gets «أقسامي»
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** A new teacher declares their classes and school right after the recovery
 code (the account exists by then — that is WHY the steps hang off `issued`), positions
