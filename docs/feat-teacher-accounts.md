@@ -7,7 +7,7 @@ part_of: prod-exam-builder
 realized_by: [cmp-be-auth-api, mod-be-teacher-store, cmp-fe-auth-panel, flow-sign-in-and-recover]
 demonstrated_by: [features/persistence-gaps/iterations/01-initial/qa.md]
 status: fresh
-last_verified: 2026-08-08
+last_verified: 2026-08-11
 tags: [arabic, rtl]
 ---
 
@@ -29,6 +29,9 @@ ever left holding a code they have already spent.
 Typing it back is forgiving: case does not matter and neither do the dashes, so
 `abcd efgh ijkl` works as well as `ABCD-EFGH-IJKL`.
 
+After the code, sign-up continues into two more screens — the teacher's classes and school,
+then where each class has reached. See [[feat-classes-progress]].
+
 Before this, identity was invisible — the product minted a hidden id and kept it in
 the browser. It worked until the browser was cleared, and then every exam that teacher
 had ever made became unreachable. The documents survived; nothing could find them.
@@ -46,7 +49,16 @@ That is the failure this closes.
 ## Honest limits
 
 The id behind an account is still a **bearer value**: whoever holds it can read that
-teacher's exams. Accounts made it recoverable, not secret. There is no rate limiting,
-and sign-up answers differently for a taken address, so it is possible to test whether
-an address has an account. All three are accepted at the current milestone — two teacher
-friends trying the product — and none should survive contact with real users at scale.
+teacher's exams — and now their classes and where each one has reached. Accounts made it
+recoverable, not secret. It is accepted at the current milestone — two teacher friends
+trying the product — and should not survive contact with real users at scale.
+
+**Signing up for an address that already has an account no longer says so.** It answers
+exactly like a first sign-up: `201`, a working teacher id, and a recovery code that is a
+decoy. Nothing about the real account changes, and the duplicate simply creates no second
+one. The cost is that a teacher who types an address they already used is left holding a
+recovery code that cannot be redeemed, with nothing telling them why — and, if the browser
+was not already carrying a known id, a fresh empty workspace. Traded for closing a
+one-request way to test whether a colleague has an account.
+
+The auth routes are rate limited (`429`, with a retry-after); the class routes are not.

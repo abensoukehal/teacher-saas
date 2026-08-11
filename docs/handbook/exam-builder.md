@@ -19,11 +19,18 @@ value is time: an evening's work compressed into minutes.
 - [Rework one exercise](../feat-exercise-refinement.md) — rework one exercise in the teacher's own words
 - [Print the paper](../feat-exam-print.md) — a printable paper
 - [Keep every exam](../feat-subject-library.md) — every exam is kept and can be reopened
+- [Going back to an earlier version of an exercise](../feat-exercise-history.md) — every superseded version is kept, and restorable
+- [The correction a teacher keeps](../feat-solution-sheets.md) — the model correction and its grading scale
+- [A teacher's exams follow them](../feat-teacher-accounts.md) — an account, so the exams follow the teacher
+- [A teacher's classes, and where each one has reached](../feat-classes-progress.md) — the teacher's classes, and where each one has reached
+- [Seeing the system you are running](../feat-admin-console.md) — the operator's view, not a teacher's
 
 ### Boundaries
-Mathematics only, and one stream's programme so far. Nothing student-facing.
-No sign-in and no billing. Exams are kept, but they are tied to the browser they
-were made in, and there is no search, no folders and no deleting.
+Mathematics only. Six streams can be declared for a class and every one resolves to its
+own programme document, but only شعبة الرياضيات has a curriculum reference for generation.
+Nothing student-facing. There is billing for nobody. Exams are kept and now belong to an
+account, but there is no search, no folders and no deleting — and a generated exam does not
+yet know which class it was made for.
 
 ## Features
 
@@ -64,6 +71,161 @@ An admin is **not a super-teacher.** On the ordinary teacher routes they see exa
 own work — another teacher's exam is as invisible to them as it is to anyone. Privilege
 lives on separate routes behind a separate guard, so there is no path where an ownership
 check is "relaxed" for a role.
+
+## A teacher's classes, and where each one has reached
+
+### Product behavior (what the user gets)
+
+A teacher tells the product which classes they teach — a name they already use
+(«3ر1», «3ع2») and a stream for each — and then, per class, **where that class has
+actually reached in the official programme**. A bar of tabs sits across the top of the
+app, one tab per class, and the selected tab is the class everything else is about.
+
+A class with no position says only its name. Selecting it puts one question on screen —
+«أين وصل هذا القسم؟» — and a week picker running from 0 to that class's own last week.
+Once a week is marked, the tab carries it («3ع2 · أسبوع 8») with a thin rail showing how
+far through the programme that is.
+
+Switching class empties the desk: the open exam, the refine panel and the corrections all
+go, and the saved-exams list re-reads scoped to the new class. One thing deliberately
+survives a switch — an exam that failed to save and is waiting to be retried. Dropping
+that on a tab click would be exactly the silent loss the save queue exists to prevent.
+
+New teachers meet classes during sign-up: after the recovery code, step 3 asks for the
+classes and the school, step 4 asks where each one has reached, and every class on step 4
+can be skipped. Everyone else — including every teacher who had an account before this
+existed — adds classes from «أقسامي» in the account panel.
+
+**Why per class and not per teacher.** A teacher with two classes three weeks apart has
+two positions. Modelling them as one merges them silently, and the merge is discovered
+when an exam covers material one class has never been taught, in front of that class.
+
+### Implementation parallel
+
+| Node | Stack | Role |
+|---|---|---|
+| [Class endpoints](../cmp-be-classes-api.md) | be | `POST`/`GET /api/classes` — create and list, stream validated against the corpus |
+| [Progress endpoints](../cmp-be-progress-api.md) | be | `GET`/`PUT /api/progress/:classId` — the read synthesizes, the write compare-and-sets |
+| [The teacher's school](../cmp-be-teacher-school.md) | be | `PUT /api/teacher/school` — collected on the same sign-up step |
+| [Class and progress mutation log](../cmp-be-mutation-log.md) | be | one structured line per class or progress write, including the losses |
+| [The class switcher](../cmp-fe-class-bar.md) | fe | the switcher row and its rails |
+| [Where this class has reached](../cmp-fe-class-position.md) | fe | the week-0 invitation, the picker, and the 409 |
+| [Sign-up steps 3 and 4](../cmp-fe-signup-classes.md) | fe | sign-up steps 3 and 4 |
+| [«أقسامي» in the account panel](../cmp-fe-my-classes.md) | fe | «أقسامي» — the only path to a class for an existing account |
+| [Making a class, telling it where it is, and switching to it](../flow-class-position-and-switch.md) | — | end-to-end: create → position → switch → re-scope |
+
+The class layer also reaches into two nodes it does not own: [Subject store](../mod-be-subject-store.md) and
+[Subject endpoints and teacher identity](../cmp-be-subjects-api.md), where a subject may carry a `classId` and a list may be filtered
+by one, and [Teacher accounts store](../mod-be-teacher-store.md), which now holds the school.
+
+### States & edges
+
+- **No classes.** Every teacher who predates this is here. No bar, no position surface,
+  no extra row in the shell — the app is byte-for-byte what it was. Verified against a
+  recording of the pre-slice DOM.
+- **Week 0.** Not an error and not a position. The tab shows the name alone; the surface
+  asks the question.
+- **A class whose position could not be read** looks the same as a genuine week-0 class in
+  the bar, and gets **no** position surface. That is deliberate: a backend predating this
+  slice answers 404 to every class call, and an error banner would greet every teacher on
+  an older backend with a failure about a feature they are not using. The cost is a real
+  ambiguity in the bar, recorded rather than papered over.
+- **Two people writing one class's position at once.** One wins, the other gets a 409, is
+  told «تغيّر موقع هذا القسم في مكان آخر… أعد الاختيار.», and the picker re-reads and
+  re-asks. The write is never resent for them.
+- **Datastore down.** The position write says so in Arabic and offers a retry, keeping the
+  week the teacher chose. The class bar simply does not appear.
+
+### Honest limits
+
+- **A generated exam carries no `classId`.** It is stored as legacy, so an exam made while
+  3ر1 was selected also appears under 3ت2. Deliberate — tagging generation is a later
+  slice — and it is the first thing a teacher trying the switcher will notice.
+- **The school is write-only.** It is stored and nothing reads it back, so «أقسامي» shows
+  no school field. End to end it reads as "the setting does not work".
+- **There is no delete, rename or archive** for a class, on any surface. A class made by
+  mistake is permanent. A name made only of invisible characters (a pasted RLM or ZWSP)
+  passes both stacks' `trim()` and produces a permanently blank tab — reproduced live.
+- **`POST /api/classes` is not rate limited**, unlike the auth routes.
+- **Per-week entries** (`planned · done · skipped` + a note) are stored and validated, but
+  nothing in the UI writes one yet — only the marked week.
+- **Nothing is auto-selected.** A teacher returning on a wiped browser gets their classes
+  back with no tab selected, and a newly created class does not become the current one.
+
+### Related
+- [A teacher's exams follow them](../feat-teacher-accounts.md) — the account these hang off; sign-up steps 3 and 4 run after it
+- [Keep every exam](../feat-subject-library.md) — the list a class switch re-scopes
+- [Generate a draft exam](../feat-exam-generation.md) — does not yet know about classes
+
+## Making a class, telling it where it is, and switching to it
+
+### Sequence
+
+1. [«أقسامي» in the account panel](../cmp-fe-my-classes.md) — a name and a stream, one create at a time, in order. (A brand-new
+   account does the same thing on sign-up step 3 — [Sign-up steps 3 and 4](../cmp-fe-signup-classes.md).)
+2. [Class endpoints](../cmp-be-classes-api.md) — validates the stream against the programme corpus, inserts, logs
+   `class.created` → `201 {class: {id, name, stream, createdAt}}`
+3. [The class switcher](../cmp-fe-class-bar.md) — the app re-reads the class list and every class's position; the bar
+   appears as a new grid row. A class at week 0 shows its name alone
+4. [Where this class has reached](../cmp-fe-class-position.md) — selecting the class puts «أين وصل هذا القسم؟» on screen with a
+   picker bounded by that class's own programme → `PUT {rev, markedWeek}`
+5. [Progress endpoints](../cmp-be-progress-api.md) — one atomic compare-and-set that also stamps the programme identity
+   and inserts the document if it is the first write; logs `progress.write outcome:"win"` →
+   `200 {progress}` (and no `programme`)
+6. **Switching class** clears the desk — the open exam, the refine panel, the corrections — and
+   re-reads the list scoped to the new class
+7. [Subject endpoints and teacher identity](../cmp-be-subjects-api.md) — `GET /api/subjects?classId=…` filters **in memory** through the
+   legacy allow-list: this class's subjects **plus every subject stored before classes existed**
+8. [Saved exams list](../cmp-fe-subject-list.md) — the sidebar renders the scoped list under the selected tab
+
+```mermaid
+sequenceDiagram
+  participant FE
+  participant BE
+  participant DB
+  FE->>BE: POST /api/classes {name, stream}
+  BE->>DB: resolve stream -> current programme
+  BE->>DB: insert classes
+  BE-->>FE: 201 {class}
+  FE->>BE: GET /api/progress/:classId
+  BE-->>FE: 200 {progress: week 0 synthesized, programme}
+  FE->>BE: PUT /api/progress/:classId {rev, markedWeek}
+  BE->>DB: CAS on rev (upsert when rev = 0)
+  BE-->>FE: 200 {progress} | 409 conflict
+  FE->>BE: GET /api/subjects?classId=...
+  BE-->>FE: 200 {subjects: this class + legacy}
+```
+
+### What the switch keeps and what it drops
+
+Dropped: the open exam, the subject id, the refine panel, the corrections, the cached list.
+Kept: an exam that failed to save and is queued for retry. Dropping that on a tab click would
+be the silent loss the save queue exists to prevent, so it is a source comment as well as a
+test. Also not cleared: the current error and busy flags.
+
+**The switch is guarded by a monotonic ticket.** Two taps a render apart used to leave the last
+*resolution* winning rather than the last *intent*, so class A's list could render under class
+B's selected tab with the loading flag already false. A sequence number taken before the fetch
+now gates the list, the list error **and** the loading flag — the third is not bookkeeping: a
+superseded read clearing the flag is how a wrong screen stops looking busy. `teacher_required`
+is deliberately outside the ticket, because it must always reach the gate.
+
+### Failure modes
+
+- **A lost race on step 5** — the second writer gets `409 conflict`, the surface re-reads and
+  re-asks in Arabic, and the write is never resent. Both attempts leave a `progress.write` line;
+  the loser's carries the rev it believed in. Correlate with `tools/obs trace <correlationId>`.
+- **The class does not resolve** — `404 class_not_found`, byte-identical whether it never
+  existed, belongs to another teacher, is malformed, or is the uppercase spelling of a real one.
+- **The class list cannot be read** — no bar, no banner, nothing. A backend predating this slice
+  answers 404 to every class call, and the app must boot clean against it.
+- **The datastore is down** — `503 store_unavailable` on all four class and progress surfaces;
+  the position surface says so in Arabic and offers a retry, keeping the chosen week.
+
+### What this flow does not do
+
+A generated exam carries **no** `classId`, so step 7 shows it under every class. That is the
+current contract, not an oversight, and it is the first surprise a teacher meets here.
 
 ## Generate a draft exam
 
@@ -354,6 +516,9 @@ ever left holding a code they have already spent.
 Typing it back is forgiving: case does not matter and neither do the dashes, so
 `abcd efgh ijkl` works as well as `ABCD-EFGH-IJKL`.
 
+After the code, sign-up continues into two more screens — the teacher's classes and school,
+then where each class has reached. See [A teacher's classes, and where each one has reached](../feat-classes-progress.md).
+
 Before this, identity was invisible — the product minted a hidden id and kept it in
 the browser. It worked until the browser was cleared, and then every exam that teacher
 had ever made became unreachable. The documents survived; nothing could find them.
@@ -371,10 +536,19 @@ That is the failure this closes.
 ### Honest limits
 
 The id behind an account is still a **bearer value**: whoever holds it can read that
-teacher's exams. Accounts made it recoverable, not secret. There is no rate limiting,
-and sign-up answers differently for a taken address, so it is possible to test whether
-an address has an account. All three are accepted at the current milestone — two teacher
-friends trying the product — and none should survive contact with real users at scale.
+teacher's exams — and now their classes and where each one has reached. Accounts made it
+recoverable, not secret. It is accepted at the current milestone — two teacher friends
+trying the product — and should not survive contact with real users at scale.
+
+**Signing up for an address that already has an account no longer says so.** It answers
+exactly like a first sign-up: `201`, a working teacher id, and a recovery code that is a
+decoy. Nothing about the real account changes, and the duplicate simply creates no second
+one. The cost is that a teacher who types an address they already used is left holding a
+recovery code that cannot be redeemed, with nothing telling them why — and, if the browser
+was not already carrying a known id, a fresh empty workspace. Traded for closing a
+one-request way to test whether a colleague has an account.
+
+The auth routes are rate limited (`429`, with a retry-after); the class routes are not.
 
 ## Signing up, signing in, and getting back in
 
@@ -411,8 +585,8 @@ password does not, because pressing the button again would be a lie.
 
 | service | modules | components |
 |---|---|---|
-| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Claude Code CLI wrapper, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Exam generation capability, Exam plan skill, Exercise refinement capability, Generation endpoint, One writer at a time, One-correction skill, One-exercise skill, Per-exercise corrections, Progressive exam endpoint, Subject endpoints and teacher identity, The solution-sheet skill |
-| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, The correction pane and its printed sheet, The operator's console, The sign-in gate |
+| [teacher-be](../svc-teacher-be.md) | Admin and the auth boundary, Agent workspace, Class store, Claude Code CLI wrapper, Progress store, Exercise revision store, Correction store, Subject store, Teacher accounts store | Account endpoints, Admin surfaces and the privilege guard, CLI runner, Class and progress mutation log, Class endpoints, Exam generation capability, Exam plan skill, Exercise refinement capability, Generation endpoint, One writer at a time, One-correction skill, One-exercise skill, Per-exercise corrections, Progress endpoints, Progressive exam endpoint, Subject endpoints and teacher identity, The solution-sheet skill, The teacher's school |
+| [teacher-fe](../svc-teacher-fe.md) | Exam builder UI | Exam controls, Exam view, Refinement panel, Saved exams list, Sign-up steps 3 and 4, The class switcher, The correction pane and its printed sheet, The operator's console, The sign-in gate, Where this class has reached, «أقسامي» in the account panel |
 
 
 ## Map
@@ -421,11 +595,14 @@ password does not, because pressing the button again would be a lie.
 flowchart TD
   cmp_be_admin_api["cmp-be-admin-api"]
   cmp_be_auth_api["cmp-be-auth-api"]
+  cmp_be_classes_api["cmp-be-classes-api"]
   cmp_be_claude_runner["cmp-be-claude-runner"]
   cmp_be_corrections_endpoint["cmp-be-corrections-endpoint"]
   cmp_be_exams_endpoint["cmp-be-exams-endpoint"]
   cmp_be_generate_endpoint["cmp-be-generate-endpoint"]
   cmp_be_inflight["cmp-be-inflight"]
+  cmp_be_mutation_log["cmp-be-mutation-log"]
+  cmp_be_progress_api["cmp-be-progress-api"]
   cmp_be_skill_exam_plan["cmp-be-skill-exam-plan"]
   cmp_be_skill_exam_subject["cmp-be-skill-exam-subject"]
   cmp_be_skill_exercise_one["cmp-be-skill-exercise-one"]
@@ -433,14 +610,20 @@ flowchart TD
   cmp_be_skill_solution_one["cmp-be-skill-solution-one"]
   cmp_be_skill_solution_sheet["cmp-be-skill-solution-sheet"]
   cmp_be_subjects_api["cmp-be-subjects-api"]
+  cmp_be_teacher_school["cmp-be-teacher-school"]
   cmp_fe_admin_console["cmp-fe-admin-console"]
   cmp_fe_auth_panel["cmp-fe-auth-panel"]
+  cmp_fe_class_bar["cmp-fe-class-bar"]
+  cmp_fe_class_position["cmp-fe-class-position"]
   cmp_fe_controls["cmp-fe-controls"]
   cmp_fe_exam_view["cmp-fe-exam-view"]
+  cmp_fe_my_classes["cmp-fe-my-classes"]
   cmp_fe_refine["cmp-fe-refine"]
+  cmp_fe_signup_classes["cmp-fe-signup-classes"]
   cmp_fe_solution_view["cmp-fe-solution-view"]
   cmp_fe_subject_list["cmp-fe-subject-list"]
   feat_admin_console["feat-admin-console"]
+  feat_classes_progress["feat-classes-progress"]
   feat_exam_generation["feat-exam-generation"]
   feat_exam_print["feat-exam-print"]
   feat_exercise_history["feat-exercise-history"]
@@ -448,6 +631,7 @@ flowchart TD
   feat_solution_sheets["feat-solution-sheets"]
   feat_subject_library["feat-subject-library"]
   feat_teacher_accounts["feat-teacher-accounts"]
+  flow_class_position_and_switch["flow-class-position-and-switch"]
   flow_generate_correction["flow-generate-correction"]
   flow_generate_exam["flow-generate-exam"]
   flow_refine_exercise["flow-refine-exercise"]
@@ -455,7 +639,9 @@ flowchart TD
   flow_sign_in_and_recover["flow-sign-in-and-recover"]
   mod_be_admin["mod-be-admin"]
   mod_be_agent_workspace["mod-be-agent-workspace"]
+  mod_be_class_store["mod-be-class-store"]
   mod_be_claude_wrapper["mod-be-claude-wrapper"]
+  mod_be_progress_store["mod-be-progress-store"]
   mod_be_revision_store["mod-be-revision-store"]
   mod_be_solution_store["mod-be-solution-store"]
   mod_be_subject_store["mod-be-subject-store"]
@@ -468,6 +654,10 @@ flowchart TD
   cmp_be_admin_api -->|depends_on| mod_be_teacher_store
   cmp_be_auth_api -->|depends_on| mod_be_teacher_store
   cmp_be_auth_api -.-> mod_be_teacher_store
+  cmp_be_classes_api -->|depends_on| cmp_be_mutation_log
+  cmp_be_classes_api -->|depends_on| mod_be_class_store
+  cmp_be_classes_api -.-> mod_be_class_store
+  cmp_be_classes_api -->|depends_on| mod_be_progress_store
   cmp_be_claude_runner -.-> mod_be_claude_wrapper
   cmp_be_corrections_endpoint -->|depends_on| cmp_be_claude_runner
   cmp_be_corrections_endpoint -->|depends_on| cmp_be_inflight
@@ -483,22 +673,42 @@ flowchart TD
   cmp_be_generate_endpoint -->|depends_on| cmp_be_claude_runner
   cmp_be_generate_endpoint -.-> mod_be_claude_wrapper
   cmp_be_inflight -.-> mod_be_claude_wrapper
+  cmp_be_mutation_log -.-> mod_be_progress_store
+  cmp_be_progress_api -->|depends_on| cmp_be_mutation_log
+  cmp_be_progress_api -->|depends_on| mod_be_class_store
+  cmp_be_progress_api -->|depends_on| mod_be_progress_store
+  cmp_be_progress_api -.-> mod_be_progress_store
   cmp_be_skill_exam_plan -.-> mod_be_agent_workspace
   cmp_be_skill_exam_subject -.-> mod_be_agent_workspace
   cmp_be_skill_exercise_one -.-> mod_be_agent_workspace
   cmp_be_skill_refine_exercise -.-> mod_be_agent_workspace
   cmp_be_skill_solution_one -.-> mod_be_agent_workspace
   cmp_be_skill_solution_sheet -.-> mod_be_agent_workspace
+  cmp_be_subjects_api -->|depends_on| mod_be_class_store
   cmp_be_subjects_api -->|depends_on| mod_be_subject_store
   cmp_be_subjects_api -.-> mod_be_subject_store
+  cmp_be_teacher_school -->|depends_on| mod_be_teacher_store
+  cmp_be_teacher_school -.-> mod_be_teacher_store
   cmp_fe_admin_console -->|depends_on| cmp_be_admin_api
   cmp_fe_admin_console -.-> mod_fe_exam_builder
   cmp_fe_auth_panel -->|depends_on| cmp_be_auth_api
   cmp_fe_auth_panel -.-> mod_fe_exam_builder
+  cmp_fe_class_bar -->|depends_on| cmp_be_classes_api
+  cmp_fe_class_bar -->|depends_on| cmp_be_progress_api
+  cmp_fe_class_bar -.-> mod_fe_exam_builder
+  cmp_fe_class_position -->|depends_on| cmp_be_progress_api
+  cmp_fe_class_position -.-> mod_fe_exam_builder
   cmp_fe_controls -.-> mod_fe_exam_builder
   cmp_fe_exam_view -.-> mod_fe_exam_builder
+  cmp_fe_my_classes -->|depends_on| cmp_be_classes_api
+  cmp_fe_my_classes -->|depends_on| cmp_be_progress_api
+  cmp_fe_my_classes -.-> mod_fe_exam_builder
   cmp_fe_refine -->|depends_on| cmp_fe_exam_view
   cmp_fe_refine -.-> mod_fe_exam_builder
+  cmp_fe_signup_classes -->|depends_on| cmp_be_classes_api
+  cmp_fe_signup_classes -->|depends_on| cmp_be_teacher_school
+  cmp_fe_signup_classes -->|depends_on| cmp_fe_class_position
+  cmp_fe_signup_classes -.-> mod_fe_exam_builder
   cmp_fe_solution_view -->|depends_on| mod_be_solution_store
   cmp_fe_solution_view -.-> mod_fe_exam_builder
   cmp_fe_subject_list -.-> mod_fe_exam_builder
@@ -506,6 +716,16 @@ flowchart TD
   feat_admin_console -->|realized_by| cmp_fe_admin_console
   feat_admin_console -->|realized_by| mod_be_teacher_store
   feat_admin_console -.-> prod_exam_builder
+  feat_classes_progress -->|realized_by| cmp_be_classes_api
+  feat_classes_progress -->|realized_by| cmp_be_mutation_log
+  feat_classes_progress -->|realized_by| cmp_be_progress_api
+  feat_classes_progress -->|realized_by| cmp_be_teacher_school
+  feat_classes_progress -->|realized_by| cmp_fe_class_bar
+  feat_classes_progress -->|realized_by| cmp_fe_class_position
+  feat_classes_progress -->|realized_by| cmp_fe_my_classes
+  feat_classes_progress -->|realized_by| cmp_fe_signup_classes
+  feat_classes_progress -->|realized_by| flow_class_position_and_switch
+  feat_classes_progress -.-> prod_exam_builder
   feat_exam_generation -->|realized_by| cmp_be_claude_runner
   feat_exam_generation -->|realized_by| cmp_be_exams_endpoint
   feat_exam_generation -->|realized_by| cmp_be_generate_endpoint
@@ -548,6 +768,13 @@ flowchart TD
   feat_teacher_accounts -->|realized_by| flow_sign_in_and_recover
   feat_teacher_accounts -->|realized_by| mod_be_teacher_store
   feat_teacher_accounts -.-> prod_exam_builder
+  flow_class_position_and_switch -->|step| cmp_be_classes_api
+  flow_class_position_and_switch -->|step| cmp_be_progress_api
+  flow_class_position_and_switch -->|step| cmp_be_subjects_api
+  flow_class_position_and_switch -->|step| cmp_fe_class_bar
+  flow_class_position_and_switch -->|step| cmp_fe_class_position
+  flow_class_position_and_switch -->|step| cmp_fe_my_classes
+  flow_class_position_and_switch -->|step| cmp_fe_subject_list
   flow_generate_correction -->|step| cmp_be_corrections_endpoint
   flow_generate_correction -->|step| cmp_be_inflight
   flow_generate_correction -->|step| cmp_be_skill_solution_one
@@ -576,7 +803,9 @@ flowchart TD
   flow_sign_in_and_recover -->|step| mod_be_teacher_store
   mod_be_admin -.-> svc_teacher_be
   mod_be_agent_workspace -.-> svc_teacher_be
+  mod_be_class_store -.-> svc_teacher_be
   mod_be_claude_wrapper -.-> svc_teacher_be
+  mod_be_progress_store -.-> svc_teacher_be
   mod_be_revision_store -.-> svc_teacher_be
   mod_be_solution_store -.-> svc_teacher_be
   mod_be_subject_store -.-> svc_teacher_be
@@ -588,6 +817,6 @@ flowchart TD
   classDef be fill:#C0DD97,stroke:#3B6D11,color:#173404
   classDef ai fill:#CECBF6,stroke:#534AB7,color:#26215C
   classDef neutral fill:#ECEAE3,stroke:#888780,color:#2C2C2A
-  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_claude_runner,cmp_be_corrections_endpoint,cmp_be_exams_endpoint,cmp_be_generate_endpoint,cmp_be_inflight,cmp_be_skill_exam_plan,cmp_be_skill_exam_subject,cmp_be_skill_exercise_one,cmp_be_skill_refine_exercise,cmp_be_skill_solution_one,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_refine,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_claude_wrapper,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
+  class cmp_be_admin_api,cmp_be_auth_api,cmp_be_classes_api,cmp_be_claude_runner,cmp_be_corrections_endpoint,cmp_be_exams_endpoint,cmp_be_generate_endpoint,cmp_be_inflight,cmp_be_mutation_log,cmp_be_progress_api,cmp_be_skill_exam_plan,cmp_be_skill_exam_subject,cmp_be_skill_exercise_one,cmp_be_skill_refine_exercise,cmp_be_skill_solution_one,cmp_be_skill_solution_sheet,cmp_be_subjects_api,cmp_be_teacher_school,cmp_fe_admin_console,cmp_fe_auth_panel,cmp_fe_class_bar,cmp_fe_class_position,cmp_fe_controls,cmp_fe_exam_view,cmp_fe_my_classes,cmp_fe_refine,cmp_fe_signup_classes,cmp_fe_solution_view,cmp_fe_subject_list,feat_admin_console,feat_classes_progress,feat_exam_generation,feat_exam_print,feat_exercise_history,feat_exercise_refinement,feat_solution_sheets,feat_subject_library,feat_teacher_accounts,flow_class_position_and_switch,flow_generate_correction,flow_generate_exam,flow_refine_exercise,flow_save_and_reopen,flow_sign_in_and_recover,mod_be_admin,mod_be_agent_workspace,mod_be_class_store,mod_be_claude_wrapper,mod_be_progress_store,mod_be_revision_store,mod_be_solution_store,mod_be_subject_store,mod_be_teacher_store,mod_fe_exam_builder,prod_exam_builder,svc_teacher_be,svc_teacher_fe neutral
 ```
 

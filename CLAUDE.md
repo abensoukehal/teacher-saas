@@ -43,7 +43,9 @@ this file is stale.
 > account with a recovery code, keeps every superseded exercise, and can be told what an
 > exam cost to produce (`persistence-gaps`). Roadmap item 1 — solution sheets with the grading
 > scale — now ships (`solution-sheets`), and `accounts-hardening` added roles, an admin
-> console with per-exam KPIs, and bounds on the auth surface. Sections still marked ★ PENDING are stubs on purpose — they
+> console with per-exam KPIs, and bounds on the auth surface. As of 2026-08-11
+> (`classes-progress`, slice 1 of 7) **a teacher has classes and each class has its own
+> position in the official programme** — the spine every later prep surface reads. Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -54,7 +56,7 @@ check a design against this table before building it.
 
 | Constraint | What it rules out |
 |---|---|
-| **Arabic only, RTL throughout** | Any LTR-first layout, any English UI string, any component that breaks under `dir="rtl"`. Not a later i18n pass — it is the only locale. |
+| **Arabic only, RTL throughout** | Any LTR-first layout, any English UI string, any component that breaks under `dir="rtl"`. Not a later i18n pass — it is the only locale. **`fe` renders `be`'s `error.message` to the teacher**, so the constraint binds the backend's strings too. Every `message:` literal in `be/src` is Arabic today; what is still reachable in English is the five `POST /api/subjects` body-validation messages, `exercise "…" is not in this subject`, and everything forwarded through `err.message` from the Mongo driver or the Claude CLI — that last family needs mapping by `error.type`, not a string edit. `fe`'s `teacherMessage()` deny-list is the seam that stops the two known-foreign families. |
 | **Math renders via KaTeX** | Non-negotiable for equations, fractions and arrays. Plain-text or image math is not acceptable output. |
 | **LaTeX is fully hidden** | Teachers do not know what LaTeX is and must never see it. No LaTeX in an input, an editable field, an error message or an export. Refinement is natural-language only — "make the numbers smaller", never `\frac{}{}`. |
 | **Inside the official Algerian curriculum** | Generation must stay on-syllabus. Not locked to exact textbook wording, but off-syllabus content is a correctness bug, not a style issue. The programme reference lives at `teacher-be/agent/curriculum/<file>.md` and `exam-subject` reads it. **Only شعبة الرياضيات has a file today**; every other stream (علوم تجريبية · تقني رياضي · تسيير واقتصاد) has none, and the skill is told to say so in `meta.assumptions` and stay with content common to all streams. The file's topic *names* are authoritative — they are the UI's own list — but its per-topic notes are marked ✎ as inference, not a transcription of the official programme. **Known gap (2026-08-09): the UI's topic list is missing two units of the programme — الحساب التكاملي and الأعداد والحساب — for the very stream it serves.** See the brief §6b. |
@@ -200,7 +202,7 @@ way to tell the products apart. With no `origin`, it falls back to the directory
                                                     │                  ▼
                                                     │      ┌─────────────────────┐
                                                     │      │ teacher_saas        │
-                                                    │      │  subjects — 1 coll. │
+                                                    │      │  8 collections      │
                                                     │      └─────────────────────┘
                                                     │ spawns, headless
                                                     │ claude -p --output-format json
@@ -256,6 +258,11 @@ wrapper that does the generating.
 | `src/routes/corrections.ts` | per-exercise corrections; stores each as it lands |
 | `src/inflight.ts` | **one writer per slot / exam / correction batch**, shared by all three |
 | `src/teacher.ts` | issues + resolves the opaque teacher id |
+| `src/store/classes.ts` | the `classes` collection — create, list, `getOwned` |
+| `src/store/progress.ts` | the `progress` collection — the lazy read and the one-operation CAS |
+| `src/routes/classes.ts` | `/api/classes`, behind `requireTeacher` on the **prefix** |
+| `src/routes/progress.ts` | `/api/progress/:classId` — the one 404, and the bounds |
+| `src/mutationlog.ts` | one structured line per class/progress write, **including CAS losses** |
 | `agent/.claude/skills/<name>/SKILL.md` | **the capabilities themselves** — under `agent/`, NOT the repo root: `config.ts` points the CLI at `<repo>/agent` and `claude/skills.ts` lists `<cwd>/.claude/skills`. Adding a directory there IS the registration; `/api/skills` is that listing. |
 
 **API surface.** `/health` (reports the CLI's version, whether it authenticates,
@@ -264,7 +271,13 @@ queue depth, the datastore, **and the fan-out budget**) · `/api` · `/api/skill
 answers, then fills each exercise concurrently) ·
 `/api/teacher` (mints **and records** an anonymous row) ·
 `/api/auth/signup` · `/api/auth/signin` · `/api/auth/recover` ·
-`/api/subjects` (create · list · get · replace one exercise ·
+**`PUT /api/teacher/school`** (behind `requireTeacher`, not an auth route; write-only) ·
+**`/api/classes`** (`POST` create · `GET` list, createdAt ASCENDING — no update, no delete) ·
+**`/api/progress/:classId`** (`GET` — synthesizes week 0 for a class never written to, and
+carries a live `programme {docKey, edition, totalWeeks}`; `PUT` — the compare-and-set, whose
+200 body carries **no** `programme`) ·
+`/api/subjects` (create — takes an optional `classId` · list, filterable with `?classId=` ·
+get · replace one exercise ·
 `GET /subjects/:id/exercises/:exerciseId/revisions` ·
 **`POST /subjects/:id/exercises/:exerciseId/regenerate`** (rebuild ONE exercise in place) ·
 `POST`/`GET /subjects/:id/solutions` ·
@@ -326,13 +339,37 @@ is process-local, and any field a restart could outlive would be a lie.
 **Failure classification:** `503 claude_auth` (a human must re-login — not retryable) ·
 `503 claude_not_installed` · `504 claude_timeout` · `502 claude_exit` ·
 **`503 store_unavailable` (datastore down — RETRYABLE)** · `401 teacher_required` ·
-`401 invalid_credentials` · `401 invalid_recovery` · `409 email_taken` ·
-`409 conflict` (the same exercise is being refined twice at once) ·
+`401 invalid_credentials` · `401 invalid_recovery` ·
+`409 conflict` (the same exercise is being refined twice at once — **and now also a lost
+progress compare-and-set**) ·
+**`404 class_not_found`** (the class is absent, another teacher's, malformed, or the
+uppercase spelling of a real one — one byte-identical body across all four, on
+`GET`/`PUT /api/progress/:classId` and `POST /api/subjects`) ·
+`404 not_found` (the catch-all — **now Arabic, and it now carries a `correlationId` in the
+body**, which is where `fe` reads it) ·
 `403 forbidden` (a real teacher who is not an admin — distinct from 401) ·
 `429 rate_limited` (auth routes only, retryable) ·
 `400 invalid_request` (includes a malformed body) · `413 payload_too_large` ·
 `500` for this service's own bugs. Note that `claude_auth` and `store_unavailable` share a
 status and mean opposite things: callers branch on `error.type`, never on the code.
+
+> **`409 email_taken` is gone, and its absence is the security decision.** A duplicate-email
+> sign-up now answers **`201` with a brand-new working `teacherId` and a decoy recovery
+> code** — indistinguishable from a first sign-up. The old 409 was a clean one-request
+> enumeration oracle (one call per address, unambiguous) that undid all the care taken to
+> make sign-*in* indistinguishable. Three things make the replacement hold: the id must be a
+> **working** one, or the caller could probe with it and read the answer off a 401 from
+> `requireTeacher`; the duplicate path burns comparable hashing work, so the clock does not
+> answer what the status no longer does; and the code **cannot** be anything but a decoy,
+> because recovery looks an account up by email and the row it belongs to has none. The real
+> account is untouched, and an operator still sees `auth.signup.duplicate` (no address, no
+> id). `fe` still carries a dead `email_taken` key in its `KIND` table. The cost, recorded:
+> a teacher who reuses their own address is left holding a code that cannot be redeemed,
+> with nothing telling them why.
+>
+> **`fe` cannot map three types `be` emits** — `rate_limited` (429), `payload_too_large`
+> (413) and `claude_bad_output` (502) all fall to the default *retryable backend failure*.
+> For 413 that is actively wrong advice: a too-large body never succeeds on retry.
 
 **The correlation-id middleware runs BEFORE the body parser.** It used to run after, so a
 malformed body short-circuited into the error handler with no `correlationId` — the one
@@ -400,8 +437,9 @@ lanes collision-free. 5000 and 7000 are unusable on macOS (AirPlay squats both).
 
 ## Data model
 
-**MongoDB, database `teacher_saas`, six collections: `subjects`, `teachers`,
-`exercise_revisions`, `solutions`, `programmes`, `programme_revisions`.** Chosen because Mongo
+**MongoDB, database `teacher_saas`, eight collections: `subjects`, `teachers`,
+`exercise_revisions`, `solutions`, `programmes`, `programme_revisions`, `classes`,
+`progress`.** Chosen because Mongo
 already runs as declared shared infra on this machine and `services.sh` had already
 reserved that db name — and because an exam subject *is* a JSON document, so the stored
 shape and the wire shape are the same object with no mapping layer to drift.
@@ -416,6 +454,14 @@ subjects
                         absent must never read as pending or they all become half-finished.
                         Both stacks read it through an allow-list, never `?? "ready"`.
   controls          object | null
+  classId           string · 24 hex (OPTIONAL) ← the class this exam was made for.
+                      ← ABSENT MEANS LEGACY, and legacy belongs to ALL of a teacher's
+                        classes, not to none: it was written before the question existed.
+                        Read only through `classOf`, an ALLOW-LIST — absent, null, a
+                        number, an object, an array, a boolean and "" all degrade to
+                        legacy. `create` SPREADS it in, so a subject made without one has
+                        the same on-disk shape as every subject that predates classes.
+                        NOTHING SETS IT YET: generation stores no classId.
   genCorrelationId  string | null            ← the /api/generate run that produced it;
                                                the join key into run-log.jsonl's costUsd
   rev               int (optional)           ← optimistic-concurrency counter, $inc-ed on
@@ -433,6 +479,12 @@ teachers                                     ← accounts ADOPT the opaque teach
   recoveryHash   string | null               ← scrypt over the recovery code
   recoveryUsedAt Date | null                 ← WHEN one was last consumed (informational)
   role           "teacher" | "admin"         ← absent reads as teacher; sign-up NEVER sets it
+  school         string | null (OPTIONAL)    ← «سيظهر على الموضوع المطبوع». Absent reads as
+                                               null, same discipline as role. WRITE-ONLY —
+                                               PUT /api/teacher/school sets it and NO route
+                                               returns it. Only {null, non-empty trimmed
+                                               string} are ever stored (the write path
+                                               normalises), so a reader has two cases.
   createdAt · updatedAt  Date
 
 indexes: { email: 1 } unique PARTIAL ($type:"string")  ← partial so many anonymous rows
@@ -460,6 +512,44 @@ solutions                                    ← one CURRENT correction per exer
   createdAt · updatedAt  Date
 
 index: { subjectId: 1, exerciseId: 1 } unique
+
+classes                                      ← the classes a teacher teaches. THE SPINE.
+  _id            ObjectId                    ← 24 LOWERCASE hex on the wire; uppercase is
+                                               refused at the route, before the store,
+                                               because ObjectId.isValid accepts it
+  teacherId      string · 32 hex             ← denormalised: ownership scoped IN the query
+  name           string                      ← trimmed, 1..80 chars (measured AFTER trim)
+  stream         string                      ← validated against the CORPUS at create time,
+                                               never against a union in TypeScript
+  createdAt · updatedAt  Date
+
+index: { teacherId: 1, createdAt: 1 }        ← ASCENDING, and that IS the tab order in the
+                                               class bar. Newest-first would reorder the
+                                               switcher under the teacher's finger.
+
+wire shape: { id, name, stream, createdAt } — four keys, built key by key. No teacherId.
+
+progress                                     ← where a class has reached. ONE DOC PER CLASS.
+  classId                    string · 24 hex ← THE key. Progress belongs to a CLASS.
+  teacherId                  string · 32 hex ← denormalised: ownership scoped IN the query
+  markedWeek                 int             ← 0 = not started. Upper bound is the class's
+                                               OWN programme totals.weeks, never the
+                                               constant 27
+  entries                    [ { week, status, note?, completedAt? } ]
+                              ↑ week is 1-BASED while markedWeek is 0-based — 0 is "not
+                                started" and there is no week 0 to annotate
+                              ↑ status ∈ planned|done|skipped, an ALLOW-LIST (uppercase
+                                DONE is refused, not folded)
+                              ↑ completedAt is stamped by the SERVER and only for `done`;
+                                a client-supplied value is accepted on the key and DISCARDED
+  rev                        int             ← the compare-and-set token. The insert writes
+                                               1, so NO stored document ever carries rev 0
+  programmeDocKey            string          ← IDENTITY, $ifNull-stamped ONCE
+  programmeEdition           string          ← IDENTITY, $ifNull-stamped ONCE
+  programmeTranscriptionRev  int             ← PROVENANCE ONLY, never compared
+  createdAt · updatedAt      Date
+
+indexes: { classId: 1 } UNIQUE · { teacherId: 1 }
 ```
 
 ```
@@ -539,6 +629,46 @@ programme_revisions           ← append-only, mirroring exercise_revisions
   independent human re-read and on sampling. Never quote a green as a fidelity certificate.
 - **`solutions` upserts** — one current correction per exercise. A history of corrections is
   deliberately out of scope; the exam's history is not.
+- **Classes are their own collection, not an array on `teachers`.** Both `progress.classId`
+  and `subjects.classId` must be validated with one `findOne({_id, teacherId})`; an array
+  element has no id a query can match, so validating one would mean reading the credential
+  row and scanning in application code — the post-hoc ownership check every store refuses.
+  And `teachers` holds both scrypt hashes and is the row `requireAdmin` reads: a weekly class
+  edit must not be a write against that document.
+- **The progress document is LAZY, and week 0 is a state.** A class is created by one insert
+  into `classes` and nothing else — no cross-collection two-step that can half-fail. A class
+  with no progress document IS "not started", so `GET` synthesizes
+  `{markedWeek: 0, entries: [], rev: 0}` with the identity fields null and **the same key set
+  a stored document produces**. A shape that gained keys after the first write would make `fe`
+  branch on which of two it got, and the branch it forgot would be the empty one.
+- **The progress write is one atomic compare-and-set, and there is NO retry.** The CAS, the
+  entry upsert, the `$ifNull` identity stamp and the lazy insert are a single
+  aggregation-pipeline update, because read-modify-write opens the exact window the CAS
+  exists to refuse. `rev === 0` runs with `upsert: true` (no stored doc carries 0, so the
+  filter cannot match; a duplicate key on `{classId:1}` IS a CAS loss and is mapped to one);
+  `rev >= 1` runs with `upsert: false`, or a caller naming a rev for a class with no document
+  would seed that rev into a conjured one. Unlike `replaceExercise` — which merges ONE
+  exercise and may safely rebase five times — a progress write is whole-state intent about
+  what the teacher was LOOKING AT. If `rev` moved, that view is gone and only they can decide
+  again. The loser gets `409 conflict` immediately.
+- **`inflight.ts` is deliberately NOT used for progress.** It guards ~110 s agent loops from
+  duplicate work; a progress PUT measures 4–13 ms.
+- **`entries` is EMBEDDED, unlike `exercise_revisions`.** Bounded at one row per programme
+  week, upserted BY WEEK, and wanted by every read of a position. Revisions are unbounded and
+  wanted by almost nobody. Same reasoning, opposite answer, because the shapes are opposite.
+  Never rebuilt from the request — a skipped week's note must survive every later write.
+- **The programme identity is stamped once and never rewritten.** A later write can never
+  re-point a class at another programme; re-pointing is a future explicit surface, not a side
+  effect of recording a week. `transcriptionRev` rides the wire only so the key set never
+  changes, and nothing compares on it — that is the two-version-axes rule above.
+- **`markedWeek`'s ceiling comes from the class's own programme**, read live through
+  `getProgrammeForStream`. Every corpus document says 27 today, which is exactly what would
+  let a hardcoded 27 survive until the first one that doesn't. Note this is a **code fact,
+  not a tested one** on `be`: a mutant hardcoding 27 survives all 411 backend tests, because
+  the oracle reads `totalWeeks` off a response that always says 27. `fe`'s twin mutant IS
+  killed — its fixtures vary the ceiling.
+- **A class is never deleted, renamed or archived.** No route, no field, no store function.
+  The design has no remove affordance on any screen.
 
 **Accounts adopt the opaque id; they did not replace it.** Sign-in returns the *same*
 32-hex `teacherId` the browser already sends as `x-teacher-id`, so no subject document was
@@ -549,10 +679,13 @@ predated the registry.
 
 ⚠ **The teacherId is still a BEARER value.** Accounts made it *recoverable*, not secret.
 Turning it into a rotating, expiring session is a separate job, and until then whoever holds
-an id reads that teacher's exams. There is also **no rate limiting**, and `POST
-/api/auth/signup` returns `409 email_taken`, which is an account-enumeration oracle by
-design of the error contract. Accepted for the two-teacher milestone; recorded so it is
-inherited knowingly.
+an id reads that teacher's exams — and now their classes and where each class has reached.
+The auth routes are rate limited (`429`, with a `retryAfterSeconds`); `POST /api/classes` and
+`PUT /api/teacher/school` are not. **And bearer ids reach the log**: the generic request
+logger writes URL path segments, so `GET /api/admin/teachers/<32hex>/subjects` puts a whole
+id in it. The mutation lines and the auth lines are clean — 8-char `teacherIdPrefix`, one key
+name across the service — but "no full 32-hex id anywhere in the log" is not true of the log
+as a whole. Accepted for the two-teacher milestone; recorded so it is inherited knowingly.
 
 ## Cost is not money, and throughput is the real constraint
 
@@ -615,6 +748,11 @@ plus `{op, subjectId}` link lines. It holds no teacher content and must not star
 | ~~Exercise revision history~~ | **CLOSED.** `exercise_revisions`, append-only. Restore reuses `PUT`, so it is itself a supersession — history grows, nothing is destroyed. |
 | ~~Generation cost per subject~~ | **CLOSED.** `subjects.genCorrelationId` joins to `run-log.jsonl`'s `costUsd`. `/api/generate` needed no change: it already returned the envelope. |
 | ~~Failed saves~~ | **CLOSED.** A retryable failure queues to `teacher.pending.v1` and is **offered** on next load, never replayed silently — `create` is insert-only, so a silent double replay would make two exams. |
+| ~~A teacher's classes~~ | **CLOSED.** `classes`, one document per class, owner-scoped in the query. Declared at sign-up (step 3) or from «أقسامي». No update, delete or archive — a class made by mistake is permanent, and an invisible-only name (a pasted RLM/ZWSP) passes `trim()` on both stacks and makes a permanently blank tab. |
+| ~~Where a class has reached~~ | **CLOSED.** `progress`, one lazy document per class, compare-and-set on `rev`. Per-week `entries` are stored and validated but **no client writes one yet** — slice 1 sets `markedWeek` only. |
+| ~~The teacher's school~~ | **HALF closed.** Stored on `teachers` by `PUT /api/teacher/school`, and **read by nothing** — no route returns it, so «أقسامي» cannot show it. End to end it reads as "the setting does not work". The print sheet is what will read it. |
+| **A generated exam belongs to no class** | `subjects.classId` exists and generation never sets it, so every exam is legacy and appears under **every** class. Deliberate — tagging generation is a later slice — and it is the sharpest teacher-facing surprise the class layer ships. |
+| **A class's own stream list** | `fe` mirrors the six corpus streams by hand in `lib/classdraft.ts`; there is no `GET /api/streams`. Proven a live drift hazard: with a synthetic seventh-stream programme, `be` accepted a class the picker could not offer. Defensible only because `be` refuses an unknown value, so drift fails loudly. |
 | **Signing IN does not merge an anonymous session** | Open by design: adopting on sign-in would re-point subject documents. The displaced id is kept in `teacher.previous.v1` and the teacher is told in Arabic — the loss is visible and recoverable, not silent. |
 | **Accounts, billing, credits** | Accounts exist; billing and credits do not. |
 | **Backups / a deploy target** | Still nothing. See Deployments — and note the store now holds **credentials**, not just exam drafts. |
