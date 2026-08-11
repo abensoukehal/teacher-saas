@@ -103,7 +103,7 @@
           "stack": "fe"
         },
         "fe-6": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "fe-1",
@@ -118,7 +118,7 @@
           "stack": "fe"
         },
         "be-3": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening"
         }
       }
