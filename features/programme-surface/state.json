@@ -1,0 +1,25 @@
+{
+  "slug": "programme-surface",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-11",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "cffc24eb63db4957"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "25041a6fd6c28ee2"
+          }
+        }
+      },
+      "subissues": {}
+    }
+  }
+}
