@@ -25,7 +25,7 @@
           "tag": "happy-path"
         },
         "be-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "be-1"

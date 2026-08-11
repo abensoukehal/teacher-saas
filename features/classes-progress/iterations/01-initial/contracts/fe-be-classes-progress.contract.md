@@ -130,7 +130,8 @@ speculative. Additive later.
 ```json
 { "progress": {
     "classId": "<24 hex>", "markedWeek": 0, "entries": [], "rev": 0,
-    "programmeDocKey": null, "programmeEdition": null, "updatedAt": null },
+    "programmeDocKey": null, "programmeEdition": null,
+    "programmeTranscriptionRev": null, "updatedAt": null },
   "programme": { "docKey": "tadarroj-3as-math", "edition": "2022-09",
                  "totalWeeks": 27 },
   "correlationId": "…" }
@@ -146,6 +147,11 @@ speculative. Additive later.
   constant, even though all five documents say 27 today (SEED risk flag).
 - A stored document is returned verbatim in `progress` (fields as in §1 plus
   `markedWeek`, `entries`, `rev`, `updatedAt`).
+- **The key set is identical in both shapes**, synthesized and stored — including
+  `programmeTranscriptionRev`, which is `null` until the first write stamps it. A key that
+  appeared only after the first write would make `fe` branch on which of two shapes it
+  got, and the branch it forgot would be the empty one. `fe` types it optional-nullable
+  and never reads it for a decision (§1: provenance only, never compared).
 - If the class's stream resolves to no current programme → `500` (the service's own
   invariant broken: §2 made that unrepresentable at create; reaching it means the corpus
   was mutated underneath us).

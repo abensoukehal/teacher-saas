@@ -185,7 +185,7 @@ kind: sub-issue
 id: be-2
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-1]
 estimate: L
 ---
@@ -193,7 +193,7 @@ estimate: L
 
 ### be-2 — progress: the read synthesizes, the write compare-and-sets
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** Each class gets its own position: `GET` answers even before anything was
 written (week 0 IS a state), `PUT` is a CAS on `rev` whose loser gets an immediate
