@@ -162,3 +162,12 @@ reach it. Re-run on a quiet host: 313/313, the same as the pre-flight baseline.
 - **`ProgressEntryWrite` has no `note`.** Notes are display-only this slice
   (contract §0). Whoever adds authoring adds the key here, and `saveProgress`'s body
   type follows for free.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- Types re-read against the live wire (key sets probed with curl): faithful to contract §2, with one **latent divergence recorded as debt**: `be` types `emphasisLegend` as `| null` and `unitId` as `| null`; this module types both non-null. All five corpus documents carry a legend and no week has a null unit today, so the divergence is unreachable — but a legend-less document would crash `legend.text` at two call sites (WeekCard/Tracker flag `title`), not degrade. Contract §2's example shape is silent on null; whoever meets that document first should widen here, not branch there.
+- Composed mutation pass: `percent`'s precision (via fe-2's consumer) and the run derivation held; the `DIVERGENT_TOTALS` synthetic is doing real work (it is the only thing separating `totals.hours` mutants on every real document).
+- The self-recorded assumptions (no sort in `deriveRuns`, float rounding deferred, no `note` key) all held up under the composed read.

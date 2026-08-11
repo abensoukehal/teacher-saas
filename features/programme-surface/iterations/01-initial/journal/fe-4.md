@@ -229,3 +229,13 @@ appear anywhere», not «the container is hidden».
   attract red is `.tracker__tag` on «مُتخطّى»; it must not have it.
 - **One SEED figure is stale and was not corrected** — «week 6 (1 row)» (see pre-flight).
   The measurement it supports is unaffected; correcting a locked SEED is not this Delta.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- The 409 drill re-run independently at review time: a curl PUT moved the class behind the tab, «تمّ ✓» on the stale band → **one** notice, inside the losing band only, fresh position re-rendered across bands/bar/rail/hours, band count of PUTs on the wire: exactly one per tap, one GET per conflict (network log verified). My composed mutant removing the notice's row-lock (`notice={notice}` unfiltered) died.
+- The last-week edge probed live: «أنهيت» at W=T=27 → 200, position stays, entry records, tag reads «الأسبوع الحالي» — the documented M12 decision behaves as pinned.
+- One composed observation, contract-conformant but worth knowing: after a re-position BACKWARDS, entries ahead of the new position keep their «منجز»/«مُتخطّى» tags (probed: marked 5, weeks 7 and 27 read «منجز»). Contract §0's vocabulary conditions entry-status on nothing, and nothing is deleted — truthful, but the first teacher to re-position back will see "done" weeks in their future. A copy question for a later slice, not a defect.
+- Duplication debt (with WeekCard): `Field`, `pageLabel`, `isFlagged`, `hoursTo` and the conflict sentence exist twice, near-verbatim. A /distill candidate — extraction is mechanical and the oracles pin behavior, not file layout.

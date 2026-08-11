@@ -172,3 +172,15 @@ No field outside the whitelist was needed · the 404 was made byte-identical wit
 UTF-8 bytes. Two streams, one document, byte-identical answers — the multikey match working.
 Timings are end-to-end from a Node client on the same host and include process scheduling;
 they are not the 1.06 ms `findOne`+stringify figure SEED §2 measured in isolation.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- 404 parity re-probed live across all four variants (absent / uppercase / short / non-hex) on BOTH routes: byte-identical bodies, 404 every time. A one-byte mutant in `notFound()`'s message was planted and the gate went RED — the byte-compare discriminates.
+- Whitelist prosecuted: a `transcriptionRev` passthrough planted in `toProgrammeRecord` → gate RED (key-set equality fires). Envelope, programme, units/weeks/rows key sets re-verified live: exactly the contract §2 sets.
+- ETag re-verified live: stable across requests, `304` + zero bytes for **both** curl and node fetch — the two-cause fix holds for the client class that matters.
+- One **equivalent mutant** found: deleting this route's own `requireTeacher` changes nothing observable, because `classesRouter`'s prefix guard (`classes.ts:31`) already covers `/api/classes/:classId/programme`. Verified live (still 401 with the guard commented out). The belt-and-braces line is fine as defense against mount reordering, but no oracle can ever kill it — do not mistake its survival for coverage.
+- **Stale prose**: `store/programmes.ts:1141`'s projection comment still describes `\square` as "escalated and parked". The corpus was corrected under this slice; the code is right, the paragraph is wrong. One-line prose fix for /document.
+- The carried-out items (contract §0's ETag sentence wrong twice over; the promotion pin being 5 clauses not 1; SEED's stale 38,775 B) are accurate and belong at seal.

@@ -328,3 +328,12 @@ reason:
   > **Overtaken** — the escalation was closed at the corpus, not parked, and the clause
   > that pinned the boxes was replaced. The half that mattered here (the card knows
   > neither spelling) survives and is now stricter. See "Supersession" above.
+
+## review
+
+**Verdict: approve.** The WF-65 supersession was re-read with fresh eyes and judged **legitimate, not regression-masking**.
+
+Attack log (cross-model, prosecution):
+- The supersession's evidence chain holds: the fixture was re-verified at review time — `JSON.stringify(fixture) === JSON.stringify(live)` is **true** against the lane today, 0 `\square`, 26 `\mathbb`. The replaced clause's successor is strictly stronger (`.mathbb` discriminator rather than `.katex-error` — the recorded trap is real, KaTeX renders `\square` happily; fixture-wide recursive sweep; three revert-probes with a driver that now throws on a no-op substitution). The half of the old clause that embodied the RULE (the component knows neither spelling) was kept and hardened. This is what a declared supersession should look like.
+- **One miss**: the component's own header comment (`WeekCard.tsx:46-50`, "the corpus prints □ … it ships visible and untouched") still describes the pre-correction corpus — and it evades its own suite's grep by construction, since it deliberately avoids the token. Stale prose only; one-paragraph fix for /document.
+- Live week probes: week 15's «القسمة الإقليدية في ℤ» renders as blackboard-bold mathematics (12 `.mathbb` glyphs, 0 errors); the invitation replaces the card at week 0; the ✎ sits on hours-to-date and nowhere else; the position line reads the write bound (my composed §3-collapse mutant at the HOST died — the card/tracker split reading of contract §3 is consistent and pinned from both sides).

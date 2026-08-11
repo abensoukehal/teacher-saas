@@ -159,3 +159,14 @@ construction.
 - **`totals.hours` is not pinned against a mutant.** The fixture keeps it honest
   (7 × 30 = 210) and the twin clause asserts it, but no mutation was run against it —
   `weeks` was the survivor, `hours` was not.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- The bound re-probed live on a real 27-week class: `markedWeek 27 → 200`, `28 → 400 «الأسبوع خارج المجال»` — consistent with the suite's synthetic-30 kill geometry.
+- The mutation table is the strongest in the slice: M2 and M3 killing **only** their own clauses is real independence evidence, and the corpus-restored clauses passing during mid-suite mutant failures proves the `afterAll` discipline under fire rather than asserting it.
+- Corpus verified untouched after everything: 5 documents, 6 streams, all `contentHash` intact, zero synthetic residue.
+- The honest gaps stand as written: `totals.hours` has an asserting clause but no mutation proof; the synthetic-fixture technique is load-bearing and lives only in this journal. Both are debt-register items, not defects.
+- Its §"Not settled" instability warning was correct and *understated* — see be-3's review: the root cause has now recurred.

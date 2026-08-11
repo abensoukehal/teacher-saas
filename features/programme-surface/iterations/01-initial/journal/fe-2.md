@@ -188,3 +188,12 @@ fifteen widths stop summing to the track and three clauses say so.
 - **`deriveRuns` walks the route's order and does not sort** (fe-1's note, inherited). The
   bar renders that order verbatim, so a future reordering of `weeks[]` would draw a wrong
   bar rather than a loud one.
+
+## review
+
+**Verdict: approve-with-debt.**
+
+Attack log (cross-model, prosecution):
+- Live: 15 segments on maths (u12 split visible), 14 on sciences, **zero fill nodes at markedWeek 0** (probed with a real week-0 class), no text node, no marker, no hue. My composed rounding mutant (`toFixed(0)`) died.
+- **The debt: the `title` tooltip is a raw-text channel for a ministry string.** This component's own rule — "the channel is chosen by WHO WROTE the string, never by what today's corpus happens to contain" — is the exact argument fe-3 used to force unit names through `Statement` in the card. Here the same ministry string goes into a `title` attribute, where KaTeX cannot run: the day a unit name carries `$…$`, the tooltip shows LaTeX source. Zero unit names carry maths today (measured), so this is latent, and the guard-rails attribute sweep only certifies current data. Pair it with the recorded accessibility gap (a `title` on a div is announced by nothing) — one future fix can retire both.
+- The week-0 "no pacing ≠ no bar" ruling was correctly escalated as a contract amendment with fe-4 in the room rather than decided silently; the reasoning trail is exemplary.

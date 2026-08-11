@@ -235,3 +235,13 @@ would have gone red for a change that was right.
 
 Nothing in `src/` other than one comment block. `git status --short` in `stacks/teacher-fe`
 empty; in `stacks/teacher-be`, `src/routes/programme.ts` only.
+
+## review
+
+**Verdict: approve-with-debt** — and the debt is urgent, because the sub-issue's central finding has ALREADY RECURRED.
+
+Attack log (cross-model, prosecution):
+- **Spot-audit of the five-green claim, re-run at review time: the mainline gate is non-deterministic AGAIN.** Three consecutive `tools/ci be` runs from the clone root, unchanged tree: **33 / 30 / 32 failures** of 509. Cause verified in git: `8e8fd03` restored `maxWorkers: 1` at 17:38 (with a comment block documenting the first deletion); `c09eb64` "engine: pull from lablabee" at **20:22 deleted the whole block again** — comment and all. The restore lasted under three hours. be-3's measurements were honest and correct *when taken*; nothing it certified about the mainline gate is true at HEAD.
+- **The debt, named**: (1) re-restore the one-liner; (2) the backlog item "a pull must not silently move an engine file backwards" is now twice-proven and should be treated as the actual defect — a third restore without it will meet a third deletion; (3) the `programmes-store` seed-path promotion bug (`:618`, one `..` too many) still blocks green×N even serialized.
+- The WF-65 supersession itself was re-read with fresh eyes and is **legitimate and stronger, not regression-masking**: hardcoded enumeration → same-run before/after set equality is what the clause names always claimed; the `PRODUCT` non-vacuity floor is kept verbatim; the negative test (planted collection → all three fire, diff names the offender) is exactly the discipline a supersession owes. The recorded property (suite-B tolerates suite-A's plant) is correct per-suite semantics, honestly disclosed.
+- The comment fix in `programme.ts` is right; note the twin stale-prose spot it did NOT sweep: `store/programmes.ts:1141` (see be-1's review).

@@ -214,3 +214,13 @@ Lane s9, real teacher `b7d20ce6…`, two real classes (3ر1 · maths · week 8, 
 - **fe-4's journal says the colour scanner is aimed at `.tracker__*`. It was not** — that
   suite has no stylesheet scanner at all. This oracle carries it, over five prefixes at
   once, with positive controls in both themes.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- **Spot-audit passed**: zero-class byte-stability re-verified live with a fresh anonymous teacher deep-linked to `#/programme` — `className="app"`, children `[sidebar, workspace]`, 0 `<nav>`, 0 programme surfaces, boot request set exactly `GET /api/subjects` + `GET /api/classes`, no programme request despite the hash.
+- Six composed mutants against this wiring, all dead: the §3 collapse at the host seam (WeekCard fed `totals.weeks` as bound), the skipped 409 re-read, an unknown-hash fallback to tracker instead of builder, a greyed «إعداد موضوع», the notice row-lock, integer bar rounding. The re-read-on-conflict path also verified live twice (card and tracker) — one GET per 409, no resubmit ever reached the wire.
+- Deep link with classes but no selection → the «اختر قسمًا» chooser, never an error, never an auto-selection (verified). Cosmetic note: in that state no nav item carries `aria-current` (the view is `tracker` but the item is hidden) — harmless, arguably honest.
+- Class switch on the tracker verified: the second class's own document loads (sciences: 14 segments, 135 h, its own weekly hours), remount lands on its week.

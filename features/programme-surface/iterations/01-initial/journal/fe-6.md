@@ -271,3 +271,14 @@ the teacher has least room to check it. Desktop re-measured after: `72px 144px 3
   at 414 px draws fifteen segments the thinnest of which is 12 px.
 - **28,194 px is the tracker with every band open**, which no teacher does. It is quoted as
   the reason collapse exists, never as a page weight.
+
+## review
+
+**Verdict: approve.**
+
+Attack log (cross-model, prosecution):
+- The derived-sweep design (marker-region CSS scan, fixture-computed island census, `readableAttributes`) is the right answer to the prefix-list blindness it names, and the hollow-run self-catch (a driver that reported 18/18 survivors because nothing collected, now refusing runs under 200 clauses) is exactly the WF-82 class of failure, caught in its own tooling and disclosed. That disclosure is why this net is trustworthy.
+- Constraints re-swept independently on the live composed page at review time: 0 `$`, 0 backslash, 0 `□`, 0 Arabic-Indic digits, no "AI", attributes clean, 12 `.mathbb` glyphs on open week 15, 0 KaTeX errors. Confirmed.
+- The reload judgement (structural argument: the browser cannot restore scroll into a scroller that has no height yet) was accepted on its pinned form rather than re-measured — the two pins (no `scrollRestoration` assignment anywhere; scroll once-per-mount confined to `Tracker.tsx`) are what make the claim safely falsifiable later, which is the right shape.
+- The narrow-viewport fix is inside the declared fix-only Delta, append-only below the marker, and the 820px breakpoint verified present in `App.css`. The `scrollIntoView({block:"center"})` handoff to fe-4 stands as recorded debt.
+- Its two mutation survivors were re-judged: both are correct layering, killed by the suites that own the rules.
