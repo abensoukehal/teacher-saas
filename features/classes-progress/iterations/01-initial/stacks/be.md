@@ -496,3 +496,61 @@ journal:
 **Exit protocol.** Done-when: all six suites green ×2 · freeze audit · `tools/ci be
 --slug classes-progress` green · the supersession declared in the journal. Ask-when: any
 consumer turns out to branch on the English string · a frozen file needs touching.
+
+---
+
+```yaml
+---
+kind: sub-issue
+id: be-7
+parent: i1
+stack: be
+status: todo
+depends_on: [be-6]
+estimate: S
+---
+```
+
+### be-7 — the last English strings a teacher can reach
+
+**status:** todo · **tag:** hardening
+
+**Intent.** be-6 fixed the catch-all and found the same defect in six more places. One of
+them, `src/routes/subjects.ts:50`'s `"subject not found"`, is a **teacher-reachable 404
+on the product's hottest surface** — and `fe` renders `error.message` raw
+(`fe/src/lib/api.ts:145,309`). Arabic-only is the product's first hard constraint; an
+English string in front of a teacher is a correctness bug, not a polish item.
+
+**Ground truth (recorded 2026-08-11, lane s8, by the be-6 loop).** Seven literals:
+```
+src/routes/subjects.ts:50   "subject not found"          ← teacher-reachable, hottest surface
+src/routes/subjects.ts:473  "exercise is required"
+src/routes/subjects.ts:479  "exercise.id must match the path segment"
+src/app.ts:176              "input is required (string or object)"
+src/app.ts:183              `unknown skill …`
+src/app.ts:272              "internal server error"
+```
+Re-run: `grep -rn '"[A-Za-z][A-Za-z ()\.]\{6,\}"' src/routes/ src/app.ts | grep -i message`
+
+**Delta (freeze).** May touch **only the message literals** at those six sites. **Frozen:**
+every `error.type` (callers branch on it) · every status code · all store files · the
+new class/progress/school surfaces (already Arabic — be-6 checked) · every route's logic.
+
+**EXPLICITLY OUT OF SCOPE — do not touch:** `src/app.ts:254,265` pass `err.message`
+through from `ClaudeError` and `StoreError`, so the strings come from the Claude CLI and
+the Mongo driver. Fixing those means **mapping by `error.type`**, not editing a literal —
+a different and larger piece of work. Grouping them here would understate it. Record them
+for the backlog; leave them.
+
+**Oracle.** Extend the be suite (or a new `arabic-messages.characterization.test.js`):
+- every user-reachable error body on `/api/subjects`, `/api/exams`, `/api/generate` and
+  the catch-all carries a **non-Latin** `message` — assert `!/[A-Za-z]{4,}/.test(message)`
+  rather than matching an exact Arabic string, so a reword cannot silently regress it
+- every `error.type` byte-identical to its recording (negative — the types must not move)
+- the six prior suites green; the `/api` index unchanged
+
+**Boundaries.** Contract §6. Budget 6. This changes `message` only, never `type`.
+
+**Exit protocol.** Done-when: seven suites green ×2 · freeze audit · `tools/ci be --slug
+classes-progress` green. Ask-when: any consumer branches on an English message ·
+a pass-through string turns out to be teacher-reachable after all.
