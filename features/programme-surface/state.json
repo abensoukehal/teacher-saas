@@ -30,6 +30,13 @@
           "derived_from": {
             "subissues": "eda22d6cc3fa73cc"
           }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "acde88c8c11a7967",
+            "subissues": "eda22d6cc3fa73cc"
+          }
         }
       },
       "subissues": {
