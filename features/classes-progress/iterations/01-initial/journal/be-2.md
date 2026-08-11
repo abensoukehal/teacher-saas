@@ -261,3 +261,26 @@ next slice inherits it.
 6. **Not tested: the `500` for a class whose stream stops resolving** (contract §4). It is
    implemented and commented, but making it executable means mutating the `programmes`
    corpus, and the corpus drifting is this sub-issue's ask-when rather than a fixture.
+
+## review
+
+**Verdict: approve-with-debt.** Cross-model review (Fable), by execution against lane 8.
+
+Attack log:
+- Re-ran the CAS race myself at width 6, both shapes: first-write race (rev 0) and
+  rev-1 race each produced exactly one 200, rev advanced once, stored week was one
+  writer's whole value. The insert/upsert split (`rev===0` upsert-on, `rev>=1`
+  upsert-off) is correct in the source and mutant MB3 (`upsert` always on) was killed
+  by exactly the clause the journal names.
+- Adversarial bodies: `27.5`, `"8"`, `-1`, `1e1` (=10, correctly accepted), `rev 2.5`,
+  entry week 0, `DONE`, unknown key — every refusal Arabic and classified; nothing wrote.
+- **The debt — mutation survivor MB2.** Hardcoding the markedWeek bound to `27`
+  (`markedWeek > 27` instead of `> totalWeeks` in `routes/progress.ts`) passes **all 411
+  tests**. The SEED names this its explicit risk flag and the oracle's decision 1 claims
+  to guard it — but "read `totalWeeks` off the response" cannot discriminate while every
+  corpus document says 27. The implementation is correct (verified by read and by the fe
+  twin, which fixtures a non-27 ceiling and kills its mutant); the *pin* is vacuous. The
+  known-gaps drift test already demonstrates the fix technique: seed a synthetic
+  programme with `totals.weeks ≠ 27`, create a class on its stream, probe the bound.
+  One clause, next time this oracle is legally editable (slice-2 planning). Until then,
+  quote "the bound comes from the programme" as a code fact, not a tested one.

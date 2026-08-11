@@ -187,3 +187,19 @@ rule was inspected, not exercised — no print run was performed.
   shadowed `npx` — fails every `.tsx` suite with `Failed to resolve import
   "@testing-library/react"`. Unexplained, harmless (the supported entry point works),
   recorded so the next person does not lose the same twenty minutes.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable), by execution against lane 8 and jsdom.
+
+Attack log:
+- Zero-class teacher re-verified live in the browser: `className="app"`, no bar, no
+  alerts, no `teacher.class.v1`, and only the one extra `GET /api/classes` (the recorded
+  N+1 request-set delta).
+- Mutants MF4 (a week-0 tab says «أسبوع 0») and MF8 (the bar re-sorts by name) both
+  killed — 3 clauses each. The rails' colour and RTL fill were re-measured live under
+  fe-5's review.
+- The banner-displacement fix (a failed class read renders nothing) held under a foreign
+  backend simulation: no alert, legacy shell.
+- Note: fe's `classdraft.ts` shares be-1's invisible-name blind spot (`trim()` only) —
+  filed on be-1, mirror the fix here.

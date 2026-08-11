@@ -312,3 +312,22 @@ about waiting.
   integer rendered by template literal, so there is no `toLocaleString` to go wrong yet.
   The day one appears, `ar-DZ` will happily emit ٠-٩ and the rendered clause will catch
   it on whatever surface a test drives — not everywhere. Recorded as the sweep's edge.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable).
+
+- The rail-colour supersession re-measured live: `rgb(168,176,169)` = `--ink-soft`,
+  accent `#4fae8a` untouched elsewhere; no red/green anywhere on a position surface.
+  The two-ended pin (DOM + CSS-block scan) is the right design — the CSS-side clause is
+  the one that would have caught fe-1's original.
+- The kept silence on a failed progress read re-examined and accepted: the no-setter
+  half is load-bearing and pinned (M5), the blast-radius argument (17,861 teachers on an
+  older `be`) is decisive, and the bar-ambiguity is honestly recorded.
+- The legacy byte-recording held in my own live pass (zero-class teacher: `"app"`, no
+  bar, no alerts, no class key).
+- One scope note: fe-5's language sweep pinned the *rendered* surfaces, and rightly —
+  but the slice's one remaining reachable English string arrives via `err.message` from
+  `be` (`store_unavailable`), which no rendered-tree sweep can see until the failure
+  happens. That is fe-3's reopen, not this sub-issue's miss; recorded here because the
+  sweep's edge ("nothing pins a value `be` sends") is exactly where it lives.

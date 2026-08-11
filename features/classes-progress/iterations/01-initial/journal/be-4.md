@@ -212,3 +212,17 @@ seems to need to RETURN school", and none does.
    non-empty trimmed string is ever stored) and by the doc comment on `TeacherDoc.school`.
    The slice that adds the reader owes the codebase the `roleOf`-shaped function; adding a
    caller-less one here would have been dead code.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable), by execution against lane 8.
+
+Attack log:
+- `PUT /api/teacher/school`: set, blank-clears, 121-char refusal re-verified. The
+  credential row's key-set discipline is pinned whole-document in the oracle; no leak of
+  `school` on any read surface (probed sign-in, subjects, classes, progress, /health).
+- The `/api`-index correction (cycle 2) is the right call and the frozen pins that forced
+  it did their job — a good example of the freeze working as designed.
+- Standing debt (already recorded, agreed): write-only `school` will read as "the feature
+  does not work" to anyone testing end to end; the caller-less `createTeacher`
+  pass-through should be deleted if slice 2 decides sign-up never carries a school.

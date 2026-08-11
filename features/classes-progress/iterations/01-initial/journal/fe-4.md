@@ -256,3 +256,20 @@ NON-math stream resolves to its own programme document.
   verified against the running service, and it will drift the day the corpus gains a
   stream. `GET /api/streams` on `be` is the follow-on; until then the drift is caught by
   `be`'s own `400`, on the row that caused it, rather than silently.
+
+## review
+
+**Verdict: approve-with-debt.** Cross-model review (Fable).
+
+The Delta extension (steps off `onAuthenticated`, not inside `AuthPanel`) re-examined:
+the frozen promoted clauses at the «متابعة» seam are real, binding, and the extension
+was the only shape that satisfies them — legitimate, as the verifier found. The
+journal's attribution error (calling the implementer brief "the sub-issue's own text")
+is already recorded in known-gaps; the extension itself is sound.
+
+Double-submit on step 3 is guarded (`busy` + sequential creates + succeeded rows
+dropped); the skip writes nothing (re-confirmed in the store during my pass). The debt
+is the recorded pair: `ClassPosition` at full size styled down by host CSS (a `compact`
+prop is the honest fix, next slice), and the write-only school leaving «أقسامي» without
+the design's school field. The `STREAMS` mirror stands as the known drift hazard —
+`GET /api/streams` deserves the sub-issue known-gaps asks for.

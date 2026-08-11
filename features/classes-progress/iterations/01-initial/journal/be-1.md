@@ -139,3 +139,22 @@ All four rungs, each re-run rather than remembered.
 `getProgrammeForStream` is used by be-1 only as a yes/no at create time. Nothing reads
 `totals.weeks`, stamps a programme identity, or writes a progress document — that is
 be-2, and doing any of it here would have put an unpinned surface in a green slice.
+
+## review
+
+**Verdict: approve-with-debt.** Cross-model review (Fable), by execution against lane 8.
+
+Attack log:
+- Re-ran the create/list surface adversarially. Ownership scoping, ascending order, the
+  401 gate and the corpus-backed stream validation all held live.
+- Mutation: `classOf`'s cousin surfaces (be-3) and the log line (MB4) are covered
+  elsewhere; be-1's own store survived nothing it should not have.
+- **The debt: the empty-name guard does not meet its own stated rule.** The code comment
+  says "a name of three spaces is an empty name wearing a costume" — but `trim()` only
+  strips whitespace. A name of U+200F (RLM) or U+200B (ZWSP) alone is accepted
+  (`201`, reproduced live), renders as a **permanently blank tab** in the switcher, and
+  "nothing is deleted" makes it immortal. `fe`'s `classdraft.ts` validation uses the same
+  `trim()`, so the real UI reaches it by paste. Self-inflicted only, and the tab still
+  functions — hence debt, not reopen. Suggested micro-patch (not applied): strip
+  `[​-‏⁠﻿]` before the emptiness check, in `routes/classes.ts` and
+  mirrored in `fe/src/lib/classdraft.ts`, with one clause each.

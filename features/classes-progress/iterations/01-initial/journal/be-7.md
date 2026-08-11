@@ -292,3 +292,19 @@ verified by the sweep. Every `bad(res, req, "…")` literal is Arabic. `classes.
 6. **The wordings are product calls.** Six strings chosen against a stated constraint, in
    the codebase's existing voice, by an implementer and not a spec. The oracle deliberately
    does **not** lock them — a reword is a one-line change and no test edit.
+
+## review
+
+**Verdict: approve-with-debt.** Cross-model review (Fable).
+
+The six literals verified live in Arabic; the source sweep's design (assert the absence
+of a Latin word, never pin a translation) is the right shape and its anti-vacuity
+clauses are real. The revert-check (15 red, exactly the six behaviours) re-read and
+accepted. The dropped skill-name echo is a real diagnostic loss, honestly recorded.
+
+The debt is the sweep's blind spot, which known-gaps states and I confirm: the `FILES`
+list omits `src/store/*`, and the one English literal be-7 misfiled (`exercise "ex9" is
+not in this subject`, `store/subjects.ts` — written in this repo, not a pass-through)
+lives exactly there. Widening the sweep is a one-line change to a frozen oracle — a
+declared supersession for the next sub-issue that touches this ground. The five
+`invalidSubject` literals remain the most actionable leftover, with a ready-made oracle.

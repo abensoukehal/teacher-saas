@@ -251,3 +251,17 @@ unmodified at 47 · 97 · 48 · 52.
    run), and it did not clean up the earlier residue either: that is not in its Delta, and
    the SEED's `8,423` recording is now stale as a live number. Someone should decide whether
    to purge it before the recorded baseline is quoted again.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable). This journal's central claim was the
+spot-audited one (protocol ⑥): I re-ran the 404 byte-parity matrix live with my own
+teachers — foreign class, unknown well-formed id, garbage id, UPPERCASE of an owned id,
+on GET and PUT progress and on POST subjects' classId. **All byte-identical modulo
+correlationId, all 404, and the owned class still answered 200** (anti-vacuity). The
+matrix holds exactly as recorded.
+
+Also re-verified: malformed 2 MB body → Arabic `413 payload_too_large`; malformed JSON →
+Arabic 400 with correlationId; no Mongo/stack leakage in any refusal body I provoked.
+The timing surface is clean where it matters: foreign-vs-nonexistent both cost one
+`findOne` miss; only the malformed shape short-circuits, and it reveals nothing.

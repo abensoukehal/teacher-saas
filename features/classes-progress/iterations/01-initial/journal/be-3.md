@@ -247,3 +247,19 @@ implementation `cbf9c3e` (be).
    route for classes, so it cannot dangle today. When one is added, a subject pointing at
    a removed class becomes invisible under every filter while remaining legacy to nothing
    — worth deciding then, not now.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable), by execution against lane 8.
+
+Attack log:
+- Re-ran the legacy pins live on a fresh teacher: a legacy subject survived filtering by
+  an owned class, a second owned class, an invented class and the empty value; a tagged
+  subject appeared under its own class and not the other; the partition never hid legacy.
+- Mutants: MB1 (`classOf` treats `""` as a class) killed by 2 clauses; MB5 (strict
+  partition — legacy dropped from a filtered list) killed by **14**. The one hazard the
+  SEED called real is the best-defended property in the slice.
+- The in-memory filter claim checked: `find({teacherId}).sort({updatedAt:-1})` is
+  byte-identical to the recorded query; the IXSCAN cannot have moved.
+- POST with a foreign classId → `404 class_not_found`, byte-identical to the progress
+  routes' body. Uppercase of a real id → same 404 (regex before store confirmed).

@@ -61,6 +61,35 @@ accepted a class on it while the UI picker still offered six. Defensible only be
 refuses an unknown value on the row that caused it, so drift fails loudly. **`GET /api/streams`
 is the real fix and deserves a sub-issue, not a journal note.**
 
+## Debt the cross-model REVIEW gate graded (2026-08-11)
+
+Two `reopen-implement` findings were **fixed** in a micro loop and are not debt:
+the raw English `store_unavailable` message reaching `ClassPosition`/`SignupClasses`/
+`MyClasses`, and the stale-response race on class switch. What remains as debt:
+
+- **be-1 · an invisible-only class name survives the `trim()` guard.** `U+200F` / `U+200B`
+  pass validation on both stacks, producing a **permanently blank tab** — and there is no
+  delete route, so "nothing is deleted" makes it immortal. Reproduced live end to end: two
+  blank tabs rendered in the real switcher. Cheap fix (require at least one visible
+  character), but it moves a shape three suites pin.
+- **be-2 · the `markedWeek` bound pin is vacuous.** Hardcoding `> 27` in place of
+  `> totalWeeks` **survives all 411 be tests** — the slice's only mutation survivor. The
+  implementation is correct; the *pin* cannot discriminate while all five corpus documents
+  say 27. fe's twin mutant IS killed, because jsdom fixtures vary the ceiling. The technique
+  to fix it is already proven (seed a synthetic programme with `totals.weeks ≠ 27`, as two
+  verifiers did). **Do it at slice-2 planning, when the oracle is legally editable.**
+- **be-7 · the source sweep is blind to `src/store/*`.** Its `FILES` list is `app.ts` plus
+  five route files — and the English literal it misfiled (`exercise "ex9" is not in this
+  subject`) lives in exactly the directory it does not read. The sweep exists to catch the
+  next literal and would not catch a repeat of its own miss.
+
+**Review's grading corrections to this file:**
+- «step 3 will create ten classes in one press» is **overstated** — the UI guards
+  double-submit (`busy` + sequential creates + succeeded rows dropped). The exposure is
+  API-only, which the bearer posture already concedes.
+- The English-on-`ClassPosition` path was a **slice-1 omission** from this file, not
+  inherited mapping debt: slice 1 built a new surface that displayed it. Now fixed.
+
 ## Smaller, recorded
 
 - **A failed progress *read* degrades to silence** — no panel, no rail, and a failed read

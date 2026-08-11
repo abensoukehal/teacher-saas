@@ -176,3 +176,18 @@ Everything the new routes emit (`classes.ts`, `progress.ts`, the `classId` paths
 4. **The `msg`/`event` duplicate key in `mutationlog.ts` was left alone.** Two keys, one
    value, deliberately — its own comment explains why, it was not in the Delta, and it is a
    different question from this rename.
+
+## review
+
+**Verdict: approve.** Cross-model review (Fable).
+
+The WF-65 supersession is legitimate on all four counts: each amended pin was true,
+each was superseded by a declared Delta, none was weakened (one inverted-and-
+strengthened, one applied the file's own mask, two renames asserted complete with a
+negative). The revert-check — 17 red, all the right clauses, nothing else moved — is the
+strongest evidence in the slice that an oracle discriminates. The catch-all now carries
+an Arabic message and a body correlationId, re-verified live on an unknown path.
+
+One note forward: be-6's open item 3 ("fe still renders `error.message` raw") is not
+theoretical — see the fe-3 review below, where it composes into a live English string on
+a slice-1 surface.
