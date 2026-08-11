@@ -54,7 +54,7 @@
           "stack": "fe"
         },
         "fe-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "fe-1"
