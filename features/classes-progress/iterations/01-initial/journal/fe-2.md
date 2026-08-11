@@ -310,3 +310,95 @@ ordinary switching:
 
 The ordering property itself is pinned in jsdom, where the release order can be chosen,
 and revert-checked. Recorded as such rather than claimed as a live result.
+
+## qa
+
+**Finding K1 — the boot banner spoke English.** The subject-list error
+(`SubjectList`'s `.subjects__error`, chosen at `App.tsx`'s `refreshList` catch) rendered
+`err.message` raw. On a datastore outage `be` forwards `StoreError`'s own words, so the
+first thing a teacher saw was **«datastore unavailable»**, in Latin script, in the
+sidebar. Same defect the review loop already fixed in `ClassPosition`, `SignupClasses`
+and `MyClasses` with the `teacherMessage(e, fallback)` seam — this is the fourth site and
+the most visible one.
+
+### Reopen — the outage's first sentence
+
+> Micro IMPLEMENT loop, same lane (fe :10800 → be :9800). Path-scoped freeze checks
+> (WF-63).
+
+**Reproduced live before a line of source moved.** Lane 8's backend restarted with
+`MONGO_URL=mongodb://127.0.0.1:59999` — a dead port, not the shared Mongo, which other
+work is using. `/health` went `degraded` with `store.ok:false`, and the list read
+answered exactly what the fixture now carries:
+
+```
+GET /api/subjects → 503
+{"error":{"message":"datastore unavailable","type":"store_unavailable",
+          "detail":"MongoServerSelectionError: connect ECONNREFUSED 127.0.0.1:59999"}}
+```
+
+and the sidebar, under «مواضيعي»:
+
+```html
+<div class="subjects__error" role="alert"><span>datastore unavailable</span>
+  <button class="btn btn--ghost">إعادة المحاولة</button></div>
+```
+
+A scan of the whole rendered page found **exactly one** Latin run on it — that sentence.
+So the banner was not one English string among many; on the outage screen it was the only
+thing a teacher could not read.
+
+**The fix.** `teacherMessage(e, "تعذّر تحميل المواضيع.")` at the point the message is
+chosen, keeping the existing deny-list design: `be`'s route handlers write Arabic that
+names the real problem («الأسبوع خارج المجال», «القسم غير موجود») and those still reach
+the teacher; only the pass-through families are substituted, and an unknown `type` falls
+to the caller's own sentence. The **raw `e`** is handed over, not `asError(e)` — that
+wrapper turns a non-`GenerateError` into `String(e)`, which is a JS error string and just
+as foreign; the original lets the seam fall to the Arabic fallback.
+
+**One more site fixed, and why.** `AuthPanel`'s alert (`AuthPanel.tsx:275`) is byte-identically
+the same shape — `<strong>{error.message}</strong>` plus a `retryable`-gated retry, no
+`detail`, no correlation id — and it is the FIRST screen a signed-out teacher sees. Driven
+live against the same dead store: signing in printed «datastore unavailable» on the gate.
+Fixed at the render site, the object kept whole so `retryable` still decides the affordance.
+
+**The sweep — what was left, and why it is not arbitrary.**
+
+| site | verdict |
+|---|---|
+| `App.tsx` list banner | **FIXED.** Teacher-reachable, most visible, reproduced live. |
+| `AuthPanel.tsx:275` | **FIXED.** Teacher-reachable, reproduced live, identical shape. |
+| `AdminConsole.tsx:174` | **Operator-only** — behind `requireAdmin`, reachable only by an admin account. English from a forwarded upstream failure is diagnostic there, not a constraint breach. Not touched. |
+| `RefinePanel.tsx:164` | Teacher-reachable and the same shape — **but it cannot be fixed here.** The promoted net pins it: `tests/fe/persistence-gaps/revisions.characterization.test.tsx:207` asserts the alert contains «الخدمة غير متاحة مؤقتًا» under a `store_unavailable` fixture. That is a message `be` never sends (the same fixture-fiat the K1 fix exists to end), but the oracle is frozen against this loop, and substituting our sentence would turn it red. **Stop-and-ask, not an edit.** |
+| `App.tsx:1308` (workspace alert) | Teacher-reachable and genuinely English today, but **not the same shape**: it also renders `error.detail` raw, which is always English (`MongoServerSelectionError: …`), and its `claude_*` messages are the CLI's own words. `teacherMessage` on `message` alone would leave English on screen one line below. That is the larger error-mapping job, out of scope as briefed. |
+
+**Pinned.** One clause in fe-2's own `class-switch` oracle, in its own describe block. The
+mock gained one option, `listFails`, carrying **`be`'s English verbatim** — mocking an
+Arabic message for this type is what made the earlier clause certify nothing, and the
+comment on the fixture says so. The clause asserts the Arabic sentence, that the word
+`datastore` never reaches the surface, that no Latin run of any kind does, and that the
+retry still re-issues the read and the substitution survives a second failure.
+
+**Revert-check.** Stash the two source files and the clause goes red on exactly the defect:
+
+```
+× the banner says it in Arabic, with no Latin run, and the retry still re-reads
+    expected 'datastore unavailableإعادة المحاولة'
+    to contain 'تعذّر الوصول إلى قاعدة البيانات'
+```
+
+97 passed, 1 failed. Pop, and 98/98.
+
+### Done-protocol (K1)
+
+| rung | outcome |
+|---|---|
+| oracle green ×2 | `98 passed (98)` · `gate PASS` both runs |
+| promoted net | `project/tests/fe` staged under a throwaway slug against this checkout's `src/` — **21 suites, 313/313 PASS**, unchanged |
+| freeze audit (path-scoped) | `git status --short` empty for `persist.ts` · `ClassBar` · `ExamView` · `RefinePanel` · `SolutionView` · `poll.ts` · `taxonomy.ts` · `AdminConsole` · `App.css` · `api.ts` · `ClassPosition` · `MyClasses` · `SignupClasses` · `SubjectList`. fe-1's, fe-4's and fe-5's oracles byte-untouched. `class-switch`'s diff is **purely additive** — `git diff \| grep '^-'` returns nothing |
+| source diff | three removed lines total: the one `setListError`, `AuthPanel`'s import, `AuthPanel`'s `<strong>` |
+| `tools/ci fe --slug classes-progress` | `gate PASS (1 ran, 0 skipped)`, from the fe worktree |
+| build + lint | `tsc -b` + `vite` clean · `oxlint` exit 0 |
+| live, before | «datastore unavailable» in `.subjects__error`; the gate's alert the same |
+| live, after | «تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى.» in both, retry affordance intact, **zero** Latin runs on the page |
+| lane restored | `MONGO_URL` unset, `be` restarted — `/health` `ok`, `store.ok:true`; `obs status` both services UP; the app boots to the empty state with no banner |

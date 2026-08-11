@@ -160,6 +160,17 @@ interface ApiOptions {
    * held query exactly once.
    */
   holdLists?: string[];
+  /**
+   * The list read answers this error instead — every time, so a retry can be pressed
+   * and the surface re-checked rather than healing on its own.
+   *
+   * The shape is `be`'s, VERBATIM: `store/client.ts` throws
+   * `StoreError("datastore unavailable")` and `app.ts` passes that message through
+   * untranslated, because a dropped datastore is not a failure `be` authored a
+   * sentence for. Confirmed on the wire against lane 8 with the store pointed at a
+   * dead host — see the clause at the bottom of this file.
+   */
+  listFails?: { status: number; type: string; message: string };
 }
 
 function mockApi(opts: ApiOptions = {}) {
@@ -216,6 +227,10 @@ function mockApi(opts: ApiOptions = {}) {
         // The list. Everything after `?` is the query the app chose to build.
         const q = url.slice("/api/subjects".length);
         const id = q.startsWith("?classId=") ? decodeURIComponent(q.slice("?classId=".length)) : "";
+        if (opts.listFails) {
+          const { status, type, message } = opts.listFails;
+          return res(status, { error: { message, type }, correlationId: "cid-list-fail" });
+        }
         if (opts.holdLists?.includes(id)) {
           await new Promise<void>((resolve) => held.set(id, resolve));
         }
@@ -675,5 +690,72 @@ describe("the hard constraints hold across a switch", () => {
     expect(barText.match(/[A-Za-z]{2,}/g) ?? []).toEqual([]);
     expect(barText).not.toMatch(/[٠-٩۰-۹]/);
     for (const needle of ["$", "\\frac", "\\begin{"]) expect(barText).not.toContain(needle);
+  });
+});
+
+// ---------------------------------------------------------------------------------
+// THE BOOT BANNER — the first thing a teacher sees when the store is down
+// ---------------------------------------------------------------------------------
+
+describe("a datastore outage reaches the list in Arabic", () => {
+  /**
+   * QA K1. Boot's own list read is the request that FINDS OUT the datastore is down,
+   * so `.subjects__error` is the first thing on screen in an outage — and it used to
+   * render `err.message` raw. `be` forwards `StoreError`'s own words there, so the
+   * first sentence of an Arabic-only product was «datastore unavailable», in Latin
+   * script, in the sidebar.
+   *
+   * Reproduced live before the fix, on lane 8 with the backend pointed at a dead
+   * Mongo (`MONGO_URL=mongodb://127.0.0.1:59999`):
+   *
+   *   GET /api/subjects → 503
+   *   {"error":{"message":"datastore unavailable","type":"store_unavailable",
+   *             "detail":"MongoServerSelectionError: connect ECONNREFUSED …"}}
+   *
+   *   <div class="subjects__error" role="alert"><span>datastore unavailable</span>…
+   *
+   * The mock below sends what `be` sends, byte for byte. Mocking an Arabic message
+   * here is the mistake this clause exists to be immune to: `be` never sends one for
+   * this type, so a fixture that invents one certifies nothing and passes over the
+   * defect.
+   */
+  test("the banner says it in Arabic, with no Latin run, and the retry still re-reads", async () => {
+    seed({ cls: null });
+    const h = mockApi({
+      classes: TWO_CLASSES,
+      listFails: {
+        status: 503,
+        type: "store_unavailable",
+        // VERBATIM from `store/client.ts`. Do not translate this fixture — translating
+        // it IS the defect, and the clause would go back to proving nothing.
+        message: "datastore unavailable",
+      },
+    });
+    await boot();
+
+    const banner = await waitFor(() => {
+      const el = document.querySelector<HTMLElement>(".subjects__error");
+      if (!el) throw new Error("no boot banner");
+      return el;
+    });
+
+    // `fe`'s own sentence, which names the problem AND that retrying is worth it.
+    expect(banner.textContent).toContain("تعذّر الوصول إلى قاعدة البيانات");
+    // The server's own word never reaches the teacher…
+    expect(banner.textContent).not.toContain("datastore");
+    // …and neither does any other Latin run, whatever `be` puts in `message` next.
+    expect(banner.textContent!.match(/[A-Za-z]{2,}/g) ?? []).toEqual([]);
+
+    // The failure is retryable and the affordance is real — a datastore blink is the
+    // one 503 a teacher can act on.
+    const before = h.lists().length;
+    await act(async () => {
+      [...banner.querySelectorAll<HTMLElement>("button")]
+        .find((b) => b.textContent?.includes("إعادة المحاولة"))!
+        .click();
+    });
+    await waitFor(() => expect(h.lists().length).toBe(before + 1));
+    // Still ours after the retry fails again — the substitution is not a one-shot.
+    expect(document.querySelector(".subjects__error")!.textContent).not.toContain("datastore");
   });
 });
