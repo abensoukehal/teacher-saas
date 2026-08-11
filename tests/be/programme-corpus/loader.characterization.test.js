@@ -32,6 +32,7 @@ let mongo;
 let db;
 let tmp;
 let runLogBefore;
+let realCollectionsBefore;
 
 /** Run the loader. Never throws — the exit code IS the assertion. */
 function load(args) {
@@ -67,6 +68,9 @@ beforeAll(async () => {
   db = mongo.db(SCRATCH);
   await db.dropDatabase();
   runLogBefore = fs.existsSync(RUN_LOG) ? fs.statSync(RUN_LOG) : null;
+  realCollectionsBefore = (await mongo.db(REAL_DB).listCollections().toArray())
+    .map((c) => c.name)
+    .sort();
 });
 
 afterAll(async () => {
@@ -550,16 +554,22 @@ describe("be-11 · a new edition needs saying so", () => {
 
 describe("be-2 · perimeter", () => {
   test("teacher_saas is untouched by this suite", async () => {
-    // RE-BASELINED (be-9). This asserted a fixed four-collection list, which was true
-    // until be-4 loaded the corpus into teacher_saas — the deliverable of this very job.
-    // The clause's NAME was always the real intent: the product's collections are not
-    // disturbed. So it now asserts that, and tolerates the corpus collections this job
-    // exists to create. A product collection disappearing is still a hard failure.
+    // RE-BASELINED twice. be-9 widened a fixed four-collection list to tolerate the corpus
+    // collections that job created. programme-surface/be-3 stopped enumerating altogether:
+    // the list went stale AGAIN the moment classes-progress added `classes` and `progress`,
+    // and a clause that must be edited by every job that adds a collection is a clause that
+    // reads red for reasons that have nothing to do with the perimeter it guards.
+    //
+    // The measurement is now the baseline. `realCollectionsBefore` is snapshotted in this
+    // file's top-level beforeAll, and the assertion is EXACT SET EQUALITY against it — not
+    // a subset check, not a widened literal. It is strictly the clause's stated intent
+    // ("untouched BY THIS SUITE") and it is immune to the next collection anyone adds.
+    // The PRODUCT containment stays as a non-vacuity floor: without it, a Mongo that
+    // answered an empty list both times would pass this clause having verified nothing.
     const PRODUCT = ["exercise_revisions", "solutions", "subjects", "teachers"];
-    const CORPUS = ["programme_revisions", "programmes"];
     const names = (await mongo.db(REAL_DB).listCollections().toArray()).map((c) => c.name).sort();
     for (const c of PRODUCT) expect(names).toContain(c);
-    expect(names.filter((n) => !PRODUCT.includes(n) && !CORPUS.includes(n))).toEqual([]);
+    expect(names).toEqual(realCollectionsBefore);
   });
 
   test("run-log.jsonl is neither written nor created", () => {

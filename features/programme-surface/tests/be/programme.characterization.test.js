@@ -23,10 +23,14 @@
  * drifts unless something compares the two. The parity clauses below compare RAW RESPONSE
  * TEXT across routes with only the correlationId masked (contract §0, §7).
  *
- * ⚠ `\square` is a transcription placeholder appearing 61 times across 48 corpus strings
- * where the ministry printed ℤ/ℂ/ℝ. It is ESCALATED and PARKED (SEED). Ministry text goes
- * out exactly as stored: no clause here remaps, sanitises or tolerates a "fixed" one, and
- * the verbatim byte-compare below would fail if any stack tried.
+ * ⚠ The `\square` placeholder is GONE, and nothing here had to change for that. It stood in
+ * 61 places across 3 documents where the ministry printed ℤ/ℂ/ℝ but the source PDFs fail to
+ * embed the double-struck glyphs; all 61 were restored through the loader with `--correct`
+ * (transcriptionRev 4→5, 3→4, 4→5 · `edition` unchanged · `programme_revisions` 9→12 ·
+ * A1–A8 green on each). The clauses below survived a corpus correction untouched precisely
+ * because they are BYTE-COMPARES AGAINST THE STORE and never fixtures — which is the point
+ * the next paragraph makes and the reason this note is prose, not an assertion. Ministry
+ * text still goes out exactly as stored: no clause here remaps, sanitises or normalises one.
  *
  * PRECONDITION: the lane is up. A hollow run is RED in job mode — WF-82.
  */
@@ -321,8 +325,11 @@ describeIfLane(BE, "be-1 — GET /api/classes/:classId/programme", () => {
   describe("verbatim is a COMPARISON against the store, never a fixture", () => {
     // A fixture would only prove the projection matches what a test author typed. Reading
     // the same fields out of Mongo inside the suite proves the projection may DROP a field
-    // and may never ALTER one — which is the whole verbatim promise, and the reason a
-    // parked `\square` must arrive on the wire as a literal `\square`.
+    // and may never ALTER one — which is the whole verbatim promise.
+    //
+    // Since proven, not merely argued: the corpus's 61 `\square` placeholders were later
+    // corrected to ℤ/ℂ/ℝ, and these clauses stayed green without an edit. A fixture would
+    // have gone red for a change that was right.
     let programme;
     let stored;
 
