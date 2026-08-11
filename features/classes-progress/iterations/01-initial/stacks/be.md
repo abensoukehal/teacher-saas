@@ -329,7 +329,7 @@ kind: sub-issue
 id: be-4
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: []
 estimate: S
 ---
@@ -337,7 +337,7 @@ estimate: S
 
 ### be-4 — the school lands on the teacher row
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** Sign-up step 3 collects the school («سيظهر على الموضوع المطبوع») after the
 account already exists, so it needs its own small write surface; slice 1 only *stores*
