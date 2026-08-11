@@ -619,7 +619,12 @@ describe("be-11 · edition is YYYY-MM, so a typo cannot read as a syllabus revis
  * corpus, and a future transcription pass would re-normalise it exactly as this one did.
  */
 describe("be-11 · the maths legend keeps the page's squash", () => {
-  const SEED = path.resolve(__dirname, "..", "..", "..", "..", "data", "programmes", "tadarroj-3as-math.jsonl");
+  // THREE levels, not four: this file lives at <project>/tests/be/programme-corpus/.
+  // It was authored at features/<slug>/tests/be/ — one deeper — and `tools/promote-tests`
+  // moved it without rewriting the climb, so it resolved to <clone-root>/data/programmes
+  // and ENOENT'd on every run since promotion. Three deterministic reds nobody had
+  // separated from the pool's noise, because the gate's failure count was moving anyway.
+  const SEED = path.resolve(__dirname, "..", "..", "..", "data", "programmes", "tadarroj-3as-math.jsonl");
 
   /** ه و م ل ّ و ن — what page 18 prints. */
   const AS_PRINTED = "هوملّون";
