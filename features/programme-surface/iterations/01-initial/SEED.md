@@ -114,7 +114,52 @@ over the existing `{streams:1, current:1}` index, 1.06 ms.
 | `red-unlegended` is dead | **accepted risk** | Zero instances in all five documents. Whatever is built for it is untestable against real data. Keep the type; do not build a branch for it. |
 | The lettres document serves two streams | **accepted** | آداب وفلسفة and لغات أجنبية resolve to the same document and get identical trackers. Correct per the corpus; unverified as a product expectation. |
 
-### ⚠ Escalation — the corpus says □ where the ministry printed ℤ
+### ✅ RESOLVED 2026-08-11 — and the diagnosis below was wrong in an instructive way
+
+**The transcription was faithful. The source PDFs are the broken thing.**
+
+`pdftotext` on `tadarroj-3as-math-2022.pdf` p13 ends the line at «القسمة اإلقليدية في» —
+**there is no character after it at all**. Not a wrong codepoint: an absent one. The
+document embeds `Cambria`, `Calibri`, `Symbol`, `Arial`, `Arabic`, `Wingdings` and **no math
+font carrying double-struck glyphs**, while every other formula on the same page extracts
+cleanly (`PGCD(a;b)`, `a = bq + r`, `0 ≤ r ≤ b`). So the ministry's own PDF fails to embed
+ℤ/ℕ/ℝ/ℂ and **every reader sees a box**. Whoever transcribed it wrote `\square` because that
+is literally what the page shows.
+
+That changes what the fix *is*. It is not a correction of our misreading — it is an
+**editorial restoration** of glyphs the source cannot render, and it is defensible only
+because the mathematics determines each one uniquely:
+
+| context | restored | why it is forced, not chosen |
+|---|---|---|
+| القسمة الإقليدية · قابلية القسمة · الموافقات · مبرهنة غوص · Diophantine `ax+by=c` | **ℤ** | Euclidean division, divisibility and congruence are defined on the integers; `q` and `r` are named «عددان صحيحان» in the same sentence |
+| the division theorem's second set, `\square_{+}^{*}` | **ℤ*₊** | `0 ≤ r ≤ b` with `q,r` integers forces a positive integer bound |
+| Euclid's lemma `a,b ∈ \square^{*}`, `p` prime | **ℤ*** | primality and divisibility are integer notions |
+| المجموعة □ · quadratics with real coefficients · `z' = az + b` similitudes | **ℂ** | the containing unit is الأعداد المركبة; a quadratic with real coefficients is being solved *in* ℂ precisely because it need not split over ℝ |
+| `θ` sweeps □, `k` sweeps `\square^{+}` | **ℝ**, **ℝ⁺** | a swept angle and a positive scalar |
+| `x \mapsto x^{a}` with `x > 0` | **ℝ*₊** | the same sentence says «من أجل كل عددين حقيقيين $a$ و $b$» — the exponent is real, **not** the ℤ its identical `_{+}^{*}` decoration carries three units later |
+
+That last row is why this was not safe to batch-replace: **the same decoration means ℝ*₊ in
+week 8 and ℤ*₊ in week 15.** The applier was keyed on the exact surrounding fragment, with an
+expected occurrence count per rule and a hard abort on any string that matched no rule —
+61 of 61 matched, none fell through.
+
+**Applied through the loader, not by hand.** `--correct` on the three affected files, which
+archived the superseded versions to `programme_revisions` (9 → 12) and bumped
+`transcriptionRev` **4→5 · 3→4 · 4→5**, leaving `edition` at `2022-09` on all five. That is
+the two-axes rule working: our reading changed, the ministry's programme did not.
+`verify-programmes --db teacher_saas --docKey …` reports **A1–A8 · 8 passed / 0 failed** on
+each, and zero `\square` remain anywhere in the corpus.
+
+**What is still true and must not be forgotten:** a verifier green certifies structure and
+arithmetic, never page fidelity. These 61 are now *our* symbols, restored on mathematical
+grounds, in a corpus whose whole point is that it is the ministry's words. They are the
+first editorial intervention in it. If a human ever does read the pages, these are the
+strings to read first.
+
+---
+
+### ⚠ The original escalation, kept for the record — the diagnosis it argued was wrong
 
 **`\square` is the single most frequent TeX command in the corpus and it is a transcription
 placeholder.** Measured corpus-wide at seal time — **61 occurrences across 48 strings**, in
