@@ -17,6 +17,19 @@
           "derived_from": {
             "seed": "f2a4407d724b63fe"
           }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "subissues": "4392e473091cb264"
+          }
+        },
+        "staging": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "4392e473091cb264"
+          }
         }
       },
       "subissues": {
