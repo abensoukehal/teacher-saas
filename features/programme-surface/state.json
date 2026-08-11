@@ -9,7 +9,7 @@
         "seed": {
           "status": "locked",
           "derived_from": {
-            "brief": "cffc24eb63db4957"
+            "brief": "7e3362b6c4a0f798"
           }
         },
         "contracts": {
@@ -19,7 +19,105 @@
           }
         }
       },
-      "subissues": {}
+      "subissues": {
+        "be-1": {
+          "status": "todo",
+          "tag": "happy-path",
+          "delta": [
+            "be/src/routes/programme.ts",
+            "be/src/store/programmes.ts",
+            "be/src/app.ts"
+          ],
+          "stack": "be"
+        },
+        "be-2": {
+          "status": "todo",
+          "tag": "hardening",
+          "depends_on": [
+            "be-1"
+          ],
+          "delta": [
+            "features/programme-surface/tests/be/bound-pin.characterization.test.js"
+          ],
+          "stack": "be"
+        },
+        "fe-1": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "delta": [
+            "fe/src/lib/programme.ts",
+            "fe/src/lib/api.ts"
+          ],
+          "stack": "fe"
+        },
+        "fe-2": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1"
+          ],
+          "delta": [
+            "fe/src/components/ProgrammeBar.tsx"
+          ],
+          "stack": "fe"
+        },
+        "fe-3": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1"
+          ],
+          "delta": [
+            "fe/src/components/WeekCard.tsx"
+          ],
+          "stack": "fe"
+        },
+        "fe-4": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "fe-2"
+          ],
+          "delta": [
+            "fe/src/components/Tracker.tsx"
+          ],
+          "stack": "fe"
+        },
+        "fe-5": {
+          "status": "todo",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-2",
+            "fe-3",
+            "fe-4"
+          ],
+          "delta": [
+            "fe/src/components/Nav.tsx",
+            "fe/src/App.tsx",
+            "fe/src/App.css"
+          ],
+          "stack": "fe"
+        },
+        "fe-6": {
+          "status": "todo",
+          "tag": "hardening",
+          "depends_on": [
+            "fe-1",
+            "fe-2",
+            "fe-3",
+            "fe-4",
+            "fe-5"
+          ],
+          "delta": [
+            "features/programme-surface/tests/fe/guard-rails.characterization.test.tsx"
+          ],
+          "stack": "fe"
+        }
+      }
     }
   }
 }

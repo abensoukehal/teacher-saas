@@ -1,119 +1,297 @@
 # Stack spec — teacher-be (Express · TypeScript · ESM · Node 20+)
 
 > The per-job skeleton for the **be** repo (`repos.sh` key `be`).
-> `tools/provision` copies this into every new job's `stack-skeletons/`; the job
-> fills it in. Filled and implemented by the `be` stack agent (reads
-> `project/CLAUDE.md`'s be section + this feature's `contracts/`).
-> Loop-engineering format: everything an implementing agent needs, issue by issue.
+> Filled at PLANNING for `programme-surface` (slice 2 of 7) from the locked SEED.
+> Implemented by the `be` stack agent against this feature's `contracts/`.
 >
-> **This repo is two things:** the application tier, and the **Claude Code CLI
-> wrapper** (`src/claude/`) that generates coursework. A new kind of generated
-> material is a new `.claude/skills/<name>/SKILL.md` — *not* new orchestration
-> code. If a sub-issue here is building a prompt pipeline in TypeScript, it is
-> scoped wrong.
+> **be is small in this slice, and that is the plan, not an accident.** One read route
+> over a store that already exists, one field-explicit projection, and the closing of a
+> vacuous test pin slice 1 left behind. No collection is added, no write path changes,
+> nothing here reaches `src/claude/`. If a sub-issue grows a second route or a write,
+> it is scoped wrong.
 
 ## Scope recap (from SEED.md + this stack's sub-issues)
-- Modules:
-- Contracts this stack must honor: `contracts/<a>-<b>`, …
+- Modules: `GET /api/classes/:classId/programme` (new route) · `toProgrammeRecord`
+  projection appended in `src/store/programmes.ts` · mount + `/api` index entry ·
+  **closing the `markedWeek` bound pin** (test-only — the slice-1 mutation survivor).
+- Contracts this stack must honor: `contracts/fe-be-programme.contract.md` (§§0–5, 7,
+  8), `contracts/flows.md`. Slice 1's `fe-be-classes-progress.contract.md` stays in
+  force untouched.
 
 ## Current behavior baseline
-> What the touched areas do today, with file:line refs.
-> Pinned by `features/<slug>/tests/be/*.characterization.*` (the WF-53 home —
-> never sub-repo-local; run via `tools/ci be --slug <slug>`; import by module
-> resolution, never relative `../../` paths into the repo).
+> Captured 2026-08-11 against lane slot 9 (be :9900) — SEED §2 is the recording of
+> record; re-run commands there. Pinned by
+> `features/programme-surface/tests/be/*.characterization.test.js`
+> (WF-53 home; run `tools/ci be --slug programme-surface` FROM THE JOB WORKTREE;
+> lane from `CHAR_BE_URL`, log from `CHAR_BE_LOG` — never a hardcoded port).
 
-### Run headless (to investigate — do this before writing the Blueprint)
-> Exercise the real code; record real shapes. Don't assume.
-- Run the local stack (`tools/dev up`) or just this one: `tools/dev up be`.
-- **Check the CLI first** — most generation failures are environmental, not code:
-  `curl localhost:<lane-port>/health` → `claude.ok`, version, queue depth.
-  A `503 claude_auth` means the CLI needs an interactive `/login`, not a fix here.
-- Call the target surfaces (curl / a throwaway script), record ACTUAL
-  request/response shapes → paste into the contract's "current shape".
-- Watch it: `tools/obs logs be`, `tools/obs trace <id>` (correlation id is echoed
-  on every response and log line).
-
-> ⚠ `POST /api/generate` runs a **whole Claude Code agent loop** — minutes, and it
-> spends quota. Record the shape once and pin it with a characterization test;
-> don't re-call it on every loop iteration.
+- No programme route: `curl -s -o /dev/null -w '%{http_code}' $CHAR_BE_URL/api/programmes`
+  → `404`; `curl -s $CHAR_BE_URL/api` → 9 route entries, none for the programme.
+- The readers exist unmounted: `getProgramme` (`src/store/programmes.ts:1019`),
+  `getProgrammeForStream` (`:1052`, slice 1, over the `{streams:1, current:1}` index).
+- Corpus: 5 docs · 6 streams · 27 weeks each · rows **103/97/81/59/39**
+  (`mongosh teacher_saas --quiet --eval 'db.programmes.find().toArray().map(d => d.weeks.flatMap(w => w.rows).length)'`).
+  Maths field density: competencies **76**/103 · contents 63 · guidance 55.
+- Cost of serving: projection **38,775 B** (whole doc 62,883); find + stringify
+  **p50 1.06 ms · p95 2.55 ms** over 30 runs. `If-None-Match` on `/api/skills` →
+  `304` zero-byte (Express default ETag, no middleware). `Accept-Encoding: gzip` →
+  no `Content-Encoding` (no compression, parked — SEED §6).
+- The one 404: `resolve()`/`notFound()` (`src/routes/progress.ts:44-56,77-113`) —
+  lowercase-hex check → `getOwned` → `{"error":{"message":"القسم غير موجود","type":"class_not_found"},…}`,
+  byte-identical across probe variants. **`progress.ts` is read-only this slice** —
+  the programme route replicates the guard; parity is pinned by byte-compare
+  (contract §0).
+- The vacuous pin: `markedWeek`'s bound reads the class's own programme
+  (`progress.ts:111,127,139,177` — code correct), but a mutant hardcoding 27
+  **survives all 411 be tests** because every corpus doc says 27
+  (`classes-progress/known-gaps.md`). Recorded live with a synthetic
+  `totals.weeks: 30` programme: `markedWeek 28 → 200`, `31 → 400` — **a hardcoded 27
+  gives 400 at 28, the kill** (SEED §2).
+- The loader refuses non-27 by design: `WEEKS_PER_YEAR = 27` enforced at
+  `src/store/programmes.ts:445,556,679`. Those guards are **correct and frozen** —
+  which is exactly why the pin's fixture must be a direct Mongo insert in the suite.
+- ci gate: `tools/ci be --slug programme-surface` → `FAIL: no characterization tests
+  resolved` — RED, correct (WF-82; a fresh job has no gate yet).
 
 ## Observability (PIN co-requisite)
-> Before implementing: is this area observable today? What must be added.
-- Logs: key transitions, structured fields, correlation id in/out
-- Errors: error-tracker capture on the paths we touch
-- Trace: correlation id received upstream, propagated downstream
-- Blind spots → first issue(s) in the slice. Verify: `tools/obs logs`, `tools/obs trace <id>`
+- Visible today: correlation id on every response (middleware BEFORE the body parser —
+  must not regress); `mutationlog` covers every class/progress write incl. CAS losses
+  (`teacherIdPrefix`, 8 chars, one key name).
+- **No blind spot to close, and that is a finding, not an omission (SEED §5):** a
+  programme read is a cache-friendly read of a public document — a mutation-style log
+  line would be noise, and the oracle pins its ABSENCE. What matters operationally is
+  the tracker's new write pattern (many small PUTs → `cas_loss` becomes a frequency
+  signal), and the existing `progress.write` line already carries it. Nothing to add.
+- Verify: `tools/obs logs be`, `tools/obs trace <correlationId>`; suites read
+  `CHAR_BE_LOG`.
 
 ## Data model changes
 | Model / store | Field | Change | Migration? |
 |---------------|-------|--------|-----------|
-| | | add / modify | yes/no |
-
-> ★ No datastore is chosen yet — record the decision here the first time a job
-> needs one. Additive, backward-compatible; never drop/rename in the same release
-> as the code change.
+| — none — | | no collection, no field, no index; `toProgrammeRecord` is a read-side projection appended to `src/store/programmes.ts` | no |
 
 ## Surfaces (Express routes)
-> Declared in `src/app.ts`. Existing surface: `/health` · `/api` · `/api/skills`
-> · `/api/generate`.
+> Mounting in `src/app.ts:118-146` (after `progressRouter()` at `:138`); the `/api`
+> index list at `src/app.ts:100-117` gains exactly one entry (contract §0).
 
 | Surface | Implementation path | New/Modify | Contract |
 |---------|--------------------|-----------|----------|
-| | `src/app.ts:LINE` | | |
+| `GET /api/classes/:classId/programme` | new `src/routes/programme.ts` | new | §1, §2, §7 |
+| `toProgrammeRecord(doc)` | `src/store/programmes.ts` (append after `:1052`, touch no existing function) | modify (append only) | §2 |
+| mount + index entry | `src/app.ts:100-117` (index), `:138+` (mount) | modify | §0 |
 
 ## Skills touched (`.claude/skills/`)
-> The product's real capability layer. One row per skill this job adds or changes.
-
 | Skill | New/Modify | What it produces | How its output is judged |
 |-------|-----------|------------------|--------------------------|
-| | | | |
-
-> A skill's oracle is not a string match — it is whether the material is usable in
-> a real classroom. State the checkable properties (e.g. "segment minutes sum to
-> the stated duration", "objectives are observable"), and pin those.
+| — none — | | this slice generates nothing | |
 
 ## Gating (concurrency, timeouts)
-> `CLAUDE_MAX_CONCURRENT` queues runs; `CLAUDE_TIMEOUT_MS` bounds one. If this job
-> makes generation slower or more parallel, say what happens to the queue.
+Untouched. No new path reaches `src/claude/runner.ts`. The programme read is a 1 ms
+`findOne` + stringify on an existing index; it queues behind nothing.
 
 ## Failure classification
-> Auth → 503 · timeout → 504 · other CLI failure → 502 · this service's own bug →
-> 500. A new failure path must land in the right bucket; collapsing to 500 hides
-> the ones a human can actually act on.
+No new type, no new 5xx. The route reuses: `401 teacher_required` ·
+`404 class_not_found` (**byte-identical body to the progress routes' — contract §7,
+pinned by cross-route compare**) · `503 store_unavailable` (retryable) · `500` only
+for the corpus-moved-underneath-us invariant (same rule as `GET /api/progress/:classId`
+— a class's stream that stops resolving is OUR broken invariant, never the caller's
+400). Callers branch on `error.type`, never the status code.
+
+## Perimeter — two slice-1 pins this slice must respect (SEED §3)
+
+1. **The `/api` route-count pin fires at promotion, not here.**
+   `features/classes-progress/tests/be/progress.characterization.test.js:1074-1079`
+   asserts the index has **exactly** `RECORDED_ROUTES.length + 1` entries. That suite
+   is **not yet promoted**, so this slice's gate is unaffected — but promoting
+   `classes-progress` after this lands turns it red. The amendment (a declared
+   supersession, WF-65) is a promotion-time decision for that net; recorded here so it
+   surprises nobody.
+2. **`classes.characterization.test.js:198-203` pins `distinct("streams")` to exactly
+   the six recorded values.** A synthetic programme left behind by a crashed run turns
+   it red. be-2's fixture therefore self-heals (deletes any leftover in `beforeAll`)
+   and cleans up in `afterAll` — **never at the end of a test body**.
 
 ---
 
 ## Sub-issues (this stack's technical work, grouped by issue)
 
-<!-- Personal-only. Each rolls its status UP to its parent issue. No board title. -->
-
 ```yaml
 ---
 kind: sub-issue
 id: be-1
-parent: i1                  # the board issue this builds
+parent: i1
 stack: be
-status: todo                # rolls up to the issue
+status: todo
 depends_on: []
 estimate: M
 ---
 ```
 
-### be-1 — <short name>
-<!-- Six slots — the loop-ready contract (conventions/writing-sub-issues.md). -->
-1. **Intent:** why this sub-issue exists, one sentence — the loop's tiebreaker.
-2. **Ground truth (recorded + re-run command):** real shapes from the running
-   service (`curl …` / `tools/obs trace <id>`) — pasted here with the command.
-   Pre-flight: the loop re-runs this and must reproduce it before writing a line.
-3. **Delta:** target files (`path:LINE`) + the change. **Everything else frozen**
-   (freeze check is path-scoped: `git status --short -- <delta paths>`, never repo-wide — WF-63).
-4. **Oracle (executable, two-sided):**
-   - positive: spec-test / characterization `features/<slug>/tests/be/…`
-     (run: `tools/ci be --slug <slug>`);
-     acceptance as commands + expected observations, states incl. (loading/error/empty)
-   - negative: existing consumers' recorded shapes bit-stable; untouched paths unchanged
-   - obs assertion: `tools/obs trace <id>` shows the flow with expected status
-5. **Boundaries:** contract refs; additive/versioned only; budget: 10 loop iterations.
-6. **Exit:** done-when = oracle green + freeze respected + `tools/ci be` green ·
-   ask-when = contract change needed / non-additive / frozen file / red pin / budget blown
-   (see `conventions/autonomy.md`).
+### be-1 — the programme route: the corpus becomes visible, whole and whitelisted
+
+**tag:** happy-path
+
+**Intent.** The product's lead value is conformity to the official programme and the
+programme is invisible — one guarded, class-scoped read route serves the whole
+field-explicit projection, so `fe` never holds a stream→programme mapping and the
+verbatim ministry text reaches the screens from data, not from UI literals.
+
+**Ground truth.** SEED §2, lane slot 9 — pre-flight: reproduce all three before
+writing a line:
+```
+curl -s -o /dev/null -w '%{http_code}' $CHAR_BE_URL/api/programmes        → 404
+curl -s $CHAR_BE_URL/api | jq '.routes | length'                          → 9 (no programme entry)
+mongosh teacher_saas --quiet --eval \
+  'const d = db.programmes.findOne({docKey:"tadarroj-3as-math",current:true});
+   print(d.totals.weeks, d.totals.hours, d.units.length, d.weeks.length)' → 27 189 14 27
+```
+The readers exist unmounted (`programmes.ts:1019,1052`); the 404 body to match is the
+recorded `{"error":{"message":"القسم غير موجود","type":"class_not_found"},…}` from
+`GET /api/progress/:classId` (progress.ts:50-56). Projection payload measured at
+38,775 B, p50 1.06 ms.
+
+**Delta (freeze).** May touch: new `src/routes/programme.ts` (the route: hex-shape
+check → `getOwned` → `getProgrammeForStream` → `toProgrammeRecord`, behind
+`requireTeacher`); `src/store/programmes.ts` (**append** `toProgrammeRecord(doc)` +
+its return type after `:1052` — touch no existing function, and NOTHING between
+`:396-750`: the validators and `WEEKS_PER_YEAR` are gated by the promoted
+`programme-corpus` suite); `src/app.ts:100-117` (one index entry:
+`"/api/classes/:classId/programme"`) and `:138+` (mount). **Frozen:**
+`src/routes/progress.ts` (the guard is REPLICATED, not exported — SEED marks the file
+read-only; parity is pinned executable below), `src/store/progress.ts`,
+`src/routes/classes.ts`, `src/store/classes.ts`, `src/teacher.ts`, `src/inflight.ts`,
+`src/mutationlog.ts`. Freeze check:
+`git status --short -- src/routes/progress.ts src/store/progress.ts src/routes/classes.ts src/store/classes.ts src/teacher.ts src/inflight.ts src/mutationlog.ts` empty.
+
+**Oracle.** `features/programme-surface/tests/be/programme.characterization.test.js`
+(jest, black-box over `CHAR_BE_URL`, `describeIfLane` from `guard` — model:
+`classes-progress/tests/be/classes.characterization.test.js`)
+- mint a teacher → class on `شعبة الرياضيات` → `GET /api/classes/:id/programme` →
+  `200`; `programme.docKey "tadarroj-3as-math"`, `edition` present, `weeklyHours 7`,
+  `totals` exactly `{weeks: 27, hours: 189}`, `units.length 14`, `weeks.length 27`
+  (positive)
+- **key-set equality, three depths** (the whitelist is executable — contract §2):
+  `Object.keys(programme).sort()` is exactly the eight; each unit exactly `{id, name}`;
+  each week exactly `{week, unitId, hours, pdfPages, rows}`; each row exactly
+  `{competencies, contents, guidance, hours, emphasis}`. Excluded-by-name spot checks:
+  no `contentHash`, `transcriptionRev`, `frontMatter`, `weekNumberPrinted`, `nameText`,
+  `units[].hours` anywhere in the payload string (negative)
+- **verbatim is a comparison, not a fixture**: `source.authority/title`,
+  `emphasisLegend.{text, pdfPage}`, and week 20's full `rows` byte-equal the same
+  fields read directly from Mongo in the suite (positive — the projection may drop
+  fields, never alter one)
+- **one probe per corpus document, WF-70**: a class per stream (all six — the lettres
+  document serves two streams the same doc), each GET returns the doc whose `streams`
+  held that stream, `weeks.length 27`, and total row counts `103/97/81/59/39` per
+  docKey (positive)
+- the density fact that drove the contract: maths rows with non-empty `competencies`
+  = **76**, contents 63, guidance 55; week 20 has 7 rows with 7 competencies and 3
+  contents (positive — if a re-transcription moves these, the recording moved and the
+  ask-when fires)
+- **404 parity, cross-route**: {nonexistent id, another teacher's real class,
+  non-hex garbage, UPPERCASE of the owned id} → all `404 class_not_found`, all four
+  bodies byte-identical to each other AND to `GET /api/progress/:classId`'s 404 for
+  the same probes (negative — contract §0/§7; the replicated guard cannot drift)
+- no `x-teacher-id` → `401 teacher_required`, recorded body (negative)
+- second GET with `If-None-Match` from the first's `ETag` → `304`, zero-byte body
+  (positive — the caching story is the default ETag; a middleware that breaks it goes
+  red here)
+- `/api` index: contains `"/api/classes/:classId/programme"` and grew by exactly one
+  entry over this suite's own recorded slice-1 list (negative — and see Perimeter 1:
+  the OLD suite's count pin is amended at promotion, not here)
+- `GET /api/progress/:classId` response for the same class byte-identical in key set
+  and `programme {docKey, edition, totalWeeks}` to the slice-1 recording (negative —
+  the picker's bound is untouched, contract §3)
+- **obs assertion:** the programme GET's `correlationId` echoes in the response, and
+  `CHAR_BE_LOG` gains NO `class.created`/`progress.write`-style mutation line for it —
+  the deliberate read silence (SEED §5), pinned
+
+**Boundaries.** Contract §§0–3, 7, 8.1, 8.10. Additive only — one route, one index
+entry, zero changes to existing responses. Budget 10 iterations.
+
+**Exit protocol.** Done-when: oracle green ×2 · freeze paths clean ·
+`tools/ci be --slug programme-surface` green from the job worktree. Ask-when: the
+projection seems to need a field outside the whitelist (contract amendment, not a
+judgment call) · the 404 body cannot be made byte-identical without touching
+`progress.ts` · any frozen file · budget blown.
+
+---
+
+```yaml
+---
+kind: sub-issue
+id: be-2
+parent: i1
+stack: be
+status: todo
+depends_on: [be-1]
+estimate: M
+---
+```
+
+### be-2 — the bound pin closes: a programme that is not 27 weeks, at last
+
+**tag:** hardening
+
+**Intent.** Slice 1's only mutation survivor dies: hardcoding `27` for `totalWeeks`
+survives all 411 be tests because every corpus document says 27 — so this sub-issue
+gives the suite what reality refuses to provide, a programme with a different ceiling,
+inserted directly because the loader's own guards (correctly) forbid making one.
+
+**Ground truth.** The kill is proven live (SEED §2, lane s9): with a synthetic
+`totals.weeks: 30` programme and a class on it, `PUT markedWeek: 28 → 200` and
+`31 → 400` — **a hardcoded 27 answers 400 at 28**. The obstacle is written down:
+`WEEKS_PER_YEAR = 27` is enforced at `src/store/programmes.ts:445,556,679`, those
+guards are right and frozen, so the fixture CANNOT come through
+`scripts/load-programmes.mjs` — it is a direct Mongo insert in the suite, on a stream
+value no real document carries. Slice 1 already proved `be` accepts a class on a
+synthetic-stream programme (the drift experiment, `known-gaps.md`). The tripwire to
+respect: `classes-progress/tests/be/classes.characterization.test.js:198-203` pins
+`distinct("streams")` to exactly the six. Pre-flight:
+`mongosh teacher_saas --quiet --eval 'db.programmes.distinct("streams").length'` → `6`
+(no leftover), and be-1's suite green.
+
+**Delta (freeze).** May touch: **only** the new suite
+`features/programme-surface/tests/be/bound-pin.characterization.test.js`.
+**No product code — `git status --short` inside `stacks/teacher-be` stays empty for
+this sub-issue.** Frozen explicitly: `WEEKS_PER_YEAR`, the seed validator, and every
+line of `src/` (the implementation is already correct; the PIN is the deliverable).
+
+**Oracle.** The suite itself (jest, black-box, `CHAR_BE_URL` + direct Mongo):
+- `beforeAll`: **self-heal** — delete any `docKey: "synthetic-bound-pin"` residue from
+  a prior crashed run; then insert the synthetic programme: stream
+  `"شعبة اصطناعية — اختبار"` (no real document carries it), `current: true`,
+  `totals: {weeks: 30, hours: 210}`, 30 `weeks[]` entries with `unitId`s/`rows`
+  minimal but shaped, `edition`/`transcriptionRev` present (the stamp fields
+  `resolve()` reads). The fixture is deliberately NOT loader-valid — varying the
+  ceiling is its whole job
+- create a class on the synthetic stream → `201` (the corpus, not a TS union, is the
+  validator — re-proving slice 1's rule) (positive)
+- `GET /api/progress/:classId` → `programme.totalWeeks: 30` (the picker's bound
+  follows the class's OWN document) (positive)
+- **the kill**: `PUT {rev: 0, markedWeek: 28}` → `200` — a hardcoded-27 mutant answers
+  `400` here and this clause goes red; `markedWeek: 30` → `200`; `31` → `400
+  invalid_request` (positive + negative — the bound is the document's, exactly)
+- the entry bound follows the same ceiling (`progress.ts:139`): entry `{week: 29,
+  status: "done"}` accepted; `{week: 31}` → `400` (positive + negative — WF-70, the
+  second consumer of `totalWeeks`)
+- **the twin kill on the new route**: `GET /api/classes/:classId/programme` →
+  `totals.weeks: 30` and `weeks.length: 30` served verbatim — a projection-side
+  hardcode or a `WEEKS_PER_YEAR` reuse in `toProgrammeRecord` dies here (positive)
+- `afterAll`: delete the synthetic programme and the classes/progress docs created on
+  it — **cleanup lives in `afterAll`, never at the end of a test body** (a mid-suite
+  failure must still clean up); final clause runs slice 1's own guard expression:
+  `distinct("streams")` equals exactly the six recorded values again (negative — the
+  corpus-guard restored, executable in THIS suite so the leak is caught where it is
+  made)
+
+**Boundaries.** Contract §3 (the two week-totals are separate sources — this suite is
+why); the promoted `programme-corpus` suite gates the loader and must stay green
+untouched. Budget 8 iterations. Never touch `project/data/programmes/*.jsonl` — the
+fixture lives and dies inside Mongo and this suite.
+
+**Exit protocol.** Done-when: suite green ×2 (including the restored-corpus clause) ·
+`git status --short` empty in `stacks/teacher-be` · `tools/ci be --slug
+programme-surface` green · the promoted `project/tests/be` net still green. Ask-when:
+class creation refuses the synthetic stream (the corpus-validation contract moved) ·
+the synthetic insert trips any guard other than the ones named · budget blown.
