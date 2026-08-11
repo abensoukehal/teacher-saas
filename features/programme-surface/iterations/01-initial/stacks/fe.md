@@ -119,7 +119,7 @@ kind: sub-issue
 id: fe-1
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [be-1]
 estimate: M
 ---
