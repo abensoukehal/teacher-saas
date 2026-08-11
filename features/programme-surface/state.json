@@ -31,7 +31,7 @@
           "stack": "be"
         },
         "be-2": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "be-1"
