@@ -30,6 +30,19 @@
           "derived_from": {
             "subissues": "4392e473091cb264"
           }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "4392e473091cb264"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "subissues": "4392e473091cb264"
+          }
         }
       },
       "subissues": {
