@@ -93,8 +93,11 @@
           ]
         },
         "be-6": {
-          "status": "todo",
-          "tag": "hardening"
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-5"
+          ]
         }
       }
     }

@@ -366,7 +366,7 @@ describeIfLane(BE, "be-1 — classes: created, listed, owner-scoped, and observa
   });
 
   describe("THE BLIND-SPOT CLOSURE — every class write emits one structured line", () => {
-    test("class.created carries the response's correlationId, the classId, and an 8-char teacher PREFIX", async () => {
+    test("class.created carries the response's correlationId, the classId, and an 8-char teacherIdPrefix", async () => {
       if (!LOG) throw new Error("CHAR_BE_LOG is unset — run via tools/ci, not jest directly");
       const teacher = await mintTeacher();
       const { body } = await makeClass(teacher, { name: "3ر7", stream: "شعبة الرياضيات" });
@@ -379,8 +379,13 @@ describeIfLane(BE, "be-1 — classes: created, listed, owner-scoped, and observa
       expect(hits).toHaveLength(1);
       const line = hits[0];
       expect(line.classId).toBe(body.class.id);
-      expect(line.teacher).toBe(teacher.slice(0, 8));
-      expect(line.teacher).toHaveLength(8);
+      // AMENDED by be-6 (WF-65 declared supersession): the key is `teacherIdPrefix`, the
+      // name teacher.ts and routes/auth.ts already used at six call sites. The VALUE and
+      // the 8-char slice did not move — only what the field is called, and `teacher` is
+      // now asserted absent so the rename is complete rather than doubled.
+      expect(line.teacherIdPrefix).toBe(teacher.slice(0, 8));
+      expect(line.teacherIdPrefix).toHaveLength(8);
+      expect(line.teacher).toBeUndefined();
     });
 
     test("NO log line for this write contains the whole 32-hex bearer value", async () => {

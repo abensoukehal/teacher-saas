@@ -337,16 +337,31 @@ describeIfLane(BE, "be-5 — the perimeter: probes, abuse, and log truth under f
       expect(withClass.body.error.type).not.toBe("class_not_found");
       // Identical for a teacher who owns a class and one asked about a path with no id —
       // nothing about the collection is readable here.
-      expect(withClass.raw).toBe(withoutClass.raw);
+      //
+      // AMENDED by be-6 (WF-65 declared supersession). This compared the two raws
+      // directly, which was byte-identity only because the catch-all body carried no
+      // correlationId. be-6 put one in it, so two requests now legitimately differ by
+      // that one field — and the fix is `mask`, the SAME normalisation every other
+      // parity clause in this file already applies (RECORDED_CLASS_404 is written with
+      // `<CID>` for exactly this reason). The invariant is unchanged and still exact:
+      // byte-identical modulo the per-request correlation id.
+      expect(mask(withClass.raw)).toBe(mask(withoutClass.raw));
     });
 
-    it("the catch-all 404 carries NO correlationId — recorded, not fixed here", () => {
-      // A pre-existing gap in the route-level catch-all, older than this job (scaffold
-      // commit fd122fc) and outside be-5's Delta. Pinned so it is inherited knowingly
-      // rather than discovered later, and so closing it is a deliberate change that turns
-      // this clause red on purpose.
+    it("the catch-all 404 now carries a correlationId, in Arabic — be-6", () => {
+      // AMENDED by be-6 (WF-65 declared supersession). be-5 pinned the pre-existing gap
+      // — no correlationId in the body, and an ENGLISH message — as inherited knowingly,
+      // and said in as many words that closing it "is a deliberate change that turns this
+      // clause red on purpose". be-6 is that deliberate change: `fe` reads the id out of
+      // the BODY (fe/src/lib/api.ts) and renders `error.message` RAW to the teacher, so
+      // the old body was both untraceable by its own consumer and English on an
+      // Arabic-only product. The `type` did NOT move — callers branch on it.
       return call("GET", "/api/progress/", { teacher: teacherA }).then((res) => {
-        expect(res.body.correlationId).toBeUndefined();
+        expect(typeof res.body.correlationId).toBe("string");
+        expect(res.body.correlationId.length).toBeGreaterThan(0);
+        expect(res.body.error.type).toBe("not_found");
+        expect(res.body.error.message).toMatch(/[؀-ۿ]/);
+        expect(res.body.error.message).not.toMatch(/[A-Za-z]/);
       });
     });
   });
@@ -638,10 +653,15 @@ describeIfLane(BE, "be-5 — the perimeter: probes, abuse, and log truth under f
       for (const l of logLines.filter((x) => x.outcome === "cas_loss")) expect(l.rev).toBe(0);
     });
 
-    it("every line carries an 8-char teacher prefix and never the bearer value", () => {
+    it("every line carries an 8-char teacherIdPrefix and never the bearer value", () => {
+      // AMENDED by be-6 (WF-65 declared supersession): the key is `teacherIdPrefix`, the
+      // name teacher.ts and routes/auth.ts already used at six call sites. The VALUE and
+      // the 8-char slice did not move — only what the field is called, and `teacher` is
+      // now asserted absent so the rename is complete rather than doubled.
       for (const l of logLines) {
-        expect(l.teacher).toBe(teacherA.slice(0, 8));
-        expect(l.teacher).toHaveLength(8);
+        expect(l.teacherIdPrefix).toBe(teacherA.slice(0, 8));
+        expect(l.teacherIdPrefix).toHaveLength(8);
+        expect(l.teacher).toBeUndefined();
         // The whole id must not have arrived under a different key.
         expect(l.teacherId).toBeUndefined();
         expect(JSON.stringify(l)).not.toContain(teacherA);

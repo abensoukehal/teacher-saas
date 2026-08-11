@@ -446,7 +446,7 @@ kind: sub-issue
 id: be-6
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-5]
 estimate: S
 ---
@@ -454,7 +454,7 @@ estimate: S
 
 ### be-6 — the catch-all speaks Arabic, and one name for the teacher prefix
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** Two defects the be-5/fe-1 verifier found, both small, both real. The app's
 catch-all 404 answers in **English** on a product whose first hard constraint is

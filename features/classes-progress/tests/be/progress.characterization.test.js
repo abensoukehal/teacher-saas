@@ -861,7 +861,7 @@ describeIfLane(BE, "be-2 — progress: synthesized on read, compare-and-set on w
       );
     });
 
-    test("every progress line carries an 8-char teacher PREFIX and never the bearer value", async () => {
+    test("every progress line carries an 8-char teacherIdPrefix and never the bearer value", async () => {
       requireLog();
       const teacher = await mintTeacher();
       const klass = await makeClass(teacher);
@@ -869,8 +869,13 @@ describeIfLane(BE, "be-2 — progress: synthesized on read, compare-and-set on w
       const lines = await findLogLines((o) => o.correlationId === body.correlationId);
       expect(lines.length).toBeGreaterThan(0);
       const write = lines.find((l) => l.event === "progress.write");
-      expect(write.teacher).toBe(teacher.slice(0, 8));
-      expect(write.teacher).toHaveLength(8);
+      // AMENDED by be-6 (WF-65 declared supersession): the key is `teacherIdPrefix`, the
+      // name teacher.ts and routes/auth.ts already used at six call sites. The VALUE and
+      // the 8-char slice did not move — only what the field is called, and `teacher` is
+      // now asserted absent so the rename is complete rather than doubled.
+      expect(write.teacherIdPrefix).toBe(teacher.slice(0, 8));
+      expect(write.teacherIdPrefix).toHaveLength(8);
+      expect(write.teacher).toBeUndefined();
       for (const line of lines) {
         expect(JSON.stringify(line)).not.toMatch(HEX32);
         expect(JSON.stringify(line)).not.toContain(teacher);
