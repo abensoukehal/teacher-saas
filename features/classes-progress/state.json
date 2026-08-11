@@ -39,7 +39,7 @@
           ]
         },
         "be-4": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path"
         },
         "be-5": {

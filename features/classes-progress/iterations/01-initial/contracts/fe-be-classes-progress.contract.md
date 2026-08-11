@@ -220,6 +220,27 @@ invalid_request`. Absent → the subject is legacy, exactly as every subject tod
 - Stays on the `{teacherId: 1, updatedAt: -1}` index (the filter narrows in-memory or
   via the same scan; the recorded IXSCAN must not degrade — SEED §2).
 
+**The two degenerate values, pinned — they resolve OPPOSITE ways on read and write, and
+`fe` must know it (verifier finding, be-3/be-4 audit):**
+
+| value | `GET ?classId=` | `POST` body `classId` |
+|---|---|---|
+| `""` (empty) | **no filter** — the whole list | **`404 class_not_found`** |
+| repeated (`?classId=a&classId=b`) or array-shaped (`classId[]=`) | **`400 invalid_request`** | n/a |
+
+Empty reads as "no class selected" and writes as "a class was named and it does not
+exist" — fail-open on the read that must never lose a subject, fail-closed on the write
+that would otherwise store a meaningless tag. **`fe` must never serialise an unselected
+class as `""` in a POST body — omit the key entirely.**
+
+The repeated-param `400` is the **only new way `GET /api/subjects` can fail**, on the
+product's most-loaded read. It is accepted deliberately: a repeated param is ambiguous
+*intent* that only a client bug can produce, and degrading it to "no filter" would hide
+that bug behind a plausible-looking full list. **`fe` must never emit a repeated or
+array-shaped `classId`.** Recorded dissent: the be-3 verifier argued for degrading to
+no-filter on the "the reading that cannot lose a subject wins" principle, since a `400`
+renders as «تعذّر تحميل مواضيعك». Revisit if a real client ever produces one.
+
 ### Projections
 
 `toRecord` and `toSummary` (`subjects.ts:172-202`) each gain **one** explicit key:

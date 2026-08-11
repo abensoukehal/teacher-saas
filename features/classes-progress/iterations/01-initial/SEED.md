@@ -25,6 +25,17 @@ exists to prevent, so the spine has to land before anything hangs off it.
 Confirmed against the real store: **8,423 subjects, 0 with `classId`, 0 with `scope`**;
 **17,049 teachers**, 11,808 anonymous, 6,092 with no `role` field at all.
 
+> **Baseline drift, recorded not corrected (be-3/be-4 verifier).** The dev store has since
+> grown to **8,839 subjects / 17,861 teachers** — 384 of those subjects are orphan fixtures
+> from be-3's own implement cycle (created 2026-08-11 00:26–00:37 UTC), the rest is
+> accumulated drill litter. **Not deleted**: 32 predate this job, and the counts are a
+> baseline, not a product invariant. What matters is unchanged and was re-verified against
+> the *larger* population — **0 of 8,839 carry a `classId`**, so the legacy-visibility
+> property is pinned against more legacy documents than the spec assumed, not fewer. The
+> committed suites leave zero residue (three consecutive gate runs moved no counter).
+> A later pre-flight that quotes 8,423 should expect this drift and check the *shape*, not
+> the count.
+
 ## Current reality — the planning kit
 
 ### 1 · Acting-surface map
