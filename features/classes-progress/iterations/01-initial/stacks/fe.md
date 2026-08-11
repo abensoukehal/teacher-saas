@@ -107,7 +107,7 @@ kind: sub-issue
 id: fe-1
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [be-1]
 estimate: M
 ---
@@ -115,7 +115,7 @@ estimate: M
 
 ### fe-1 — the class layer and the bar
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** The product can SHOW classes: a typed client layer mirroring the contract,
 and a class bar as a new grid row that renders only when the teacher has classes — so
