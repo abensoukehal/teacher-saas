@@ -21,16 +21,28 @@
  *
  * Recorded 2026-08-11 against lane slot 9 (be :9900):
  *   curl -s -H "x-teacher-id: <id>" localhost:9900/api/classes/<classId>/programme
+ *
+ * RE-RECORDED 2026-08-11, same lane, at `tadarroj-3as-math` **transcriptionRev 5**
+ * (edition unchanged at `2022-09` — this is our reading being corrected, not the
+ * ministry's document). The corpus restored the double-struck set symbols the source
+ * PDFs fail to embed, so the recording that predates it is a recording of a corpus
+ * that no longer exists.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Programme, ProgrammeWeek } from "@/lib/programme";
 
 /**
- * The whole `programme` object from the recorded 200, verbatim — including the
- * 21 `\square` strings the SEED escalated. They are here UNTOUCHED on purpose: no
- * fixture in this job may sanitise a corpus defect the product has decided to ship
- * visibly (contract §6.5).
+ * The whole `programme` object from the recorded 200, verbatim — now carrying the 26
+ * `\mathbb{…}` symbols that replaced the 21 `\square` strings the SEED escalated. They
+ * are here UNTOUCHED on purpose, exactly as the placeholders were: no fixture in this
+ * job may sanitise or restore corpus text itself (contract §6.5). The escalation was
+ * closed the only way §6.5 permits — at the source, through the loader, with a
+ * `programme_revisions` row behind it — and NOTHING in either stack changed.
+ *
+ * The whole diff against the previous recording is those 21 strings, each a pure
+ * placeholder→symbol substitution. Every number fe-1, fe-2 and fe-3 assert (27 weeks,
+ * 189 hours, u12 at weeks 20 / 22–23, 308 corpus strings, 103 rows) is unmoved.
  */
 export const MATH: Programme = JSON.parse(
   // `__dirname` keeps the fixture beside the suite that uses it — the shape that

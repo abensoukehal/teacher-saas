@@ -30,8 +30,9 @@
  *     nobody asserts is one refactor away from being helpfully restored.
  *
  * Fixtures are fe-1's (`programme-fixtures.ts`), frozen — `MATH` is the real recorded
- * corpus, `\square` strings and all, and it was re-verified byte-identical to the live
- * route at this sub-issue's pre-flight.
+ * corpus, and it was re-verified byte-identical to the live route at this sub-issue's
+ * pre-flight, and again after the corpus correction re-recorded it at
+ * `transcriptionRev 5` (see the supersession note in `journal/fe-3.md`).
  */
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -143,7 +144,24 @@ const ministryStrings = (row: ProgrammeWeek["rows"][number]): string[] => [
   ...row.guidance,
 ];
 
+/**
+ * EVERY string anywhere in a programme — not just the three ministry columns.
+ *
+ * A sweep that walked only `weeks[].rows[]` would pass a placeholder left behind in a
+ * unit name, the legend or the title. The recursion is the point: the clause has to be
+ * unable to miss a field the corpus grows later.
+ */
+const everyString = (v: unknown): string[] =>
+  typeof v === "string"
+    ? [v]
+    : Array.isArray(v)
+      ? v.flatMap(everyString)
+      : v && typeof v === "object"
+        ? Object.values(v).flatMap(everyString)
+        : [];
+
 const POSITIONED: Position = { markedWeek: 8, totalWeeks: 27, rev: 4 };
+const AT_15: Position = { markedWeek: 15, totalWeeks: 27, rev: 4 };
 const AT_20: Position = { markedWeek: 20, totalWeeks: 27, rev: 4 };
 const AT_24: Position = { markedWeek: 24, totalWeeks: 27, rev: 4 };
 
@@ -391,16 +409,42 @@ describe("their words, their maths, and nothing of ours in between", () => {
     expect(split.container.querySelectorAll(".statement__p")).toHaveLength(2);
   });
 
-  test("`\\square` renders the literal box, untouched — the escalation ships visibly", () => {
-    const w20 = weekOf(MATH, 20);
-    expect(w20.rows[0].contents[0]).toContain("\\square");
+  /*
+   * SUPERSEDED at transcriptionRev 5 — the corpus was corrected, so the clause that
+   * asserted the placeholder was PRESENT now certifies a reality that does not exist.
+   * Its true successor is below; the half that survives unchanged is the last two
+   * assertions, which were never about the placeholder but about the seam: whatever
+   * the ministry's symbols are, the corpus is the only place they are decided.
+   * See `journal/fe-3.md` → "Supersession".
+   */
+  test("the restored set symbols render as real mathematics, not a box", () => {
+    // Week 15 is the arithmetic unit, where ℤ is the subject matter rather than a
+    // decoration — the densest run of restored symbols in the document.
+    const w15 = weekOf(MATH, 15);
+    expect(w15.rows[0].contents[0]).toContain("\\mathbb{Z}");
+    expect(w15.rows[2].guidance[0]).toContain("\\mathbb{Z}");
 
-    const { text } = draw(MATH, AT_20);
-    expect(text()).toContain("□");
+    const { container, text } = draw(MATH, AT_15);
 
-    // and nothing in the component knows the word — the RAW source, comments included,
-    // so fe-6's `grep -rn square src/components` stays clean too
+    // KaTeX accepted every one of them: blackboard-bold islands, and no error node.
+    // `.mathbb` is the discriminator and `.katex-error` is not — KaTeX knows `\square`
+    // too and renders it happily, so only the class the AMS font hangs off tells the
+    // symbol apart from the box that stood in for it.
+    expect(container.querySelectorAll(".katex-error")).toHaveLength(0);
+    expect(container.querySelectorAll(".mathbb").length).toBeGreaterThan(0);
+    expect(text()).not.toContain("□");
+
+    // and no placeholder survives ANYWHERE in the recording — one left behind on one
+    // row is a corpus defect shipping to a teacher unnoticed, which is the failure the
+    // escalation existed to prevent
+    expect(everyString(MATH).filter((s) => s.includes("\\square"))).toEqual([]);
+
+    // nothing in the component knows either spelling — the RAW source, comments
+    // included, so fe-6's `grep -rn square src/components` stays clean too. This half
+    // is unchanged by the correction: a card that remapped a symbol would be deriving
+    // ministry text, and that is forbidden whichever direction it derives in.
     expect(readSrc(COMPONENT).toLowerCase()).not.toContain("square");
+    expect(readSrc(COMPONENT).toLowerCase()).not.toContain("mathbb");
     expect(readSrc(COMPONENT)).not.toMatch(/[ℤℂℝℕℚ]/);
   });
 

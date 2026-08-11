@@ -166,6 +166,106 @@ own shape, one row per week — takes seven clauses down, which is the executabl
 | promoted fe net `project/tests/fe` | **313 passed (313)**, 21 files, no concurrent test loop (load 3.6, all of it the desktop — the fe-1 flakes came from a competing gate run, and there was none) |
 | `tsc -b` / oxlint | clean, exit 0 |
 
+## Supersession — the corpus was corrected under the oracle (WF-65)
+
+**Declared scope: the corpus change, and nothing else.** After this sub-issue closed, all
+61 `\square` placeholders across the three affected documents were replaced with the
+double-struck symbols the source PDFs fail to embed — applied through the loader with
+`--correct`, so `tadarroj-3as-math` moved to **transcriptionRev 5** (edition unchanged at
+`2022-09`), `programme_revisions` went 9 → 12, and A1–A8 stayed green on each.
+
+That makes the recording this suite ran against a recording of a corpus that no longer
+exists, and one clause of mine an oracle certifying a reality the system cannot produce —
+the exact shape slice 1's review gate convicted. So it is amended here rather than left
+to pass.
+
+### Pre-flight for the amendment
+
+| probe | expected | got |
+|---|---|---|
+| live corpus, `\square` | zero | **0** occurrences anywhere in `GET /api/classes/:id/programme` |
+| live corpus, restored symbols | the 8 named forms | **26** `\mathbb{…}` — `\mathbb{Z}` `\mathbb{Z}^{*}` `\mathbb{Z}_{+}^{*}` `\mathbb{C}` `\mathbb{C}^{*}` `\mathbb{R}` `\mathbb{R}^{+}` `\mathbb{R}_{+}^{*}` |
+| the frozen fixture | 21 strings | **21** strings carrying **26** `\square`, at byte-identical paths to the 26 live symbols |
+| the whole diff, live vs. frozen | only the placeholders | **21 differing leaves, all of them a pure placeholder→symbol substitution.** Nothing structural moved: 27 weeks, 189 hours, 103 rows, 308 corpus strings, unchanged |
+| `transcriptionRev` in Mongo | 5 | math **5** · techmath **5** · sciences **4** · gestion 2 · lettres 1 |
+
+### What was amended
+
+**Re-recorded**, from the live route on lane slot 9, same path and filename (the recording
+date is unchanged — it is still 2026-08-11), 21 insertions / 21 deletions:
+
+- `tests/fe/fixtures/programme-math.2026-08-11.json`
+
+**One clause replaced**, `week-card.characterization.test.tsx` §3:
+
+- ~~«`\square` renders the literal box, untouched — the escalation ships visibly»~~ →
+  **«the restored set symbols render as real mathematics, not a box»**. The successor
+  asserts week 15's arithmetic strings carry `\mathbb{Z}`, that KaTeX renders them into
+  blackboard-bold islands with no `.katex-error`, that no `□` reaches the DOM, and that
+  **no placeholder survives anywhere in the recording**.
+- The discriminator is `.mathbb`, **not** `.katex-error` — KaTeX knows `\square` too and
+  renders it happily, so an error-node check alone would not tell the symbol from the box
+  that stood in for it. Recorded because it is the trap in this clause.
+- The sweep is a recursion over every string in the programme, not over `weeks[].rows[]`,
+  so a placeholder left in a unit name, the legend or the title cannot slip past.
+
+**Kept, unchanged, because it was never about the placeholder:** the component must
+contain neither spelling — `square` *and* now `mathbb`, plus the ℤℂℝℕℚ glyph guard. The
+rule is the seam, not the symbol: a card that remapped ministry text would be deriving it,
+and that is forbidden whichever direction it derives in. This is the half of the old
+clause that was still true, and it is strengthened rather than weakened.
+
+**Prose corrected** (no assertion moved): the header of this suite,
+`programme-bar.characterization.test.tsx`'s header, and `programme-fixtures.ts`'s
+provenance block, which now names `transcriptionRev 5`.
+
+### What did NOT change
+
+- **No product code.** `git status --short` in the fe checkout is empty. The correction
+  happened in the corpus, which is precisely what contract §6.5 said the fix had to be —
+  «a corpus fix behind a human page-check», never a stack remapping a symbol. The rule
+  §6.5 states still binds and is still tested; only its *count* and its «ships visibly as
+  a box» consequence are stale.
+- **No other assertion.** Every value fe-1, fe-2 and fe-3 pin is arithmetic or structural
+  — hours, weeks, unit ids, row counts, the 308-string sweep — and the correction touched
+  only text. `corpus.length` recomputes to **308** exactly as before: a placeholder→symbol
+  substitution only ever makes a string longer, so nothing crossed the >6-char floor.
+- **The two synthetic fixtures.** `THIRTY_WEEKS` and `DIVERGENT_TOTALS` are constructed,
+  not recorded, and were left alone.
+- **Test count.** 56 in this suite, 105 in the job gate — one clause replaced, none added.
+
+### Revert-check — the successor discriminates
+
+Three probes, each putting a `\square` back and each expected to go red for a different
+reason:
+
+| probe | where | result |
+|---|---|---|
+| A | week 15's `contents[0]` — the clause's own target | **RED**, `gate FAIL` — `expected 'القسمة الإقليدية في $\square$ :' to contain '\mathbb{Z}'` |
+| B | week 22's guidance — a week this test never draws | **RED**, `gate FAIL` — the fixture-wide sweep alone catches it. This is the probe that proves the sweep does work no local assertion can |
+| C | a unit name — outside `weeks[]` entirely | **RED**, `gate FAIL` — the sweep, plus two pre-existing clauses. Proves the recursion reaches past `weeks[].rows[]` |
+
+> Probe B was wrong on its first run and passed: it targeted `\mathbb{C}` on a week that
+> carries `\mathbb{R}`, so the edit was a no-op and the green measured nothing. Recorded
+> because a revert-check that silently fails to revert is indistinguishable from an oracle
+> that does not discriminate — the probe now throws if its own substitution does not apply.
+
+### Found stale elsewhere, NOT touched
+
+- **`tests/be/programme.characterization.test.js`** — `be`'s, so reported and left alone.
+  Its header (`:26`) still says `\square` «appears 61 times across 48 corpus strings … it
+  is ESCALATED and PARKED», and `:325`'s comment still calls it «a parked `\square`». The
+  *assertions* there are byte-compares against the store, so they still pass and are still
+  correct; it is the prose that now describes a corpus that is gone.
+- **`contracts/fe-be-programme.contract.md` §6.5 and §8.9** — a frozen planning artifact,
+  not edited. §6.5's counts (61 across 48, 26 maths) and «the defect ships visibly» are
+  stale; its rule is not. §8.9 («nothing may quote a verifier green as page fidelity»)
+  is still exactly true — its named counterexample is simply now a historical one.
+- **SEED.md, `stacks/fe.md`, `journal/fe-1.md`, `journal/fe-2.md`** — historical records of
+  the escalation. Correct as history, left as written.
+- **The promoted net `project/tests/fe`** — zero `square`, zero `□`. The `mathbb` hits
+  there are generated exam recordings, not corpus, and are unrelated to this change.
+
 ## What this sub-issue did not settle
 
 - **The note clause could not be pinned where it was asked for.** The instruction says to
@@ -225,3 +325,6 @@ own shape, one row per week — takes seven clauses down, which is the executabl
   render as literal boxes, the card neither inspects nor remaps them, and the token
   appears nowhere in the file — comments included — so fe-6's raw grep is already clean.
   The escalation stays parked.
+  > **Overtaken** — the escalation was closed at the corpus, not parked, and the clause
+  > that pinned the boxes was replaced. The half that mattered here (the card knows
+  > neither spelling) survives and is now stricter. See "Supersession" above.

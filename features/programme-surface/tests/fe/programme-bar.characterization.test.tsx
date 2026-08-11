@@ -26,7 +26,9 @@
  *     lets a hardcoded 27 survive. The thirty-week fixture and a source grep kill it.
  *
  * Fixtures come from fe-1 (`programme-fixtures.ts`) and are frozen here — `MATH` is the
- * real recorded corpus, `\square` strings and all.
+ * real recorded corpus, re-recorded at `transcriptionRev 5` when the set symbols were
+ * restored. Nothing this suite asserts is corpus TEXT: every number here is hours, weeks
+ * and unit ids, none of which the correction touched.
  */
 import { render } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
