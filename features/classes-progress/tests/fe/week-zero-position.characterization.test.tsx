@@ -28,6 +28,12 @@
  *   - **never grade the teacher.** Nothing on this surface is red or green — not a class
  *     name, not an inline colour, not a token that happens to be green. Behind is not a
  *     failure and ahead is not a reward.
+ *   - **a failure notice is the PRODUCT's Arabic, never the server's message.** `be`
+ *     passes an upstream failure's own text through verbatim, and for the datastore that
+ *     text is English (`"datastore unavailable"`). Every fixture in this file that stands
+ *     in for `be` therefore sends exactly what `be` sends — a fixture translated for
+ *     convenience makes the Arabic clause certify itself. See the supersession note on
+ *     the 503 clause.
  */
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -94,7 +100,15 @@ interface ApiOptions {
   weeks?: Record<string, number>;
   /** classId → the `rev` the GET reports. */
   revs?: Record<string, number>;
-  /** Fail the FIRST `PUT` with this error type; later writes succeed. */
+  /**
+   * Fail the FIRST `PUT` with this error type; later writes succeed.
+   *
+   * ⚠ `message` must be **what `be` actually sends**, not what would be convenient.
+   * The 503 below is the case that matters: `be` maps `StoreError` by passing its
+   * message through verbatim (`app.ts`), and that message is the English literal
+   * `"datastore unavailable"` (`store/client.ts`). See the supersession note at the
+   * clause itself.
+   */
   putFails?: { status: number; type: string; message: string };
   /** Make `GET /api/classes` fail — a `be` that predates this slice answers 404. */
   classesFail?: number;
@@ -460,6 +474,32 @@ describe("a `409 conflict` sends the teacher back to a fresh reading", () => {
 // ---------------------------------------------------------------------------------
 
 describe("`503 store_unavailable` is one tap from done", () => {
+  /**
+   * ⚠ SUPERSESSION (WF-65), declared — the mock, never the assertion.
+   *
+   * This clause first shipped with the 503 mocked as
+   * `message: "تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى."`, and asserted that
+   * sentence on screen. `be` never sends it. It maps `StoreError` by passing the
+   * message through verbatim (`app.ts`), and that message is the ENGLISH literal
+   * `"datastore unavailable"` (`store/client.ts`) — confirmed on the wire against
+   * lane 8 with the store pointed at a dead host:
+   *
+   *   PUT /api/progress/… → 503
+   *   {"error":{"message":"datastore unavailable","type":"store_unavailable", …}}
+   *
+   * So the clause was true only of a fixture. `ClassPosition` rendered
+   * `err.message` raw, and the surface really did put «datastore unavailable» in
+   * front of a teacher — the hard constraint broken on the exact path a passing
+   * test claimed was Arabic. The pin was wrong about reality, which is what a
+   * declared supersession is for.
+   *
+   * WHAT CHANGED: the mock now sends what `be` sends.
+   * WHAT DID NOT: every assertion. Arabic on screen, retryable, the chosen week
+   * still selected, and the retry re-sending the same body — all four still hold,
+   * and two assertions were ADDED (no Latin run anywhere on the surface, and the
+   * server's own word never reaches it) so the clause can now fail the defect it
+   * used to certify.
+   */
   test("Arabic, retryable, the chosen week still selected — and the retry re-sends it", async () => {
     seed({ cls: C2 });
     const h = mockApi({
@@ -467,7 +507,9 @@ describe("`503 store_unavailable` is one tap from done", () => {
       putFails: {
         status: 503,
         type: "store_unavailable",
-        message: "تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى.",
+        // VERBATIM from `be`. Do not translate this fixture — translating it is the
+        // bug, and the whole point of the clause is that `fe` never shows it.
+        message: "datastore unavailable",
       },
     });
     await boot();
@@ -480,7 +522,11 @@ describe("`503 store_unavailable` is one tap from done", () => {
     await click(btn(HERE));
     await waitFor(() => expect(h.puts()).toHaveLength(1));
 
+    // The teacher is told, in the product's own Arabic — `fe` says the datastore
+    // blinked; it does not repeat what `be` said about it.
     await waitFor(() => expect(text(panel())).toContain("تعذّر الوصول إلى قاعدة البيانات"));
+    expect(text(panel())).not.toContain("datastore");
+    expect(text(panel()).match(/[A-Za-z]{2,}/g) ?? []).toEqual([]);
     // The teacher's choice is not thrown away by the failure — retry is one tap, not a
     // re-decision.
     expect(weekSelect().value).toBe("8");

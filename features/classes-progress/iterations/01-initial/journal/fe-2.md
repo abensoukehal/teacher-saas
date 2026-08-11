@@ -196,3 +196,117 @@ LEGACY exam with no `classId` at all. Driven in a real browser, one tab.
   gets bound to a class.
 - **The class layer still has no error state of its own** (fe-1's open note). fe-2 added
   no surface that can fail visibly, so nothing was decided here either.
+
+## review
+
+**Verdict: reopen-implement.** Cross-model review (Fable). One finding, micro-loop sized.
+
+**The switch's list refetch has no stale-response guard.** `onSelectClass(A)` fires
+`refreshList(teacherId, A)`; a fast second tap on B fires `refreshList(teacherId, B)`.
+Both are un-tokened `fetch`es and the last **resolution** wins, not the last intent — on
+parallel connections nothing orders them, so A's response landing after B's leaves
+**class A's subject list rendered under class B's selected tab** (and `listLoading`
+false, so it looks settled). Before this sub-issue the race was harmless: `refreshList`
+had one shape and out-of-order responses answered the same query. The `classId` param is
+what made ordering meaningful, and it arrived here. The failure scenario is the
+product's own nightmare shape — a class-A-tagged exam shown under class B — and the
+audience is on mobile networks where multi-second reorderings are routine. Nothing in
+any suite pins response ordering (verified: no clause fails under a delayed-first-response
+mock).
+
+Suggested patch (not applied): a monotonically increasing token in `App` —
+`refreshList` captures `++listSeq` before the await and discards its result if
+`listSeq` moved; one jsdom clause with two mocked fetches resolving out of order.
+
+Everything else held: `pendingSave` survival, the no-op re-tap, the unscoped re-read
+after a dropped stale selection (re-driven live via a cross-account localStorage probe —
+boot self-heals in the same pass, storage cleared). Mutants MF1 (selection not
+persisted), MF2 (stale held id kept), MF9 (refetch uses the stale closure default) all
+killed — 3, 2 and 5 clauses.
+
+### Reopen — the last resolution was winning, not the last intent
+
+> Micro IMPLEMENT loop, same lane (fe :10800 → be :9800). Path-scoped freeze checks
+> (WF-63). The finding is upheld: it reproduces on the first try and the harm is the one
+> the reviewer named.
+
+**Pre-flight — reproduced before a line of source moved.**
+
+Two clauses written first, with the list responses held open and released BY HAND, so the
+order they resolve in is chosen rather than raced. Seeded with no class selected, so
+boot's own param-less read settles first and the screen starts clean; then tap C1, tap C2
+before C1's answer is back, and release C2 then C1.
+
+```
+tools/ci fe --slug classes-progress
+  × A resolving after B leaves B's subjects on screen, not A's
+      expected [ 'موضوع القسم الأول', 'موضوع قديم' ]
+      to deeply equal [ 'موضوع القسم الثاني', …(2) ]
+  × a stale response landing while the newest is still in flight neither paints nor settles
+      expected [ 'موضوع القسم الأول', 'موضوع قديم' ] to not include 'موضوع القسم الأول'
+```
+
+That first line is the finding, printed: **class C1's list, rendered under class C2's
+selected tab.** `selected()` says C2, storage says C2, the subjects say C1. The second
+clause is the worse half — the stale answer arriving while the current one is still coming
+— and it also drops `listLoading`, so the wrong screen additionally looks finished.
+
+**The fix.** A monotonic ticket, taken before the await and checked after it:
+`const seq = ++listSeq.current`, and every write in `refreshList` gated on still holding
+it — `setSubjects`, `setListError`, **and `setListLoading(false)`**. The third is not
+bookkeeping: a superseded read clearing the flag while the newest is still in flight is
+precisely how a wrong screen stops looking busy.
+
+A `useRef` and not state, for the same reason `creating` is one: the ticket has to be
+readable by a resolution that started before the next render.
+
+**One thing deliberately NOT gated: `teacher_required`.** A refused identity is refused
+whichever request found out, and discarding a stale one would leave the session running on
+an id `be` has rejected. It returns before the ticket is consulted, and that is written
+into the source rather than left to be rediscovered.
+
+**The other reads, checked rather than assumed.**
+
+- **`getProgress` inside `loadClasses`** — every per-class rail read is awaited in one
+  `Promise.all` inside a single `loadClasses` call, so they share that call's ordering and
+  cannot interleave with each other.
+- **`ClassPosition`'s own `getProgress` / `saveProgress`** — the component is keyed by
+  class id and unmounts on a switch, so a late resolution can only reach a still-mounted
+  instance, which is by construction the right class. `onUpdated` writes
+  `classProgress[currentClass.id]` from that render's closure, so there is no path by which
+  one class's position lands on another's key.
+- **`loadClasses` itself — examined, and NOT given a ticket.** Three call sites: `boot`,
+  sign-up's `onDone`, and `ClassPosition`'s `onClassGone`. The third cannot start before
+  the first has finished (the component only mounts once a snapshot exists) and the second
+  is dismissed with `setOnboarding(null)`, so no two can be in flight together today.
+  And its one ordering-sensitive write is self-correcting by construction: `setCurrentClassId`
+  is derived from `loadCurrentClassId()` read AFTER the awaits — from storage, which the
+  tap already updated — not from the response. Adding a guard for an interleave that
+  cannot occur, on a function whose sensitive write reads current state anyway, is the
+  speculative kind of hardening the hard-constraints table rules out. **Recorded so the
+  next person who makes `loadClasses` concurrently reachable knows this was a judgement
+  and not an oversight.**
+
+**Pinned.** Two new clauses in fe-2's own oracle, in their own describe block. fe-1's,
+fe-4's and fe-5's are byte-untouched (`git status --short` on all three: empty). The
+`class-switch` diff is **purely additive** — `git diff | grep '^-'` returns nothing at all,
+so no existing clause was weakened to make room. The mock gained one option, `holdLists`,
+and one control, `release(classId)`.
+
+**Revert-check.** Drop the three `if (current())` guards and both new clauses go red on
+the same two assertions as the pre-flight — 95 passed, 2 failed. Neither clause can pass
+without the fix.
+
+**Live (:10800, real `be` on :9800), two classes.** Forced reordering is not reproducible
+against a real lane without a proxy in the path, so what was measured live is the genuine
+concurrency and the regression risk this fix actually carries — that the ticket breaks
+ordinary switching:
+
+| | measured |
+|---|---|
+| tap 3ع2, then 3ر1 immediately | devtools shows the two scoped reads issued **1 ms apart** — `?classId=…c430` at `60214.414` and `?classId=…12c3` at `60214.415`, genuinely both in flight |
+| what settled | the tab actually selected (3ر1) with its own list, `aria-pressed=true` on it alone, `teacher.class.v1` agreeing, and no stuck spinner |
+| the position surface across the same switches | unaffected — «موقعكم المسجَّل: الأسبوع 8 من 27» and the rail on «3ر1 · أسبوع 8» |
+
+The ordering property itself is pinned in jsdom, where the release order can be chosen,
+and revert-checked. Recorded as such rather than claimed as a live result.

@@ -235,3 +235,144 @@ that reverts it fails the clause.
   is lost if the tab closes — unlike `pendingSave`, which outlives it. That asymmetry is
   right for now (a week number costs a tap to re-choose; a generated exam costs minutes)
   but it is a choice, not an oversight.
+
+## review
+
+**Verdict: reopen-implement.** Cross-model review (Fable). One composed finding; the
+surface itself is otherwise the best-defended in the fe half.
+
+**The pinned `503` clause is certified by a fixture `be` never sends.** The oracle's
+clause «Arabic, retryable, the chosen week still selected» mocks the 503 as
+`message: "تعذّر الوصول إلى قاعدة البيانات…"`. The real `be` maps `StoreError` by
+passing `err.message` through verbatim (`app.ts`), and that message is
+**`"datastore unavailable"` — English** (`store/client.ts:66`). `ClassPosition` renders
+`err?.message ?? fallback` raw into the retry notice. Composed: a datastore blink during
+a position write puts an English string on a slice-1 surface, on the exact path the
+oracle claims is Arabic — the hard constraint violated where the test says it holds.
+Neither per-stack gate can see it: be's suites never render, fe's suite invented the
+message. (Same class as the green rail this slice already caught once — fe-5's
+precedent.)
+
+Suggested micro-patch (not applied), fe-side so the clause becomes true regardless of
+`be`: in `ClassPosition` (or centrally in `api.ts`), do not surface `err.message` for
+`kind: "store"` / unknown-kind failures — use the component's own Arabic sentence (the
+fixture's «تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى.» is already written). Flip
+the oracle's mock message to the English string `be` actually sends, so the clause
+discriminates. The deeper `err.message`-mapping job on `be` stays the recorded follow-on
+(be-7 ②) — this patch just stops slice 1 shipping a surface whose pinned Arabic property
+is fixture fiat.
+
+Everything else survived prosecution: the 409 re-read-and-re-ask was re-driven (be log
+shows GET, never a resent PUT), the programme carried over from the read, ink not
+accent, «لم نبدأ بعد» for 0, western digits, keyed unmount across switches.
+
+### Reopen — the English string, and the oracle that certified it
+
+> Micro IMPLEMENT loop, same lane (fe :10800 → be :9800). Path-scoped freeze checks
+> throughout (WF-63). The reviewer's finding is upheld in full, and the fix is wider than
+> the one surface: two sibling render sites this slice also added had the same defect.
+
+**Pre-flight — reproduced against the live lane, not argued from the code.**
+
+The store was taken away from lane 8's backend only, by restarting it with
+`MONGO_URL=mongodb://127.0.0.1:59999`. Shared Mongo was never touched, and the other
+clone's lane never saw it.
+
+| probe | got |
+|---|---|
+| `GET /health` with the store pointed at a dead host | `"status":"degraded"`, `store: {ok:false, detail:"StoreError: datastore unavailable"}` |
+| `PUT /api/progress/:classId` on the wire | `503 {"error":{"message":"datastore unavailable","type":"store_unavailable","detail":"MongoServerSelectionError: connect ECONNREFUSED 127.0.0.1:59999"}}` |
+| the same write, in a real browser, week 8 chosen in the picker | the notice reads **`datastore unavailable`** — two Latin words, rendered LTR, next to «إعادة المحاولة» in an RTL card |
+
+So the finding is exactly as written: `message` is the English literal at
+`store/client.ts:66`, `app.ts` forwards it verbatim, and `ClassPosition` printed it. The
+constraint was broken on the one path a passing clause claimed was Arabic.
+
+**The decision: which kinds may still surface a server message, and why.**
+
+Not "never show `be`'s message" — that would be the opposite mistake. Every message `be`
+writes in a route handler is Arabic and names the actual problem: «الأسبوع خارج المجال»,
+«الشعبة غير معروفة», «القسم غير موجود», «تغيّر تقدّم القسم أثناء الحفظ». Substituting a
+generic sentence for those makes the product less useful, not more correct.
+
+The hazard is narrower and has a name: `be` has exactly two error classes whose message it
+does **not** author and forwards from something upstream — `StoreError` (the English
+literal above) and `ClaudeError` (English literals plus the CLI's own stdout, which is
+arbitrary text out of an agent loop). So the seam is a deny-list of those two families,
+plus **fail-closed on any type this client does not know**: a `type` absent from `KIND`
+gets the caller's own sentence, so a pass-through `be` grows later cannot leak by default.
+A `GenerateError` carrying no `type` at all was authored in `api.ts` — the network
+sentence, the `فشل الطلب (…)` fallback, the expired-session throw — and its message is
+already ours.
+
+`teacherMessage(e, fallback)` in `lib/api.ts`, next to `KIND`, because the policy is
+derived from that table. **Deliberately not applied by rewriting `GenerateError.message`
+in the two transports**: that message is also what a correlationId-carrying failure is
+traced with, and flattening it there would cost the operator the real reason while telling
+the teacher nothing more. The substitution belongs at the render site.
+
+**The sweep — `ClassPosition` was not the only one.**
+
+| site | added by | verdict |
+|---|---|---|
+| `ClassPosition.tsx` — the retry/hard notice | fe-3 | **fixed** |
+| `SignupClasses.tsx:72` — `messageOf`, the step-3 notice | fe-4 | **fixed** — same defect, and sign-up is the worst place in the product to show a word a teacher cannot read. `POST /api/classes` and `PUT /api/teacher/school` both reach it, and both can answer `503 store_unavailable` |
+| `MyClasses.tsx:94` — the per-row create error | fe-4 | **fixed**, same route, same reachable 503 |
+| `ClassBar.tsx` | fe-1 | clean — renders no error at all |
+| `ClassEditor.tsx` | fe-4 | clean — renders `r.error`, which its two callers set; fixing them fixed it |
+| `App.tsx:661` — `setListError(err.message ‖ …)` | **PRE-EXISTING** (`HEAD~n:src/App.tsx:455`, byte-identical before this job) | **reported, not fixed** — outside this slice, and the same policy call as `api.ts`'s two adoption sites. Belongs with be-7 ② |
+| `App.tsx:1279` · `AuthPanel:275` · `AdminConsole:174` · `RefinePanel:164` | pre-existing | **reported, not fixed** — the exam alert is the one that matters: `claude_*` messages are English and reach it today. Not this loop's job |
+
+**The oracle — a declared supersession (WF-65), mock only.**
+
+`week-zero-position…:470`'s 503 fixture said
+`message: "تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى."`, a sentence `be` has never
+sent. The clause «Arabic, retryable, the chosen week still selected» therefore could not
+fail the defect it was written to prevent — fixture fiat, exactly as the review says.
+
+- **Clause superseded:** the 503 fixture's `message`, and only that.
+- **Why:** the pin was wrong about reality. The finding is not "the code drifted from the
+  oracle", it is "the oracle recorded a shape the server does not produce". That is the
+  case a declared supersession exists for.
+- **What changed:** `message: "datastore unavailable"` — verbatim from the wire capture
+  above — plus a comment telling the next reader not to translate it, because translating
+  it *is* the bug.
+- **What did NOT change:** every assertion. `git diff` on that file deletes exactly two
+  lines, a doc comment and the fixture string; **zero assertions were removed**. Arabic on
+  screen, retryable, week 8 still selected, and the retry re-sending `{rev:0, markedWeek:8}`
+  all still hold. Two assertions were **added** — no Latin run anywhere on the surface, and
+  the server's own word never reaches it — so the clause now discriminates.
+- The file header gained the rule this came from: a fixture standing in for `be` sends what
+  `be` sends.
+
+**Verification — against the real thing.**
+
+Same procedure as the pre-flight, with the fix in: store pointed at the dead host, week 8
+chosen, «وصلنا هنا» pressed on the live lane.
+
+| | measured |
+|---|---|
+| the notice | «تعذّر الوصول إلى قاعدة البيانات. حاول مرة أخرى.» + «إعادة المحاولة» |
+| Latin anywhere on the card | **none** — `.classpos` innerText matched `/[A-Za-z]{2,}/` zero times |
+| the chosen week | still `8` |
+| store restored, one tap on «إعادة المحاولة» | the write lands: card becomes «موقعكم المسجَّل: الأسبوع 8 من 27», the notice is gone, the tab becomes «3ر1 · أسبوع 8» |
+| be log | one `progress.write outcome:"win" week:8 rev:1` — the 503 never reached the route, so it wrote nothing, and the retry is the only write |
+
+**Revert-check.** Restore `message: err?.message ?? "تعذّر حفظ موقع القسم."` and the
+amended clause goes red on `expected … to contain 'تعذّر الوصول إلى قاعدة البيانات'` —
+96 passed, 1 failed. The clause discriminates the exact defect it used to certify.
+
+**And a mutant on the other side**, because a fix that suppresses everything would also
+pass: make `teacherMessage` return the fallback for every kind, and **fe-4's own frozen
+clause** fails — «400 → an Arabic inline error…» loses «الشعبة غير معروفة». The seam is on
+the right axis, and a frozen oracle I may not edit is what holds it there.
+
+**Not settled by this loop.**
+
+- **`be`'s side is untouched and still owed.** `StoreError`'s message is English at the
+  source; `fe` now refuses to repeat it, which makes slice 1 shippable but does not make
+  `be`'s error copy Arabic. That is be-7 ② and stays there.
+- **The pre-existing raw-render sites are a policy question, not an oversight.** Four of
+  them, listed above. The exam alert genuinely shows English today when the CLI fails —
+  `claude_*` messages are the CLI's own words. Fixing that means deciding what a teacher
+  should be told when a generation dies, which is a copy decision, not a micro-loop.

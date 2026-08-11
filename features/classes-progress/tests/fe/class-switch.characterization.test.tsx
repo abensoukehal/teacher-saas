@@ -151,10 +151,20 @@ interface ApiOptions {
   classes?: ClassRef[];
   /** The open subject `GET /api/subjects/:id` answers with. */
   open?: { id: string; subject: ReturnType<typeof exam> };
+  /**
+   * classIds whose list response HANGS until `release(classId)` is called — the only
+   * way to choose the order two in-flight reads resolve in.
+   *
+   * `""` is the param-less read, so boot's list can be held too. A held id that is
+   * requested twice keeps only the latest resolver; every clause below requests each
+   * held query exactly once.
+   */
+  holdLists?: string[];
 }
 
 function mockApi(opts: ApiOptions = {}) {
   const calls: Call[] = [];
+  const held = new Map<string, () => void>();
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
     const method = init.method ?? "GET";
     calls.push({
@@ -206,6 +216,9 @@ function mockApi(opts: ApiOptions = {}) {
         // The list. Everything after `?` is the query the app chose to build.
         const q = url.slice("/api/subjects".length);
         const id = q.startsWith("?classId=") ? decodeURIComponent(q.slice("?classId=".length)) : "";
+        if (opts.holdLists?.includes(id)) {
+          await new Promise<void>((resolve) => held.set(id, resolve));
+        }
         return res(200, { subjects: LISTS[id] ?? LISTS[""]!, correlationId: "cid-list" });
       }
     }
@@ -221,6 +234,13 @@ function mockApi(opts: ApiOptions = {}) {
     lists,
     lastList: () => lists()[lists().length - 1]!.url,
     reads: (id: string) => calls.filter((c) => c.method === "GET" && c.url === `/api/subjects/${id}`),
+    /** Let a held list response land. The order these are called in IS the network. */
+    release: (classId: string) => {
+      const open = held.get(classId);
+      if (!open) throw new Error(`no held list for ${JSON.stringify(classId)}`);
+      held.delete(classId);
+      open();
+    },
   };
 }
 
@@ -528,6 +548,104 @@ describe("what the switch must NOT do", () => {
     expect(localStorage.getItem("teacher.class.v1")).toBeNull();
     await waitFor(() => expect(h.lastList()).toBe("/api/subjects"));
     expect(items()).toHaveLength(3);
+  });
+});
+
+// ---------------------------------------------------------------------------------
+// THE LAST INTENT WINS, NOT THE LAST RESOLUTION  (review finding, fe-2)
+// ---------------------------------------------------------------------------------
+
+describe("a list response that arrives out of order is discarded", () => {
+  /**
+   * Two taps, two `refreshList`es, and nothing in HTTP orders their responses.
+   *
+   * Before the `classId` param existed this race was harmless: every list read asked
+   * the same question, so an out-of-order answer was the same answer. Scoping the read
+   * is what made ordering meaningful, and the harm is the product's own nightmare
+   * shape — class A's exams under class B's tab, `listLoading` false, looking settled.
+   * A teacher on an Algerian mobile network reorders responses routinely.
+   *
+   * Both clauses hold the responses explicitly rather than racing timers: the order
+   * they are released in IS the network, so neither can pass by being lucky.
+   */
+
+  test("A resolving after B leaves B's subjects on screen, not A's", async () => {
+    seed({ cls: null });
+    const h = mockApi({ classes: TWO_CLASSES, holdLists: [C1, C2] });
+    await boot();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    // boot's own param-less read is not held, so the screen starts settled.
+    await waitFor(() => expect(items()).toHaveLength(3));
+
+    // Tap A, then B before A's answer is back. Both reads are now in flight.
+    await act(async () => {
+      tab(C1).click();
+    });
+    await act(async () => {
+      tab(C2).click();
+    });
+    expect(h.lists()).toHaveLength(3);
+    expect(selected()).toBe(C2);
+
+    // B lands first and paints the classroom the teacher is standing in.
+    await act(async () => {
+      h.release(C2);
+    });
+    await waitFor(() => expect(items()).toEqual(LISTS[C2]!.map((s) => s.title)));
+
+    // …and A lands late. THE CLAUSE: it is thrown away. A response for a classroom
+    // the teacher has left may never repaint the one they are in.
+    await act(async () => {
+      h.release(C1);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(selected()).toBe(C2);
+    expect(items()).toEqual(LISTS[C2]!.map((s) => s.title));
+    expect(items()).not.toEqual(LISTS[C1]!.map((s) => s.title));
+    // The C2-only row is the sharp one: it exists in no other list, so its absence
+    // would be unambiguous evidence that A's response won.
+    expect(items()).toContain("موضوع القسم الثاني");
+  });
+
+  test("a stale response landing while the newest is still in flight neither paints nor settles", async () => {
+    // The same race the other way round, and the worse half: the stale answer arrives
+    // FIRST and the current one is still coming. Rendering it would put class A's
+    // exams under class B's tab and drop the loading state — a screen that is both
+    // wrong and finished-looking, which is the one the teacher would trust.
+    seed({ cls: null });
+    const h = mockApi({ classes: TWO_CLASSES, holdLists: [C1, C2] });
+    await boot();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await waitFor(() => expect(items()).toHaveLength(3));
+
+    await act(async () => {
+      tab(C1).click();
+    });
+    await act(async () => {
+      tab(C2).click();
+    });
+    expect(h.lists()).toHaveLength(3);
+
+    await act(async () => {
+      h.release(C1);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    // Nothing of A's is on screen…
+    expect(items()).not.toContain("موضوع القسم الأول");
+    expect(items()).toHaveLength(0);
+    // …and the surface still says it is working, because it is.
+    expect(text()).toContain("جارٍ التحميل…");
+
+    // Then B lands and the classroom fills in — once, correctly.
+    await act(async () => {
+      h.release(C2);
+    });
+    await waitFor(() => expect(items()).toEqual(LISTS[C2]!.map((s) => s.title)));
+    expect(text()).not.toContain("جارٍ التحميل…");
   });
 });
 
