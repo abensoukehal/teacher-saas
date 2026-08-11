@@ -310,16 +310,34 @@ estimate: S
 ---
 ```
 
-### be-3 — main's promoted gate is red, and one comment argues with its own file
+### be-3 — main's promoted gate is not red, it is non-deterministic
 
 **status:** todo · **tag:** hardening
 
-**Intent.** Two defects the be-1 verifier found, neither of them be-1's fault, both worth
-closing here because the first one blocks honest verification for **every** later slice.
+**Intent.** `tools/ci be` from the clone root — the promoted regression net on `main` — cannot
+answer "did my change break it?". Not because it is red, but because **it is red by a
+different amount every run on an unchanged tree**. Five slices remain, and every one of them
+needs a baseline it can subtract. Fix determinism first; the staleness is the easy half.
 
-**1 · `tools/ci be` from the clone root is `gate FAIL` on `main` today.** Slice 1 added the
-`classes` and `progress` collections; three clauses in the **promoted** net enumerate the
-database's collections and were recorded before those existed:
+**Ground truth (measured 2026-08-11, unchanged tree, `tools/ci be` from the clone root).**
+Seven consecutive runs — four by the be-2 loop, three re-measured at planning time:
+
+```
+34 failed / 475 passed      41 failed / 468 passed      28 failed / 481 passed
+29 failed / 480 passed      34 failed / 475 passed      32 failed / 477 passed
+(+ one run in which the `--new-edition` clauses that failed in run 1 did not fail at all)
+Tests total: 509 every time — nothing is being skipped.
+```
+
+The same suites pass and fail non-deterministically. be-2's diagnosis, not yet proven: the
+`programme-corpus` loader and verifier suites spawn `scripts/load-programmes.mjs` against the
+**shared scratch database `programme_corpus`** and contend with each other. `jest.characterization.config.js`
+sets `maxWorkers: 1` (WF-84) for the *lane*-sharing reason, so if these still collide the
+contention is between sequential runs' residue, not parallel workers — establish which before
+changing anything.
+
+**The deterministic half is separate and known.** Three clauses in the promoted net enumerate
+the database's collections and were recorded before slice 1 added `classes` and `progress`:
 
 ```
 project/tests/be/programme-corpus/loader.characterization.test.js:562
@@ -329,43 +347,51 @@ project/tests/be/programme-corpus/verifier.characterization.test.js:609
     → fails with  + "classes", + "progress"
 ```
 
-Proven pre-existing, not caused by this job: the verifier ran the same suites against base
-`7c18729` and got **byte-identical** results on both sides. A red mainline gate means no later
-slice can tell its own regression from this one.
+Proven pre-existing: the be-1 verifier ran the same suites against base `7c18729` and got
+**byte-identical** results on both sides.
 
-**2 · `src/routes/programme.ts:22-23` contradicts the rest of its own file.** The comment
-still carries the pre-fix reasoning — *"Express's default ETag already answers a repeat visit
-with a zero-byte 304"* — which the two long comments ~100 lines below prove false twice over.
-be-1 amended the contract and left the code comment repeating the disproved claim.
+**Third, small:** `src/routes/programme.ts:20-26`'s comment still carries the pre-fix claim
+("Express's default ETag already answers a repeat visit with a zero-byte 304") that the two
+comments ~100 lines below disprove twice over. The file argues with itself.
 
-**Ground truth (recorded 2026-08-11).**
-```
-tools/ci be                     (from the clone root)  → gate FAIL, 28 failed / 481 passed
-tools/ci be --slug programme-surface  (from be wt)     → gate PASS, 49/49
-sed -n '20,26p' src/routes/programme.ts                → the stale sentence
-```
+**Delta (freeze).** May touch: the three named collection-set clauses; whatever the flakiness
+diagnosis actually implicates in `project/tests/be/programme-corpus/` (fixture isolation, a
+per-run scratch db name, an `afterAll` that does not run, ordering) — **name it in the journal
+before changing it**; and the comment block at `src/routes/programme.ts:20-26`.
+**Frozen:** every other promoted clause · all product code except that comment · the corpus,
+its loader and `scripts/verify-programmes.mjs` · `WEEKS_PER_YEAR` and the seed validator ·
+this slice's own suites.
 
-**Delta (freeze).** May touch: the **three named clauses** in `project/tests/be/programme-corpus/`
-(this is a **WF-65 declared supersession** of a promoted oracle — declare it in the journal:
-which clause, why, what did not change), and the comment block at
-`src/routes/programme.ts:20-26`. **Frozen:** every other promoted clause · all product code
-except that comment · the corpus and its loader · `WEEKS_PER_YEAR` and the seed validator.
+**Order of work, and it matters.** Diagnose and fix determinism **first**, then re-measure the
+baseline over **at least five consecutive runs**, and only then decide what the collection-set
+amendment has to say. Widening three clauses against a moving target proves nothing.
 
 **The amendment must not weaken.** Those clauses exist to catch a suite that writes to the
-product database. Keep them asserting exact collection-set equality — widen the *expected set*
-to include `classes` and `progress`, never relax the comparison to a subset check. If the
-right fix is to assert "this suite added nothing" by diffing before/after within the run
-rather than against a hardcoded list, that is stronger and preferred — say which you chose.
+product database. Keep exact collection-set equality — widen the *expected* set, never relax
+to a subset check. Stronger and preferred if it is available: diff the collection set
+**before and after within the run** rather than against a hardcoded list, which is immune to
+the next collection anyone adds. Say which you chose and why. This is a **WF-65 declared
+supersession of a promoted oracle** — declare it in the journal: which clauses, why, what did
+not change.
 
-**Oracle.** `tools/ci be` from the **clone root** goes green, and `tools/ci be --slug
-programme-surface` stays green. Add one clause to this slice's own suite asserting the
-programme route's comment block and its behaviour agree — or, if that is untestable, state so
-and rely on the diff. Negative: the three amended clauses must still go **red** if a suite
-actually creates a collection — prove it by planting one temporarily.
+**Oracle.**
+- **`tools/ci be` from the clone root is green, and green FIVE consecutive times.** One green
+  run is not evidence for this sub-issue; the whole point is repeatability.
+- `tools/ci be --slug programme-surface` stays green (65/65).
+- **Negative, and it is the important one:** the amended clauses must still go **red** when a
+  suite really does create a collection. Prove it by planting one temporarily and showing the
+  clause fires.
+- Negative: no promoted clause outside the three is amended — diff the promoted tree and show
+  the changed set.
 
-**Boundaries.** Budget 6. Do not fix the other pre-existing reds in the mainline net unless
-they are the same root cause; report them instead.
+**Boundaries.** Budget 8. Do not fix unrelated pre-existing reds; report them. If the
+flakiness turns out to be environmental (host load — be-2 measured load average **59.9 on 8
+cores** while two loops ran) rather than a suite defect, **say so and stop** rather than
+inventing a fix: that is a stop-and-ask, and the right answer might be a serialisation rule
+in `tools/ci`, which is engine and out of this Delta.
 
-**Exit protocol.** Done-when: `tools/ci be` green from the clone root · this slice's gate
-still green · the supersession declared · freeze audit. Ask-when: a promoted clause turns out
-to be red for a *different* reason · the amendment cannot keep exact-set semantics.
+**Exit protocol.** Done-when: five consecutive greens from the clone root · this slice's gate
+green · the supersession declared · freeze audit · the flakiness root cause named in the
+journal with its evidence. Ask-when: the cause is environmental or lives in `tools/`
+(engine) · a promoted clause is red for a reason unrelated to slice 1 · the amendment cannot
+keep exact-set semantics.
