@@ -411,7 +411,7 @@ It also must NOT add rate limiting (a product decision recorded as inherited, no
 hardening freebie). Freeze check: be-1..be-3's oracles stay green untouched — they are
 frozen against this implementer (WF-65 does not apply: nothing here supersedes a pin).
 
-**Oracle.** `features/classes-progress/tests/be/perimeter.characterization.test.js`
+**Oracle.** `features/classes-progress/tests/be/hardening.characterization.test.js`
 - **probe matrix** (one clause per cell, WF-70): {nonexistent id, another teacher's id,
   non-hex garbage, 12-char hex, UPPERCASE of a real owned id} ×
   {`GET /api/progress/:id`, `PUT /api/progress/:id`, `POST /api/subjects` classId} →
@@ -437,3 +437,62 @@ nothing here touches `src/claude/`.
 **Exit protocol.** Done-when: oracle green ×2 · be-1..be-3 oracles green unmodified ·
 `tools/ci be --slug classes-progress` green. Ask-when: a probe cell cannot return the
 identical body without touching a frozen shape · budget blown.
+
+---
+
+```yaml
+---
+kind: sub-issue
+id: be-6
+parent: i1
+stack: be
+status: todo
+depends_on: [be-5]
+estimate: S
+---
+```
+
+### be-6 — the catch-all speaks Arabic, and one name for the teacher prefix
+
+**status:** todo · **tag:** hardening
+
+**Intent.** Two defects the be-5/fe-1 verifier found, both small, both real. The app's
+catch-all 404 answers in **English** on a product whose first hard constraint is
+Arabic-only — and `fe` renders `payload.error.message` **raw to the teacher**
+(`fe/src/lib/api.ts:145,309`). And the newest log surface invented a second name for a
+field six other call sites already had, so an operator greps one and misses the other.
+
+**Ground truth (recorded 2026-08-11, lane s8).**
+```
+curl -i localhost:9800/api/nope
+→ 404 {"error":{"message":"not found","type":"not_found"}}
+   header x-correlation-id present, body has NO correlationId
+grep -c teacherIdPrefix src/teacher.ts src/routes/auth.ts   → 2, 4  (six sites)
+grep -c '"teacher"'      src/mutationlog.ts                  → 1    (the odd one out)
+```
+The handler ten lines below (`src/app.ts:212+`) was already fixed for exactly this reason
+(QA BUG-3: malformed body → Arabic «الطلب غير صالح»); the catch-all was missed.
+
+**Delta (freeze).** May touch: `src/app.ts:209-211` (the catch-all body only — Arabic
+message + `correlationId` in the body, matching the sibling handler's shape) and
+`src/mutationlog.ts` (rename the field `teacher` → `teacherIdPrefix`; the value and its
+8-char slicing do not change). **Frozen:** every route and store file, `src/teacher.ts`,
+`src/routes/auth.ts`, and the error *types* — `not_found` stays `not_found`.
+
+**Oracle.** This sub-issue's declared scope is to change behaviour three earlier suites
+pinned, so it is a **WF-65 declared supersession** — amend those pins, and say so in the
+journal:
+- be-5's two catch-all clauses (English body, no `correlationId`) → now Arabic + a
+  `correlationId` in the body. Assert the message is Arabic and that **no English string
+  reaches the client on any unrouted path**.
+- be-1/be-2/be-5's `class.created` / `progress.write` log clauses → key is now
+  `teacherIdPrefix`. Assert the value is still 8 chars and that **no full 32-hex id**
+  appears anywhere in the log.
+- negative: every other error body byte-identical (the 401 gate, `class_not_found`,
+  `invalid_request`, `conflict`); the `/api` index unchanged; the four other suites green.
+
+**Boundaries.** Contract §6. Additive to the wire except the two declared changes. Budget 6.
+
+**Exit protocol.** Done-when: all six suites green ×2 · freeze audit · `tools/ci be
+--slug classes-progress` green · the supersession declared in the journal. Ask-when: any
+consumer turns out to branch on the English string · a frozen file needs touching.

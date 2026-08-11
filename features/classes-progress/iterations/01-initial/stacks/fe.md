@@ -137,7 +137,7 @@ rule), `src/lib/persist.ts:20-34` (add `teacher.class.v1`), `App.tsx:317-324`
 `request()` only). **Frozen:** `request()` itself (`api.ts:274-296`),
 `taxonomy.ts` (the hardcoded stream is slice 3's problem), the admin view, every
 existing App.css rule. Freeze check:
-`git status --short -- src/lib/taxonomy.ts src/components/AdminView.tsx` empty.
+`git status --short -- src/lib/taxonomy.ts src/components/AdminConsole.tsx` empty.
 
 **Oracle.** `features/classes-progress/tests/fe/class-bar.characterization.test.tsx`
 - teacher with two classes (mocked `GET /api/classes`) → the bar renders both names in
@@ -175,7 +175,7 @@ kind: sub-issue
 id: fe-2
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-1, be-3]
 estimate: M
 ---
@@ -183,7 +183,7 @@ estimate: M
 
 ### fe-2 — switching class is total, and the list follows
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** Tapping another class must feel like walking into another classroom:
 everything contextual resets, the subjects list refetches scoped to that class — and
