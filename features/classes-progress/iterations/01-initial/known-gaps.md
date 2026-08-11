@@ -113,3 +113,32 @@ the raw English `store_unavailable` message reaching `ClassPosition`/`SignupClas
   "the sub-issue's own text". It is not in `stacks/fe.md`, `contracts/` or `SEED.md` — it came
   from the implementer's task brief. The extension itself is sound and the verifier accepted
   it; the attribution was wrong. It also called the `AuthPanel` diff three hunks; it is four.
+
+## Added by the QA gate and its micro-loop (2026-08-11)
+
+**Fixed, not debt:** the boot-time subject-list banner and the sign-in gate both rendered
+`err.message` raw, so a datastore outage put English «datastore unavailable» on the first
+screen a teacher sees — signed in *and* signed out. Both now use the `teacherMessage()`
+deny-list seam.
+
+**Genuine stop-and-ask, unresolved — a PROMOTED oracle asserts a message `be` never sends.**
+`project/tests/fe/persistence-gaps/revisions.characterization.test.tsx:207` pins the refine
+alert as containing «الخدمة غير متاحة مؤقتًا» under a `store_unavailable` fixture. `be` sends
+`"datastore unavailable"`. So `RefinePanel.tsx:164` still shows English on that path, and
+fixing it turns a promoted regression test red. This is the same fixture fiat the review gate
+convicted — but a *promoted* oracle is not a job's to amend. **Route it through a scoped
+`/planning` run, not a micro loop.**
+
+**Out of scope, correctly:** `App.tsx`'s workspace alert also renders `error.detail` raw
+(always English, one line below the message), and `claude_*` messages are the CLI's own
+words. That is the error-mapping job, not a literal fix. `AdminConsole.tsx:174` is
+operator-only — forwarded English is diagnostic there and should stay.
+
+**K4 — the sharpest teacher-facing surprise this slice ships.** A generated exam stores no
+`classId` (contract §0 decision 9, slice-3 boundary), so an exam generated while 3ر1 was
+selected also appears under 3تج2. Contract-conformant and deliberate; inherit it knowingly,
+and note it is the first thing a teacher trying the class bar will notice.
+
+**SEED-silent, for slice-2 planning (not violations):**
+- a newly created class is never auto-selected — the spec is silent on post-create selection
+- the sign-up wizard pushes no history entries, so browser Back exits the app mid-wizard
