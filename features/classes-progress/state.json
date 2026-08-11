@@ -67,7 +67,7 @@
           ]
         },
         "fe-3": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "depends_on": [
             "fe-1",
@@ -98,6 +98,10 @@
           "depends_on": [
             "be-5"
           ]
+        },
+        "be-7": {
+          "status": "todo",
+          "tag": "hardening"
         }
       }
     }

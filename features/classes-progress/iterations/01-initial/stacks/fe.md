@@ -233,7 +233,7 @@ kind: sub-issue
 id: fe-3
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-1, be-2]
 estimate: M
 ---
@@ -241,7 +241,7 @@ estimate: M
 
 ### fe-3 — week 0 is an invitation: «أين وصل هذا القسم؟»
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** A class with no position renders the handoff's empty state — a question
 and a single action, no invented pacing, no bar, no comparison — and «حدّد أين وصلت»
