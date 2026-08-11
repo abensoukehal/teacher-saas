@@ -21,7 +21,7 @@
       },
       "subissues": {
         "be-1": {
-          "status": "todo",
+          "status": "done",
           "tag": "happy-path",
           "delta": [
             "be/src/routes/programme.ts",
@@ -116,6 +116,10 @@
             "features/programme-surface/tests/fe/guard-rails.characterization.test.tsx"
           ],
           "stack": "fe"
+        },
+        "be-3": {
+          "status": "todo",
+          "tag": "hardening"
         }
       }
     }
