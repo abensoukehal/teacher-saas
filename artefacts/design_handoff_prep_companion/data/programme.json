@@ -1,0 +1,225 @@
+{
+  "stream": "شعبة الرياضيات",
+  "level": "3AS",
+  "source": {
+    "authority": "وزارة التربية الوطنية · المفتشية العامة للتربية الوطنية",
+    "title": "التدرجات السنوية — الرياضيات 3AS"
+  },
+  "totals": {
+    "weeks": 27,
+    "hours": 189
+  },
+  "units": [
+    {
+      "id": "u-diag",
+      "name": "تقويم تشخيصي",
+      "weeks": 1,
+      "hours": 7
+    },
+    {
+      "id": "u-deriv",
+      "name": "الاشتقاقية والاستمرارية",
+      "weeks": 2,
+      "hours": 14
+    },
+    {
+      "id": "u-explog",
+      "name": "الدالتان الأسية واللوغاريتمية",
+      "weeks": 2,
+      "hours": 14
+    },
+    {
+      "id": "u-lim",
+      "name": "النهايات",
+      "weeks": 1,
+      "hours": 7
+    },
+    {
+      "id": "u-growth",
+      "name": "التزايد المقارن ودراسة الدوال",
+      "weeks": 2,
+      "hours": 14
+    },
+    {
+      "id": "u-seq",
+      "name": "المتتاليات العددية",
+      "weeks": 2,
+      "hours": 14
+    },
+    {
+      "id": "u-int",
+      "name": "الدوال الأصلية والحساب التكاملي",
+      "weeks": 3,
+      "hours": 21
+    },
+    {
+      "id": "u-arith",
+      "name": "الأعداد والحساب",
+      "weeks": 3,
+      "hours": 21
+    },
+    {
+      "id": "u-prob",
+      "name": "الإحصاء والاحتمالات",
+      "weeks": 2,
+      "hours": 14
+    },
+    {
+      "id": "u-cplx",
+      "name": "الأعداد المركبة والتحويلات النقطية",
+      "weeks": 3,
+      "hours": 21
+    },
+    {
+      "id": "u-space",
+      "name": "الهندسة في الفضاء",
+      "weeks": 3,
+      "hours": 21
+    },
+    {
+      "id": "u-remed",
+      "name": "معالجة بيداغوجية (×3)",
+      "weeks": 3,
+      "hours": 21
+    }
+  ],
+  "weeks": [
+    {
+      "week": 8,
+      "unitId": "u-seq",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-8-1",
+          "text": "المتتاليات الهندسية: الحد العام، مجموع حدود متتابعة"
+        }
+      ],
+      "guidance": [
+        "«نقتصر على الأمثلة البسيطة سهلة الحساب»"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    },
+    {
+      "week": 9,
+      "unitId": "u-seq",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-9-1",
+          "text": "السلوك التقاربي لمتتالية، المتتاليات المتجاورة"
+        }
+      ],
+      "guidance": [
+        "دراسة النهاية انطلاقًا من الحد العام"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    },
+    {
+      "week": 10,
+      "unitId": "u-int",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-10-1",
+          "text": "تعريف الدالة الأصلية لدالة على مجال",
+          "courseId": "course-primitive"
+        },
+        {
+          "id": "ct-10-2",
+          "text": "الدوال الأصلية للدوال المألوفة"
+        },
+        {
+          "id": "ct-10-3",
+          "text": "معادلات تفاضلية من الشكل y′=f(x)"
+        }
+      ],
+      "guidance": [
+        "«نقتصر على الأمثلة البسيطة سهلة الحساب»",
+        "«حل معادلات تفاضلية من الشكل: y′=f(x) ، y′=f(x)y»"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "week": 11,
+      "unitId": "u-int",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-11-1",
+          "text": "التكامل: التعريف، الخواص، الحساب باستعمال دالة أصلية"
+        }
+      ],
+      "guidance": [
+        "حساب مساحات بسيطة"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    },
+    {
+      "week": 12,
+      "unitId": "u-int",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-12-1",
+          "text": "التكامل بالتجزئة · القيمة المتوسطة لدالة"
+        }
+      ],
+      "guidance": [
+        "«نقتصر على الأمثلة البسيطة سهلة الحساب»"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    },
+    {
+      "week": 13,
+      "unitId": "u-arith",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-13-1",
+          "text": "الموافقات في ℤ · القسمة الإقليدية"
+        }
+      ],
+      "guidance": [
+        "أنشطة حول القاسم المشترك الأكبر"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    },
+    {
+      "week": 14,
+      "unitId": "u-arith",
+      "competencies": [],
+      "contents": [
+        {
+          "id": "ct-14-1",
+          "text": "الأعداد الأولية · التحليل إلى جداء عوامل أولية"
+        }
+      ],
+      "guidance": [
+        "«نقتصر على الأمثلة البسيطة»"
+      ],
+      "hours": 7,
+      "emphasis": [
+        "normal"
+      ]
+    }
+  ]
+}

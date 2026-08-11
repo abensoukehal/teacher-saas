@@ -6,10 +6,10 @@ plane: implementation
 part_of: mod-fe-exam-builder
 realizes: [feat-teacher-accounts]
 depends_on: [cmp-be-auth-api]
-repos: [teacher-fe@8e190e0]
+repos: [teacher-fe@eadc55e]
 source: [teacher-fe/src/components/AuthPanel.tsx, teacher-fe/src/lib/persist.ts]
 status: fresh
-last_verified: 2026-08-08
+last_verified: 2026-08-11
 tags: [frontend, arabic, rtl, auth]
 ---
 
@@ -37,3 +37,14 @@ exams are not moved into the account — the server adopts only on sign-up, beca
 on sign-in would re-point subject documents. So the displaced id is kept in
 `teacher.previous.v1` and the teacher is told, in Arabic, that the exams were neither moved
 nor deleted. The loss stops being silent and irreversible.
+
+## What happens after «متابعة»
+
+The panel stores the id and hands the session to the app exactly as it always did — and it
+now says whether this was a sign-**up**. That one extra argument is what puts the class
+steps ([[cmp-fe-signup-classes]]) in front of a new teacher, without moving them behind the
+confirm gate: a promoted regression test pins «متابعة» as the moment the id is stored *and*
+the builder is on screen.
+
+The account panel also carries [[cmp-fe-my-classes]] — «أقسامي» — which is the only way a
+teacher with an existing account makes a class.

@@ -4,10 +4,10 @@ id: mod-be-teacher-store
 title: "Teacher accounts store"
 plane: implementation
 part_of: svc-teacher-be
-repos: [teacher-be@f6cf955]
+repos: [teacher-be@7b13f12]
 source: [teacher-be/src/store/teachers.ts, teacher-be/src/teacher.ts]
 status: fresh
-last_verified: 2026-08-08
+last_verified: 2026-08-11
 tags: [backend, mongodb, auth]
 ---
 
@@ -30,6 +30,25 @@ id safe: before it, `POST /api/teacher` handed out ids it never wrote down, so a
 and a real one were indistinguishable. A one-time backfill
 (`scripts/backfill-teachers.mjs`) covered the 159 ids that predated the registry — without
 it, turning rejection on would have locked every existing teacher out of their own exams.
+
+## What the row holds
+
+`teacherId` · `email` · `passwordHash` · `recoveryHash` · `recoveryUsedAt` · `role` ·
+`school` · `createdAt` · `updatedAt`. Indexes: `{email: 1}` unique **partial**, and
+`{teacherId: 1}` unique.
+
+Two of those are optional and both read as the safe value when absent: `role` reads as
+`teacher`, and **`school` reads as null**. Every row that predates a field must keep behaving
+exactly as it did, and for `role` the unsafe direction would be a privilege.
+
+The school is written only by [[cmp-be-teacher-school]], which normalises at the boundary, so
+the only stored values are `null` and a non-empty trimmed string — a reader has two cases, not
+three, and never has to decide what `""` means. `createTeacher` accepts an optional `school`
+and **no caller passes one**; sign-up runs before the step that collects it.
+
+## Components
+- [[cmp-be-auth-api]] — sign-up, sign-in, recovery
+- [[cmp-be-teacher-school]] — `PUT /api/teacher/school`
 
 ## Things that must not be undone
 

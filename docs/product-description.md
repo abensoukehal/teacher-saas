@@ -282,23 +282,24 @@ before asking for anything.** The sign-up ask lands after the first real artifac
 **States:** first visit · returning-with-account · returning-anonymous-with-exams (offer to
 claim them) · service down (see §10).
 
-### 6.2 Sign-up — **SHIPS**, profile step **DECIDED**
+### 6.2 Sign-up — **SHIPS, all four steps**
 
 Today: email + password → an account, plus a **one-time recovery code** shown once (there is no
-email sending, so this code *is* the reset path).
-
-Decided addition (J2): sign-up also collects **which stream(s) they teach** and **their school
-name**, because the programme, the topic list, and the printed header all depend on it.
+email sending, so this code *is* the reset path) — and then two more screens, the classes and
+the school, and where each class has reached. Steps 3 and 4 shipped 2026-08-11.
 
 Screen order that respects the eight-second rule:
 
-1. **Email + password.** Nothing else. (`409 email_taken` today reveals whether an email exists — a known, accepted weakness; the copy should not make a feature of it.)
+1. **Email + password.** Nothing else. (Signing up for an address that already has an account no longer says so: it answers exactly like a first sign-up, with a working teacher id and a **decoy** recovery code, to close a one-request way to test whether a colleague has an account. The consequence to design for: a teacher who reuses their own address is left holding a code that cannot be redeemed and nothing tells them why.)
 2. **The recovery code**, full screen, once. This is the most under-designed moment in the product today and the most expensive to get wrong: if they lose it and clear their browser, their year is gone. Give it weight — large, copyable, «احتفظ بهذا الرمز» — with a download/print affordance and a confirm-you-saved-it step.
-3. **Your classes** — not "your stream". Per §5b rule 4, progress belongs to a class, so classes are the unit sign-up collects: a name the teacher already uses («3ر1», «3ع2») and a stream each, from all six (شعبة الرياضيات · تقني رياضي · علوم تجريبية · تسيير واقتصاد · آداب وفلسفة · لغات أجنبية). Add-another is the default expectation, not an edge case — most teachers have several, and two classes in the same stream are still two classes.
+3. **Your classes** — not "your stream". **SHIPS.** Per §5b rule 4, progress belongs to a class, so classes are the unit sign-up collects: a name the teacher already uses («3ر1», «3ع2») and a stream each, from all six (شعبة الرياضيات · تقني رياضي · علوم تجريبية · تسيير واقتصاد · آداب وفلسفة · لغات أجنبية), nothing pre-selected. Add-another is the default expectation, not an edge case — most teachers have several, and two classes in the same stream are still two classes.
    > This is what retires the old "one stream or several?" question: a teacher has classes, each with a stream, and multi-stream falls out for free.
-4. **School name**, optional-but-encouraged, because it goes on the printed header. Explain that: «سيظهر على ورقة الاختبار».
-   > **OPEN:** does the school belong to the *teacher* or to the *exam*? A teacher who moves schools, or writes for two, breaks the first model. The class model does not settle this.
-5. **Where has each class reached?** Per class, since they differ. Skippable, and settable later in the tracker — but asked here it makes the first home screen useful instead of empty, and it is the single most valuable thing a new teacher can do in their first minute.
+   >
+   > As built: no «رجوع» on this step (the screen upstream is the recovery code, shown once and gone). Classes are created one at a time in the order typed, because that order is the switcher's tab order. A row the server refuses keeps its text and gets its own Arabic reason; a row that succeeded is dropped, because creating is insert-only and re-sending is a second class. **A reload here loses what was typed** — the wizard is not persisted — and the browser Back button exits the app, because the wizard pushes no history.
+4. **School name**, optional-but-encouraged, because it goes on the printed header. Explain that: «سيظهر على الموضوع المطبوع». **Collected and stored — and read by nothing yet**, so it appears nowhere, including the account screen. Design the read before promising it back to the teacher.
+   > **OPEN:** does the school belong to the *teacher* or to the *exam*? A teacher who moves schools, or writes for two, breaks the first model. The class model does not settle this. As built it is on the teacher.
+5. **Where has each class reached?** **SHIPS.** Per class, since they differ. Skippable per class, and settable later from the class's own surface on home — the tracker (§6.5) is not built. Asked here it makes the first home screen useful instead of empty, and it is the single most valuable thing a new teacher can do in their first minute.
+   > As built: **skipping writes nothing at all.** A class nobody positioned simply has no stored position and reads back as week 0. Recording the skip as "week 0" would make "not started" and "started at zero" the same fact. And this step reuses the home surface at full size, so its heading and lede repeat once per class — the host hides them with styling; it wants a compact variant.
 
 **Deliberately not collected:** تقني رياضي speciality (all four share one maths programme),
 wilaya, years teaching, class size. Nothing acts on them, and every personal field sits behind a
@@ -312,15 +313,43 @@ teacher id that never expires and cannot be revoked.
 
 **States:** wrong password · unknown email · rate-limited (`429`, retryable — say when to try again) · recovery code already used · service down.
 
-### 6.4 Home — «هذا الأسبوع» — **today: a list. DECIDED: the week.**
+### 6.4 Home — «هذا الأسبوع» — **today: a class switcher, a position, and a list. DECIDED: the week.**
 
-Today home is: the controls form plus a list of saved exams. That is the right screen for a
-generator and the wrong one for a companion. **This is the anchor screen of the redesign** — the
-one that decides whether the product is opened weekly or three times a trimester.
+Today home is: a class switcher across the top, the selected class's position, the controls form
+and a list of saved exams. The switcher and the position ship; **the week card and the pacing
+line do not.** That is still the right screen for a generator and the wrong one for a companion,
+and **this is the anchor screen of the redesign** — the one that decides whether the product is
+opened weekly or three times a trimester.
 
-**The class selector sits above everything.** Per §5b rule 4, a teacher has classes and each has
-its own position. Home always shows exactly one class, named the way the teacher names it
-(«3ر1», «3ع2»), with a switcher. Nothing on this screen is meaningful without it.
+**The class selector sits above everything — SHIPS.** Per §5b rule 4, a teacher has classes and
+each has its own position. Home shows one class, named the way the teacher names it («3ر1»,
+«3ع2»), with a switcher across the top. Nothing on this screen is meaningful without it.
+
+As built:
+
+- **A tab reads «3ع2 · أسبوع 8» with a thin rail** filled `markedWeek / totalWeeks` — the
+  position only, never the pacing — the pacing section below needs a reference schedule that
+  does not exist yet. The rail is ink, not colour: the product does not grade the teacher.
+- **A class with no position shows its name alone.** No rail, no «أسبوع 0» — the product will
+  not assert a position nobody set. Selecting it puts the whole question on screen instead:
+  «أين وصل هذا القسم؟», a week picker running from 0 to that class's own last week (27 in
+  every corpus document today, and read per class rather than assumed), and 0 labelled
+  «لم نبدأ بعد».
+- **Switching is a full context change**, exactly as §6.5 requires: the open exam, the refine
+  panel and the corrections all go, and the saved-exams list re-reads scoped to the new class.
+  One thing survives — an exam that failed to save and is waiting to be retried.
+- **A teacher with no classes sees the pre-class home, unchanged.** No switcher, no empty row.
+  Every teacher who predates this is in that state, and so is anyone whose class list fails to
+  load — which is deliberate, and is the honest cost: **in the switcher, a class whose position
+  could not be read looks identical to a class genuinely at week 0.**
+- **Nothing is auto-selected.** A returning teacher gets their classes back with no tab
+  selected, and a class they just created does not become the current one. Both are undesigned,
+  not decided.
+- **The saved-exams list under a class shows that class's exams plus every exam made before
+  classes existed** — never a strict partition, or thousands of exams would vanish the moment a
+  teacher picked a tab. And **a newly generated exam is stored with no class at all**, so it
+  appears under every tab. That is the first thing a teacher trying the switcher will notice,
+  and closing it is a later slice.
 
 **The week card — the largest thing on the screen.** Not a list item, not a stat tile: a card that
 reads like a page from their own planner.
@@ -644,9 +673,24 @@ the product has to ask about. Entry point: from the tracker row, or from a finis
 ### 6.17 Account and settings — **partially SHIPS**
 
 - Email, password, a fresh recovery code on demand.
-- **Profile:** stream(s), school name, and what appears on the printed header.
+- **«أقسامي» — SHIPS.** Each class as «<name> — <stream> · الأسبوع N من M», or «لم يبدأ بعد»,
+  with the ceiling read from that class's own programme. Plus add-a-class, using the same rows
+  as sign-up step 3. **This is the only way an existing account makes a class**, so it is not
+  decoration: every teacher who predates the class layer reaches classes here.
+  - It **reads** positions and does not set them. The setter lives on home, where the teacher
+    can see which class they are standing in; one compare-and-set must not have two homes.
+  - Creating a class here closes the panel and hands the teacher back to the workspace.
+- **Profile: school name — NOT built.** The school is collected at sign-up and stored, and
+  nothing reads it back, so this screen shows no school field. A blank input would silently
+  clear what they typed. Designing the read is what unblocks it, along with what appears on
+  the printed header.
+- **Stream(s)** are not a profile field and should not be drawn as one — a stream belongs to a
+  class, not to a teacher.
 - **Plan/credits** — see §8, and read the OPEN warning before drawing a checkout.
 - Sign out. Note the sign-out warning: an anonymous session's work is tied to a device-held id, and the copy must be honest about what leaving costs.
+- **No rename, no delete, no archive for a class**, on this screen or anywhere. A class made by
+  mistake is permanent today, and a name made only of invisible characters is accepted and
+  renders as a blank tab.
 
 ### 6.18 Admin console — **SHIPS · operator-facing, not teacher-facing**
 
@@ -686,6 +730,8 @@ Design each of these; they are all reachable.
 | Wrong password / bad recovery code | Say which, without revealing whether the account exists more than the product already does. | — |
 | Too many attempts | Wait, and say roughly how long. | Yes, later |
 | Same exercise being refined twice | Not an error — reassurance. «التمرين قيد الكتابة الآن.» | — |
+| The same class's position moved somewhere else while they were choosing | Their view is stale, and only they can decide again. **Ships:** the surface re-reads and re-asks — «تغيّر موقع هذا القسم في مكان آخر… أعد الاختيار.» The write is never silently resent. | Re-choose, not retry |
+| The class no longer resolves (gone, or never theirs) | Generic and identical either way — existence must not be probeable. | No |
 | Request too large / malformed | Rare, developer-facing. Generic, apologetic, no code. | — |
 
 **Copy rules for all of the above:** Arabic, no error codes, no `pending`/`failed`/`409` leaking

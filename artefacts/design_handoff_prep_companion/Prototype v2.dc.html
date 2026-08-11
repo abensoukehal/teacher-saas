@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="_ds/modernist-63bd57b4-5a65-4b9a-b510-32235392283b/styles.css">
+  <script src="_ds/modernist-63bd57b4-5a65-4b9a-b510-32235392283b/_ds_bundle.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <style>
+    /* shadcn/ui-flavored theme: warm green + naskh. Tokens mirror shadcn's
+       background/card/border/muted/primary roles for a 1:1 Tailwind handoff. */
+    :root {
+      --color-bg: #fffefb; --color-text: #292524;
+      --color-divider: #e7e0d2;
+      --color-accent: #2f6f5e; --color-accent-100: #e9f1ec; --color-accent-200: #d5e5dd;
+      --color-accent-600: #285f50; --color-accent-700: #235245; --color-accent-800: #1d443a;
+      --color-neutral-100: #f8f5ec; --color-neutral-200: #f2edde; --color-neutral-300: #e9e2cf;
+      --color-neutral-400: #dcd3bd; --color-neutral-500: #b3a88e; --color-neutral-600: #857b66;
+      --color-neutral-700: #665d4b; --color-neutral-800: #44402f;
+    }
+    body { margin: 0; background: #faf7f0; }
+    a { color: var(--color-accent-700); } a:hover { color: var(--color-accent); }
+    .katex { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: 1.05em; }
+    h1, h2, h3 { font-family: 'Amiri', 'Noto Naskh Arabic', serif; }
+    button, input { border-radius: 8px; transition: background 0.15s, border-color 0.15s; }
+    button { cursor: pointer; }
+    div[style*="border: 1px solid var(--color-divider)"] { border-radius: 12px; }
+    div[style*="border: 1px dashed"] { border-radius: 12px; }
+    div[style*="background: var(--color-bg); border: 1px solid var(--color-divider)"] { box-shadow: 0 1px 2px rgba(41,37,36,0.05); }
+    button:focus-visible, input:focus-visible, [onclick]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    [data-tip]:hover::after {
+      content: attr(data-tip); position: absolute; bottom: calc(100% + 10px); inset-inline-start: 50%;
+      transform: translateX(50%); background: var(--color-text); color: #fffdf8;
+      font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 7px;
+      white-space: nowrap; z-index: 20; pointer-events: none; box-shadow: 0 2px 6px rgba(41,37,36,0.18);
+    }
+    [data-tip]:hover::before {
+      content: ""; position: absolute; bottom: calc(100% + 5px); inset-inline-start: 50%;
+      transform: translateX(50%) rotate(45deg); width: 8px; height: 8px; background: var(--color-text);
+      z-index: 20; pointer-events: none;
+    }
+    /* phone pass — staff-room glancing, not phone-first */
+    @media (max-width: 820px) {
+      div[style*="grid-template-columns: 1fr 380px"] { grid-template-columns: 1fr !important; }
+      div[style*="grid-template-columns: 1fr 460px"] { grid-template-columns: 1fr !important; gap: 28px !important; }
+      div[style*="grid-template-columns: repeat(3, 1fr)"] { grid-template-columns: 1fr !important; }
+      div[style*="grid-template-columns: 1fr 1fr;"] { grid-template-columns: 1fr !important; }
+      div[style*="grid-template-columns: 64px 210px 1fr 80px 170px"] { grid-template-columns: 40px 1fr 120px !important; row-gap: 2px; }
+      div[style*="grid-template-columns: 1fr 150px 90px 100px 190px"] { grid-template-columns: 1fr 1fr !important; row-gap: 6px; padding: 14px 16px !important; }
+      div[style*="grid-template-columns: 230px 1fr 46px"] { grid-template-columns: 120px 1fr 40px !important; }
+      div[style*="height: 64px"] { height: auto !important; min-height: 52px; flex-wrap: wrap; row-gap: 8px; padding: 10px 14px !important; }
+      div[style*="padding: 48px 56px"] { padding: 24px 18px !important; }
+      div[style*="padding: 40px 44px"] { padding: 24px 20px !important; }
+      div[style*="padding: 32px"] { padding: 20px 16px !important; }
+      div[style*="padding: 64px 24px 80px"] { padding: 32px 16px 48px !important; }
+      div[style*="border-left: 1px solid var(--color-divider)"] { border-left: none !important; }
+      div[style*="width: 794px"] { width: 100% !important; min-height: 0 !important; }
+    }
+  </style>
+</helmet>
+<div dir="rtl" style="min-height: 100vh; font-family: 'Noto Naskh Arabic','Archivo',serif; color: var(--color-text); display: flex; flex-direction: column;">
+
+  <!-- ══════════ NAV ══════════ -->
+  <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+    <div style="background: var(--color-bg); border-bottom: 1px solid var(--color-divider);">
+      <div style="max-width: 1240px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 24px;">
+        <div style="display: flex; align-items: center; gap: 32px;">
+          <div style="font-weight: 700; font-size: 19px; cursor: pointer;" onClick="{{ goHome }}">تحضير<span style="color: var(--color-accent);">.</span></div>
+          <div style="display: flex; gap: 4px; font-size: 14px;">
+            <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+              <div onClick="{{ n.go }}" style="padding: 8px 14px; cursor: pointer; font-weight: {{ n.weight }}; border-bottom: 3px solid {{ n.border }}; color: {{ n.color }};" style-hover="background: var(--color-neutral-200);">{{ n.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="display: flex; border: 1px solid var(--color-divider);">
+            <sc-for list="{{ classTabs }}" as="c" hint-placeholder-count="2">
+              <div onClick="{{ c.pick }}" style="padding: 6px 14px 4px; cursor: pointer; background: {{ c.bg }}; color: {{ c.fg }}; border-radius: 8px;">
+                <div style="font-size: 13px; font-weight: 600; white-space: nowrap;">{{ c.name }}</div>
+                <div style="width: 72px; height: 3px; background: {{ c.railBg }}; margin-top: 3px; direction: rtl;"><div style="height: 3px; background: {{ c.railFg }}; width: {{ c.pct }};"></div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size: 13px; font-weight: 600; cursor: pointer;" onClick="{{ goAccount }}">أ. بن يوسف</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ LANDING ══════════ -->
+  <sc-if value="{{ routeLanding }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1100px; width: 100%; margin: 0 auto; padding: 64px 24px 80px; box-sizing: border-box; display: flex; justify-content: center;">
+      <div>
+        <div style="font-weight: 700; font-size: 20px;">تحضير<span style="color: var(--color-accent);">.</span></div>
+        <h1 style="margin: 24px 0 0; font-size: 38px; font-weight: 700; line-height: 1.4;">ترافقك في تحضيرك اليومي — وتعيد لك السيطرة على عملك</h1>
+        <p style="margin: 14px 0 0; font-size: 15.5px; line-height: 2; color: var(--color-neutral-700); max-width: 48ch;">نعرف ثقل التحضير بعد يوم كامل في القسم. «تحضير» تعينك عليه — فتنجز في دقائق ما كان يأخذ سهرتك، بثقة تامة وعلى البرنامج الرسمي.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px; font-size: 13.5px; line-height: 1.9; max-width: 50ch;">
+          <div style="display: flex; gap: 10px;"><span style="color: var(--color-accent); font-weight: 700;">—</span><span><b>وفق البرنامج الرسمي.</b> كل شيء مبني على التدرج السنوي للوزارة: بالمستوى المطلوب، ولا شيء خارج ما درسه قسمك.</span></div>
+          <div style="display: flex; gap: 10px;"><span style="color: var(--color-accent); font-weight: 700;">—</span><span><b>تمارين على مقاسك.</b> درس بعينه، أسبوع، محور كامل — أو اختبار يغطي ما أنجزتموه فعلًا، مع التصحيح والسلّم.</span></div>
+          <div style="display: flex; gap: 10px;"><span style="color: var(--color-accent); font-weight: 700;">—</span><span><b>تتبّع التقدّم واستباقه.</b> أين وصل كل قسم، هل أنتم في الموعد، وما القادم — الاختبار الفصلي يُقترح قبل أن تبحث عنه.</span></div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 28px;">
+          <button onClick="{{ landingStart }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 15px; font-weight: 600; padding: 13px 26px;" style-hover="background: var(--color-accent-600);">ابدأ الآن</button>
+          <button onClick="{{ landingSignin }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 15px; font-weight: 600; padding: 12px 26px;" style-hover="background: var(--color-neutral-200);">لدي حساب</button>
+        </div>
+        <div style="font-size: 13px; color: var(--color-neutral-600); margin-top: 16px;">جرّب أول موضوع دون إنشاء حساب — وفق التدرجات السنوية الرسمية.</div>
+      </div>
+          </div>
+  </sc-if>
+
+  <!-- ══════════ HOME ══════════ -->
+  <sc-if value="{{ routeHome }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width: 1240px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 28px 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div style="font-size: 14px; font-weight: 700;">{{ className }} — {{ streamName }} · {{ posLine }}</div>
+          <sc-if value="{{ hasReference }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size: 13px; color: var(--color-neutral-700);">{{ paceLine }} <span style="color: var(--color-neutral-500);">— مقارنة استرشادية بتوزيع سنوي من إعداد أستاذ، وليست حكمًا</span></div>
+          </sc-if>
+          <sc-if value="{{ noPosition }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 13px; color: var(--color-neutral-700);">لم تُحدَّد نقطة انطلاق بعد — لا مقارنة تُعرض قبل ذلك.</div>
+          </sc-if>
+        </div>
+        <div style="margin-top: 40px;">
+          <div style="position: relative; height: 26px; border: 1px solid var(--color-divider); display: flex; direction: rtl; background: var(--color-bg);">
+            <sc-for list="{{ barSegments }}" as="s" hint-placeholder-count="8">
+              <div data-tip="{{ s.name }}" style="width: {{ s.w }}; border-left: 1px solid var(--color-neutral-400); position: relative;"><div style="position: absolute; inset-block: 0; inset-inline-start: 0; width: {{ s.fill }}; background: var(--color-neutral-800);"></div></div>
+            </sc-for>
+            <sc-if value="{{ hasReference }}" hint-placeholder-val="{{ true }}">
+              <div style="position: absolute; top: -6px; bottom: -6px; inset-inline-start: {{ expectedPct }}; width: 3px; background: var(--color-accent);"></div>
+              <div style="position: absolute; top: -22px; inset-inline-start: {{ expectedPct }}; transform: translateX(50%); font-size: 11px; font-weight: 700; color: var(--color-accent-700); white-space: nowrap;">متوقَّع — الأسبوع {{ expectedWeek }}</div>
+            </sc-if>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-neutral-600); margin-top: 8px;">
+            <div>موقعكم المسجَّل: {{ posLine }} <b style="color: var(--color-text);">{{ paceNum }}</b></div>
+            <div>مقاطع الشريط بحجم الساعات الرسمية لكل محور · الامتلاء = ما سجّلتموه أنتم، لا ما يوحي به التاريخ</div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ noPosition }}" hint-placeholder-val="{{ false }}">
+        <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 40px 44px; margin-top: 24px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-neutral-600);">قسم جديد — {{ className }}</div>
+          <h1 style="margin: 8px 0 0; font-size: 28px; font-weight: 700;">أين وصل هذا القسم؟</h1>
+          <p style="margin: 10px 0 0; font-size: 14px; line-height: 2; color: var(--color-neutral-700); max-width: 60ch;">أثمن دقيقة في إعدادك: بتحديد الموقع تعرف المنصة ما يجوز أن يدخل أي موضوع لهذا القسم وما لم يُدرَّس بعد. يمكنك دائمًا تعديله من «البرنامج».</p>
+          <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button onClick="{{ goTracker }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px 20px;" style-hover="background: var(--color-accent-600);">حدّد أين وصلت</button>
+            <button onClick="{{ startFromOne }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; font-weight: 600; padding: 11px 20px;" style-hover="background: var(--color-neutral-200);">نبدأ من الأسبوع 1</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasPosition }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px; margin-top: 24px; align-items: start;">
+        <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-neutral-600);">هذا الأسبوع — الأسبوع {{ markedWeek }} من 27</div>
+          <h1 style="margin: 8px 0 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.01em;">{{ weekUnit }}</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700);">{{ weekSub }}</div>
+          <div style="height: 1px; background: var(--color-divider); margin: 20px 0;"></div>
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">المحتويات المعرفية <span style="font-weight: 400; color: var(--color-neutral-600);">— كل محتوى يفتح درسًا</span></div>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ weekContents }}" as="ct" hint-placeholder-count="3">
+              <div onClick="{{ ct.open }}" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--color-neutral-400); cursor: pointer; font-size: 14px;" style-hover="background: var(--color-neutral-100);">
+                <div style="display: flex; gap: 10px;"><span style="color: var(--color-accent); font-weight: 700;">—</span>{{ ct.name }}</div>
+                <div style="font-size: 12px; color: var(--color-neutral-600);">الدرس ←</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 20px; border: 1px solid var(--color-divider); padding: 16px 20px; background: var(--color-neutral-100);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div style="font-size: 13px; font-weight: 700;">السير المنهجي لتدرج التعلمات</div>
+              <div style="font-size: 11px; color: var(--color-neutral-600);">نصّ الوزارة حرفيًا · التدرجات السنوية الرسمية</div>
+            </div>
+            <div style="font-size: 14px; line-height: 1.9; margin-top: 8px;">{{ weekGuidance }}</div>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button onClick="{{ startSeries }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px 20px; cursor: pointer; text-align: right;" style-hover="background: var(--color-accent-600);">سلسلة تمارين هذا الأسبوع</button>
+            <button onClick="{{ markDone }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; font-weight: 600; padding: 10px 20px; cursor: pointer;" style-hover="background: var(--color-neutral-300);">أنهيت هذا الأسبوع ✓</button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 24px 28px;">
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-accent-700);">قادم — بعد أسبوعين</div>
+            <div style="font-size: 20px; font-weight: 700; margin: 6px 0 2px;">اختبار الفصل الأول</div>
+            <div style="font-size: 13px; color: var(--color-neutral-700); line-height: 1.7;">يغطي الأسابيع 1 إلى {{ markedWeek }} — ولن يتضمّن ما لم يُدرَّس بعد.</div>
+            <button onClick="{{ goGenerate }}" style="margin-top: 14px; width: 100%; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px 18px; cursor: pointer; text-align: right;" style-hover="background: var(--color-accent-600);">إعداد الاختبار ←</button>
+          </div>
+          <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 24px 28px;">
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-neutral-600);">ما أعددتُه مؤخرًا</div>
+            <div style="display: flex; flex-direction: column; margin-top: 8px;">
+              <sc-for list="{{ recent }}" as="r" hint-placeholder-count="3">
+                <div onClick="{{ r.open }}" style="display: flex; justify-content: space-between; padding: 10px 2px; border-bottom: 1px solid var(--color-neutral-400); font-size: 13px; cursor: pointer;" style-hover="background: var(--color-neutral-100);">
+                  <div>{{ r.title }}</div><div style="color: var(--color-neutral-600);">{{ r.kind }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size: 12px; color: var(--color-neutral-600); margin-top: 12px;">لا شيء يُحذف. يمكنك دائمًا العودة.</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ TRACKER ══════════ -->
+  <sc-if value="{{ routeTracker }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1240px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider);">
+        <div style="padding: 24px 32px; border-bottom: 1px solid var(--color-divider);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700; white-space: nowrap;">التدرج السنوي — {{ className }}</h1>
+            <div style="font-size: 12px; color: var(--color-neutral-600);">{{ streamName }} · وزارة التربية الوطنية · المفتشية العامة · التدرجات السنوية الرسمية · 27 أسبوعًا · {{ totalHours }} ساعة</div>
+          </div>
+          <div style="position: relative; height: 18px; border: 1px solid var(--color-divider); display: flex; direction: rtl; margin-top: 18px;">
+            <sc-for list="{{ barSegments }}" as="s" hint-placeholder-count="8">
+              <div data-tip="{{ s.name }}" style="width: {{ s.w }}; border-left: 1px solid var(--color-neutral-400); position: relative;"><div style="position: absolute; inset-block: 0; inset-inline-start: 0; width: {{ s.fill }}; background: var(--color-neutral-800);"></div></div>
+            </sc-for>
+            <div style="position: absolute; top: -5px; bottom: -5px; inset-inline-start: {{ expectedPct }}; width: 3px; background: var(--color-accent);"></div>
+          </div>
+          <div style="display: flex; gap: 24px; font-size: 12px; color: var(--color-neutral-600); margin-top: 8px;">
+            <div><span style="display: inline-block; width: 10px; height: 10px; background: var(--color-neutral-800);"></span> ما سجّلتموه</div>
+            <div><span style="display: inline-block; width: 3px; height: 10px; background: var(--color-accent);"></span> موقع التوزيع السنوي (استرشادي، من إعداد أستاذ)</div>
+            <div>{{ paceLine }}</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ trackerRows }}" as="w" hint-placeholder-count="8">
+            <div style="display: grid; grid-template-columns: 64px 210px 1fr 80px 170px; border-bottom: 1px solid var(--color-neutral-400); background: {{ w.bg }}; font-size: 13px;">
+              <div style="padding: 14px 20px 14px 8px; font-weight: 700;">{{ w.n }}</div>
+              <div style="padding: 14px 8px;">{{ w.unit }}<sc-if value="{{ w.unitBar }}" hint-placeholder-val="{{ false }}"><div style="margin-top: 6px; width: 120px; height: 4px; background: var(--color-neutral-300); direction: rtl;"><div style="height: 4px; background: var(--color-neutral-800); width: {{ w.unitPct }};"></div></div><div style="font-size: 11px; color: var(--color-neutral-600); margin-top: 3px;">{{ w.unitHours }}</div></sc-if></div>
+              <div style="padding: 14px 8px; line-height: 1.7;">{{ w.content }}<div style="color: var(--color-neutral-600); font-size: 12px; margin-top: 2px;">{{ w.guidance }}</div><sc-if value="{{ w.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; margin-top: 6px; background: var(--color-neutral-100); border: 1px dashed var(--color-neutral-400); border-radius: 8px; padding: 4px 10px; display: inline-block;">ملاحظتك: {{ w.note }}</div></sc-if></div>
+              <div style="padding: 14px 8px; color: var(--color-neutral-700);">{{ w.hours }}</div>
+              <div style="padding: 12px 8px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; background: {{ w.tagBg }}; color: {{ w.tagFg }}; border: {{ w.tagBorder }};">{{ w.status }}</span>
+                <sc-if value="{{ w.isCurrent }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; gap: 8px; font-size: 12px; flex-wrap: wrap;">
+                    <span onClick="{{ w.doDone }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text); font-weight: 600;">تمّ ✓</span>
+                    <span onClick="{{ w.doSkip }}" style="cursor: pointer; border-bottom: 1px solid var(--color-neutral-600); color: var(--color-neutral-700);">تخطٍّ ↷</span>
+                    <span onClick="{{ w.doSeries }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text); font-weight: 600;">سلسلة الأسبوع</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ w.isDone }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ w.doSupport }}" style="cursor: pointer; font-size: 12px; border-bottom: 1px solid var(--color-neutral-600); color: var(--color-neutral-700);">تمارين دعم على هذا المحور</span>
+                </sc-if>
+                <sc-if value="{{ w.showSetHere }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ w.setHere }}" style="cursor: pointer; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--color-accent-700); color: var(--color-accent-700);">وصلنا هنا</span>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 16px 32px; border-top: 1px solid var(--color-divider); font-size: 12px; color: var(--color-neutral-600);">
+          <div>النص الرسمي معروض حرفيًا · موقعكم المسجَّل هو المعتمد في اشتقاق نطاق أي موضوع، لا التقويم</div>
+          <div>ما هو من إعدادنا (الدروس، الترجيحات) مُعلَّم ✎</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ GENERATE ══════════ -->
+  <sc-if value="{{ routeGenerate }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1240px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider);">
+        <div style="padding: 24px 32px; border-bottom: 1px solid var(--color-divider); display: flex; justify-content: space-between; align-items: baseline;">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 700;">إعداد موضوع — {{ className }}</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-600);">النطاق مشتق من موقعكم المسجَّل (الأسبوع {{ markedWeek }})، لا من التقويم</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 380px;">
+          <div style="padding: 32px; border-left: 1px solid var(--color-divider);">
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 10px;">ما الذي تحضّره؟</div>
+            <div style="display: flex; background: var(--color-neutral-200); padding: 4px; gap: 4px; border-radius: 12px; font-size: 14px;">
+              <sc-for list="{{ formatOpts }}" as="f" hint-placeholder-count="4">
+                <div onClick="{{ f.pick }}" style="flex: 1; padding: 12px 14px; cursor: pointer; background: {{ f.bg }}; color: {{ f.fg }}; font-weight: {{ f.weight }}; border-radius: 9px;" style-hover="opacity: 0.85;">{{ f.label }}<div style="font-size: 11px; font-weight: 400; margin-top: 2px; color: {{ f.subFg }};">{{ f.sub }}</div></div>
+              </sc-for>
+            </div>
+            <div style="font-size: 13px; font-weight: 700; margin: 24px 0 10px;">النطاق</div>
+            <div style="display: flex; background: var(--color-neutral-200); padding: 4px; gap: 4px; border-radius: 12px; font-size: 14px;">
+              <sc-for list="{{ scopeOpts }}" as="s" hint-placeholder-count="4">
+                <div onClick="{{ s.pick }}" style="flex: {{ s.flex }}; padding: 12px 14px; cursor: pointer; background: {{ s.bg }}; color: {{ s.fg }}; font-weight: {{ s.weight }}; border-radius: 9px;" style-hover="opacity: 0.85;">{{ s.label }}<div style="font-size: 11px; font-weight: 400; margin-top: 2px; color: {{ s.subFg }};">{{ s.sub }}</div></div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ showWeights }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size: 13px; font-weight: 700; margin: 24px 0 4px;">توزيع النقاط <span style="font-weight: 400; color: var(--color-neutral-600);">— مشتق من الساعات المنجزة فعليًا ✎</span></div>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                <sc-for list="{{ weights }}" as="u" hint-placeholder-count="5">
+                  <div style="display: grid; grid-template-columns: 230px 1fr 46px; align-items: center; gap: 12px; font-size: 13px;">
+                    <div>{{ u.name }}</div>
+                    <div style="height: 14px; background: var(--color-neutral-300); direction: rtl;"><div style="height: 14px; background: var(--color-neutral-800); width: {{ u.pct }};"></div></div>
+                    <div style="font-weight: 700;">{{ u.pts }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="font-size: 13px; font-weight: 700; margin: 24px 0 10px;">ملاحظات <span style="font-weight: 400; color: var(--color-neutral-600);">— اختياري</span></div>
+            <div style="border: 1px solid var(--color-divider); padding: 12px 16px; font-size: 14px; color: var(--color-neutral-500); min-height: 40px;">{{ noteText }}</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
+                <div onClick="{{ c.tap }}" style="font-size: 12px; border: 1px solid var(--color-divider); padding: 5px 12px; cursor: pointer; color: var(--color-neutral-800);" style-hover="background: var(--color-neutral-200);">{{ c.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="padding: 32px; background: var(--color-neutral-100); display: flex; flex-direction: column;">
+            <div style="font-size: 15px; font-weight: 700;">{{ genTitle }}</div>
+            <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.7;">{{ genScopeLine }}</div>
+            <div style="height: 1px; background: var(--color-divider); margin: 16px 0;"></div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-accent-700);">لن يتضمّن — لم يُدرَّس بعد</div>
+            <div style="font-size: 13px; line-height: 2; margin-top: 8px;">
+              <sc-for list="{{ excluded }}" as="x" hint-placeholder-count="4"><div>{{ x.name }} <span style="color: var(--color-neutral-600);">{{ x.why }}</span></div></sc-for>
+            </div>
+            <div style="height: 1px; background: var(--color-divider); margin: 16px 0;"></div>
+            <div style="font-size: 12px; color: var(--color-neutral-600); line-height: 1.8;">وفق التدرجات السنوية الرسمية · {{ streamName }}. الكتابة تستغرق دقيقة إلى دقيقتين، ويظهر هيكل الموضوع فورًا — ويمكنك المغادرة والعودة، كل شيء يُحفظ أولًا بأول. موضوع أطول يستغرق أطول: ثلاثة تمارين لساعتين ≈ ضعف فرض قصير.</div>
+            <button onClick="{{ launch }}" style="margin-top: auto; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 15px; font-weight: 600; padding: 14px 20px; cursor: pointer; text-align: right;" style-hover="background: var(--color-accent-600);">{{ launchLabel }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ DOCUMENT (exam/series) ══════════ -->
+  <sc-if value="{{ routeDoc }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1000px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 13px;"><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);" onClick="{{ goHome }}">هذا الأسبوع</span> <span style="color: var(--color-neutral-500);">/ {{ docCrumb }}</span></div>
+        <div style="display: flex; gap: 10px;">
+          <button onClick="{{ goPrint }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; cursor: pointer;" style-hover="background: var(--color-accent-600);">طباعة</button>
+          <button onClick="{{ goCorrection }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; cursor: pointer;" style-hover="background: var(--color-neutral-300);">{{ corrBtnLabel }}</button>
+          <sc-if value="{{ isExam }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ goVersions }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; cursor: pointer;" style-hover="background: var(--color-neutral-300);">أنشئ نماذج أ/ب/ج</button>
+          </sc-if>
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; margin-bottom: 12px; align-items: center;">
+        <span style="font-size: 11px; color: var(--color-neutral-500);">حالات العرض:</span>
+        <sc-for list="{{ docDemoChips }}" as="d" hint-placeholder-count="2">
+          <span onClick="{{ d.tap }}" style="font-size: 11px; border: 1px solid var(--color-divider); border-radius: 999px; padding: 3px 10px; cursor: pointer; background: {{ d.bg }}; color: {{ d.fg }};">{{ d.label }}</span>
+        </sc-for>
+      </div>
+      <sc-if value="{{ genBusy }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid var(--color-divider); background: var(--color-accent-100); padding: 12px 18px; margin-bottom: 12px; font-size: 13px; line-height: 1.8;">
+          الموضوع يُكتب الآن — الهيكل ظهر فورًا وكل تمرين يظهر فور اكتماله. يمكنك مغادرة الصفحة: كل شيء يُحفظ أولًا بأول وستجد ما اكتمل هنا وفي مكتبتك. <span style="color: var(--color-neutral-700);">عند الازدحام يطول الانتظار قليلًا — ولا يفشل عملك ولا يضيع.</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ saveFail }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid var(--color-divider); background: var(--color-neutral-100); padding: 12px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+          <div style="font-size: 13px; line-height: 1.8;"><b>تعذّر الحفظ الآن.</b> عملك آمن ولن يضيع — سنقترح إتمام الحفظ عند فتحك القادم للصفحة، ولن نُنشئ نسخة مكررة تلقائيًا.</div>
+          <button onClick="{{ retrySave }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 14px; white-space: nowrap;" style-hover="background: var(--color-accent-600);">حاول الحفظ الآن</button>
+        </div>
+      </sc-if>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 48px 56px;">
+        <div style="text-align: center; border-bottom: 1px solid var(--color-divider); padding-bottom: 20px;">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 700;">{{ docTitle }}</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 8px;">{{ docMeta }}</div>
+          <div style="font-size: 12px; color: var(--color-neutral-600); margin-top: 4px;">وفق التدرجات السنوية الرسمية · يغطي: {{ docScope }} · {{ pointsLine }}</div>
+        </div>
+        <sc-for list="{{ docExercises }}" as="ex" hint-placeholder-count="3">
+          <div style="padding: 28px 0; border-bottom: 1px solid var(--color-neutral-400);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div style="font-size: 17px; font-weight: 700;">{{ ex.label }} <span style="font-weight: 400; font-size: 13px; color: var(--color-neutral-600);">{{ ex.ptsLabel }} · {{ ex.diff }} · {{ ex.unit }}</span></div>
+              <sc-if value="{{ ex.ready }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 12px; font-size: 12px; font-weight: 600;">
+                  <span onClick="{{ ex.toggleRefine }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text);">حسّن هذا التمرين</span>
+                  <span onClick="{{ ex.swap }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text);">بدّله بآخر</span>
+                  <span onClick="{{ ex.toggleHistory }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text);">النسخ السابقة ({{ ex.histCount }})</span>
+                </div>
+              </sc-if>
+            </div>
+            <sc-if value="{{ ex.pending }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; border: 1px dashed var(--color-neutral-500); padding: 20px; font-size: 14px; color: var(--color-neutral-700);">جارٍ كتابة هذا التمرين… سيظهر نصّه هنا بمجرّد اكتماله. يمكنك مغادرة الصفحة — كل شيء يُحفظ.</div>
+            </sc-if>
+            <sc-if value="{{ ex.failed }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; border: 1px solid var(--color-divider); background: var(--color-neutral-100); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                <div style="font-size: 13.5px; line-height: 1.8;">تعذّرت كتابة هذا التمرين. بقيّة التمارين جاهزة ويمكنك استعمالها.</div>
+                <button onClick="{{ ex.retry }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; white-space: nowrap;" style-hover="background: var(--color-accent-600);">أعد المحاولة</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ ex.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top: 14px; font-size: 15px; line-height: 2.1; white-space: pre-line; opacity: {{ ex.bodyOpacity }};">{{ ex.statement }}</div>
+              <sc-if value="{{ ex.refining }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 10px; font-size: 13px; color: var(--color-accent-700); font-weight: 600;">التمرين قيد الكتابة الآن — النسخة الحالية تبقى مقروءة حتى تصل الجديدة.</div>
+              </sc-if>
+              <sc-if value="{{ ex.refineOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 14px; border: 1px solid var(--color-divider); background: var(--color-neutral-100); padding: 16px 20px;">
+                  <div style="font-size: 13px; font-weight: 700;">ما الذي تريد تغييره؟ <span style="font-weight: 400; color: var(--color-neutral-600);">بالعربية، كما تقوله لزميل — والتحسين غير محدود</span></div>
+                  <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                    <div onClick="{{ ex.applySmaller }}" style="font-size: 12px; border: 1px solid var(--color-divider); padding: 5px 12px; cursor: pointer; background: var(--color-bg);" style-hover="background: var(--color-neutral-200);">صغّر الأرقام</div>
+                    <div onClick="{{ ex.applyHarder }}" style="font-size: 12px; border: 1px solid var(--color-divider); padding: 5px 12px; cursor: pointer; background: var(--color-bg);" style-hover="background: var(--color-neutral-200);">اجعله أصعب قليلًا</div>
+                    <div onClick="{{ ex.swap }}" style="font-size: 12px; border: 1px solid var(--color-divider); padding: 5px 12px; cursor: pointer; background: var(--color-bg);" style-hover="background: var(--color-neutral-200);">غيّره بتمرين آخر في نفس المحور</div>
+                  </div>
+                  <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <input placeholder="مثال: اجعل السؤال الأخير استنتاجًا وليس برهانًا" style="flex: 1; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; padding: 9px 12px; background: var(--color-bg);">
+                    <button onClick="{{ ex.applySmaller }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 18px; cursor: pointer;" style-hover="background: var(--color-accent-600);">حسّن</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ ex.historyOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 14px; border: 1px solid var(--color-divider); padding: 16px 20px;">
+                  <div style="font-size: 13px; font-weight: 700;">النسخ السابقة <span style="font-weight: 400; color: var(--color-neutral-600);">— لا شيء يُحذف، والاستعادة نسخة جديدة بدورها</span></div>
+                  <sc-for list="{{ ex.history }}" as="h" hint-placeholder-count="1">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-neutral-400);">
+                      <div style="font-size: 13px; line-height: 1.9; white-space: pre-line; color: var(--color-neutral-800);">{{ h.text }}</div>
+                      <span onClick="{{ h.restore }}" style="font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--color-text); white-space: nowrap;">استعادة</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ CORRECTION ══════════ -->
+  <sc-if value="{{ routeCorrection }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1000px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 13px;"><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);" onClick="{{ backToDoc }}">الموضوع</span> <span style="color: var(--color-neutral-500);">/ التصحيح النموذجي</span></div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="font-size: 12px; color: var(--color-neutral-600);">يُطبع منفصلًا عن الموضوع — الموضوع للتلاميذ والتصحيح لك</div>
+          <button onClick="{{ goPrintCorr }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px;" style-hover="background: var(--color-accent-600);">طباعة التصحيح</button>
+        </div>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 48px 56px;">
+        <div style="text-align: center; border-bottom: 1px solid var(--color-divider); padding-bottom: 16px;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">{{ corrTitle }}</h1>
+        </div>
+        <sc-for list="{{ corrections }}" as="c" hint-placeholder-count="3">
+          <div style="padding: 26px 0; border-bottom: 1px solid var(--color-neutral-400);">
+            <div style="font-size: 16px; font-weight: 700;">{{ c.label }} <span style="font-weight: 400; font-size: 13px; color: var(--color-neutral-600);">{{ c.ptsLabel }}</span></div>
+            <sc-if value="{{ c.stale }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 12px; border: 1px solid var(--color-divider); background: var(--color-neutral-100); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                <div style="font-size: 13px; line-height: 1.7;"><b>هذا التصحيح يخص نسخة سابقة من التمرين.</b> عدّلتَ التمرين بعد كتابته — لا تُسلّمه كما هو.</div>
+                <button onClick="{{ c.redo }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 14px; white-space: nowrap;" style-hover="background: var(--color-accent-600);">أعد كتابة هذا التصحيح</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ c.pending }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 12px; border: 1px dashed var(--color-neutral-500); padding: 16px; font-size: 13.5px; color: var(--color-neutral-700);">جارٍ كتابة هذا التصحيح… بقية التصحيحات تظهر تباعًا ويمكنك قراءة ما اكتمل.</div>
+            </sc-if>
+            <sc-if value="{{ c.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top: 12px; font-size: 14px; line-height: 2.1; white-space: pre-line; opacity: {{ c.opacity }};">{{ c.answer }}</div>
+              <sc-if value="{{ c.hasScale }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top: 14px; border: 1px solid var(--color-divider); padding: 12px 18px; background: var(--color-neutral-100);">
+                <div style="font-size: 12.5px; font-weight: 700;">السلّم</div>
+                <sc-for list="{{ c.scale }}" as="r" hint-placeholder-count="3">
+                  <div style="display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--color-neutral-300);"><span>{{ r.part }}</span><span style="font-weight: 700;">{{ r.pts }}</span></div>
+                </sc-for>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px; padding-top: 6px; font-weight: 700;"><span>المجموع</span><span>{{ c.total }} ✓</span></div>
+              </div>
+              </sc-if>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="font-size: 12px; color: var(--color-neutral-600); margin-top: 16px;">استعادة نسخة سابقة من تمرين تُصلح تصحيحه تلقائيًا — لا شيء يُحذف.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ VERSIONS ══════════ -->
+  <sc-if value="{{ routeVersions }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1240px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 13px;"><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);" onClick="{{ backToDoc }}">الموضوع</span> <span style="color: var(--color-neutral-500);">/ نماذج متعددة</span></div>
+        <div style="font-size: 12px; color: var(--color-neutral-600);">نفس الأسئلة بأعداد مختلفة وترتيب مغاير — لقاعة مكتظة، ولكل نموذج تصحيحه</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start;">
+        <sc-for list="{{ versionCards }}" as="v" hint-placeholder-count="3">
+          <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 24px 26px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div style="font-size: 17px; font-weight: 700;">{{ v.name }} <span style="font-size: 12px; font-weight: 400; color: var(--color-neutral-600);">{{ v.tag }}</span></div>
+              <sc-if value="{{ v.ready }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ v.print }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px;" style-hover="background: var(--color-neutral-200);">طباعة</button>
+              </sc-if>
+            </div>
+            <sc-if value="{{ v.pending }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; border: 1px dashed var(--color-neutral-500); padding: 16px; font-size: 13px; color: var(--color-neutral-700);">جارٍ توليد هذا النموذج… يمكنك استعمال ما اكتمل.</div>
+            </sc-if>
+            <sc-if value="{{ v.ready }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ v.items }}" as="it" hint-placeholder-count="3">
+                <div style="margin-top: 14px; border-top: 1px dashed var(--color-neutral-300); padding-top: 10px;">
+                  <div style="font-size: 12.5px; font-weight: 700;">{{ it.label }} <span style="font-weight: 400; color: var(--color-neutral-600);">{{ it.ptsLabel }}</span></div>
+                  <div style="font-size: 12px; line-height: 1.9; white-space: pre-line; margin-top: 4px; color: var(--color-neutral-800);">{{ it.statement }}</div>
+                </div>
+              </sc-for>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ COURSE SHEET ══════════ -->
+  <sc-if value="{{ routeCourse }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 900px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 13px;"><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);" onClick="{{ goHome }}">هذا الأسبوع</span> <span style="color: var(--color-neutral-500);">/ الدرس</span></div>
+        <button onClick="{{ startCourseExercises }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; cursor: pointer;" style-hover="background: var(--color-accent-600);">تمارين على هذا الدرس</button>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 48px 56px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-neutral-600);">الأسبوع {{ markedWeek }} · {{ weekUnit }}</div>
+            <h1 style="margin: 8px 0 0; font-size: 26px; font-weight: 700;">تعريف الدالة الأصلية لدالة على مجال</h1>
+          </div>
+          <span style="font-size: 12px; font-weight: 700; padding: 4px 12px; border: 1px solid var(--color-divider); white-space: nowrap;">✎ من إعدادنا — ليس نصًّا رسميًّا</span>
+        </div>
+        <div style="margin-top: 20px; border: 1px solid var(--color-divider); background: var(--color-neutral-100); padding: 14px 18px; font-size: 13px; line-height: 1.9;">
+          <b>حدود الدرس — السير المنهجي (نصّ الوزارة حرفيًا):</b> «نقتصر على الأمثلة البسيطة سهلة الحساب». هذا الدرس مُلزَم بهذا الحدّ ولا يتجاوزه.
+        </div>
+        <div style="font-size: 15px; line-height: 2.1; margin-top: 24px;">
+          <div style="font-weight: 700; font-size: 17px;">التعريف</div>
+          <p style="margin: 8px 0 0;">لتكن $f$ دالة معرّفة على مجال $I$. نقول إن الدالة $F$ دالة أصلية للدالة $f$ على $I$ إذا كانت $F$ قابلة للاشتقاق على $I$ وكان من أجل كل $x$ من $I$: $F'(x) = f(x)$.</p>
+          <div style="font-weight: 700; font-size: 17px; margin-top: 24px;">مبرهنة</div>
+          <p style="margin: 8px 0 0;">كل دالة مستمرة على مجال $I$ تقبل دوال أصلية على $I$. وإذا كانت $F$ إحداها، فإن الدوال الأصلية لـ $f$ على $I$ هي الدوال $G$ المعرّفة بـ: $G(x) = F(x) + c$ حيث $c$ ثابت حقيقي.</p>
+          <div style="font-weight: 700; font-size: 17px; margin-top: 24px;">البرهان</div>
+          <p style="margin: 8px 0 0;">لتكن $G$ دالة أصلية أخرى لـ $f$ على $I$. من أجل كل $x$ من $I$: $(G - F)'(x) = G'(x) - F'(x) = f(x) - f(x) = 0$. والدالة التي اشتقاقها معدوم على مجال هي دالة ثابتة على ذلك المجال، ومنه $G(x) = F(x) + c$.</p>
+          <div style="font-weight: 700; font-size: 17px; margin-top: 24px;">مثال</div>
+          <p style="margin: 8px 0 0;">الدالة $F(x) = x^3 - 2x$ دالة أصلية للدالة $f(x) = 3x^2 - 2$ على $\mathbb{R}$، لأن $F'(x) = 3x^2 - 2 = f(x)$. والدالة الأصلية التي تأخذ القيمة $1$ عند $0$ هي $G(x) = x^3 - 2x + 1$.</p>
+        </div>
+        <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--color-divider); display: flex; justify-content: space-between; font-size: 12px; color: var(--color-neutral-600);">
+          <div>هذه الصفحة تحضير للأستاذ — ليست مطبوعة توزَّع على التلاميذ</div>
+          <div><span style="cursor: pointer; border-bottom: 1px solid var(--color-neutral-600);">حسّن هذا الدرس</span> — بالعربية، كما في التمارين</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ PRINT ══════════ -->
+  <sc-if value="{{ routePrint }}" hint-placeholder-val="{{ false }}">
+    <div style="width: 100%; padding: 24px 0 64px;">
+      <div style="max-width: 794px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 4px 16px;">
+        <div style="font-size: 13px;"><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);" onClick="{{ backToDoc }}">← عودة إلى الموضوع</span></div>
+        <div style="font-size: 12px; color: var(--color-neutral-600);">معاينة الطباعة — A4 · الطباعة من المتصفح (حفظ PDF)</div>
+      </div>
+      <div style="width: 794px; min-height: 1123px; margin: 0 auto; background: #fff; box-shadow: var(--shadow-md); padding: 56px 64px; box-sizing: border-box; font-size: 14px; line-height: 2;">
+        <div style="text-align: center; font-weight: 700; line-height: 1.8;">
+          الجمهورية الجزائرية الديمقراطية الشعبية<br>وزارة التربية الوطنية
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 13px;">
+          <div>مديرية التربية لولاية وهران<br>ثانوية الأمير عبد القادر</div>
+          <div style="text-align: left;">السنة الدراسية: 2026/2027<br>{{ printDate }}</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 12px; border-top: 1px solid #201e1d; border-bottom: 1px solid #201e1d; padding: 6px 0; margin-top: 12px;">
+          <div style="white-space: nowrap;">المستوى: 3 ثانوي — {{ streamName }}</div>
+          <div style="white-space: nowrap;">المدة: {{ printDuration }}</div>
+          <div style="white-space: nowrap;">المعامل: 7</div>
+        </div>
+        <div style="text-align: center; font-size: 19px; font-weight: 700; margin: 24px 0 8px;">{{ printTitle }}</div>
+        <sc-if value="{{ printIsExam }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ printExercises }}" as="ex" hint-placeholder-count="3">
+            <div style="margin-top: 18px; break-inside: avoid;">
+              <div style="font-weight: 700;">{{ ex.label }} <span style="font-weight: 400;">{{ ex.ptsLabel }}</span></div>
+              <div style="white-space: pre-line; margin-top: 4px;">{{ ex.statement }}</div>
+            </div>
+          </sc-for>
+          <div style="text-align: center; margin-top: 32px; font-weight: 700;">بالتوفيق</div>
+        </sc-if>
+        <sc-if value="{{ printIsCorr }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ printCorr }}" as="c" hint-placeholder-count="3">
+            <div style="margin-top: 18px; break-inside: avoid;">
+              <div style="font-weight: 700;">{{ c.label }} <span style="font-weight: 400;">{{ c.ptsLabel }}</span></div>
+              <div style="white-space: pre-line; margin-top: 4px; font-size: 13px;">{{ c.answer }}</div>
+              <div style="border: 1px solid #d8d4d1; padding: 8px 14px; margin-top: 8px; font-size: 12px;">
+                <b>السلّم:</b>
+                <sc-for list="{{ c.scale }}" as="r" hint-placeholder-count="3"><div style="display: flex; justify-content: space-between;"><span>{{ r.part }}</span><span>{{ r.pts }}</span></div></sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6b6663; margin-top: 40px; border-top: 1px solid #d8d4d1; padding-top: 8px;">
+          <div>وفق التدرجات السنوية الرسمية · يغطي: {{ docScope }}</div>
+          <div>صفحة 1 من 1</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ LIBRARY ══════════ -->
+  <sc-if value="{{ routeLibrary }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1000px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box;">
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider);">
+        <div style="padding: 24px 32px; border-bottom: 1px solid var(--color-divider);">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">مكتبتي</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-600); margin-top: 4px;">كل ما أعددتَه، محفوظ للأبد — بنكك الخاص يكبر مع كل سنة. لا شيء يُحذف.</div>
+          <input placeholder="ابحث في مكتبتك — بالعنوان أو المحور" onInput="{{ libSearch }}" style="width: 100%; max-width: 420px; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; padding: 9px 14px; margin-top: 12px; background: var(--color-bg);">
+          <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+            <sc-for list="{{ libFilters }}" as="f" hint-placeholder-count="5">
+              <div onClick="{{ f.tap }}" style="font-size: 12px; border: 1px solid var(--color-divider); border-radius: 999px; padding: 5px 14px; cursor: pointer; background: {{ f.bg }}; color: {{ f.fg }}; font-weight: {{ f.weight }};" style-hover="background: var(--color-neutral-200);">{{ f.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ libItems }}" as="it" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: 1fr 150px 90px 100px 190px; align-items: center; padding: 14px 32px; border-bottom: 1px solid var(--color-neutral-300); font-size: 13px;">
+              <div style="font-weight: 600;">{{ it.title }}</div>
+              <div style="color: var(--color-neutral-600);">{{ it.unit }}</div>
+              <div style="color: var(--color-neutral-600);">{{ it.cls }}</div>
+              <div style="color: var(--color-neutral-600);">{{ it.date }}</div>
+              <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <span onClick="{{ it.open }}" style="cursor: pointer; font-weight: 600; border-bottom: 1px solid var(--color-text);">فتح</span>
+                <span onClick="{{ it.dup }}" style="cursor: pointer; color: var(--color-neutral-700); border-bottom: 1px solid var(--color-neutral-500);">نسخة كنقطة انطلاق</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ SIGN-IN + RECOVERY ══════════ -->
+  <sc-if value="{{ routeSignin }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 560px; width: 100%; margin: 0 auto; padding: 48px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 11px; color: var(--color-neutral-500);">حالات العرض:</span>
+        <sc-for list="{{ signinDemo }}" as="d" hint-placeholder-count="6">
+          <span onClick="{{ d.tap }}" style="font-size: 11px; border: 1px solid var(--color-divider); border-radius: 999px; padding: 3px 10px; cursor: pointer; background: {{ d.bg }}; color: {{ d.fg }};">{{ d.label }}</span>
+        </sc-for>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 40px 44px;">
+        <sc-if value="{{ siForm }}" hint-placeholder-val="{{ true }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">تسجيل الدخول</h1>
+          <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 14px;">
+            <div><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">البريد الإلكتروني</div><input value="benyoucef@gmail.com" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+            <div><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">كلمة السر</div><input type="password" value="password" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+            <sc-if value="{{ siWrong }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 13px; line-height: 1.8; background: var(--color-neutral-100); border: 1px solid var(--color-divider); padding: 10px 14px;">كلمة السر غير صحيحة. حاول مرة أخرى، أو استعمل رمز الاستعادة.</div>
+            </sc-if>
+            <sc-if value="{{ siLimited }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 13px; line-height: 1.8; background: var(--color-neutral-100); border: 1px solid var(--color-divider); padding: 10px 14px;">محاولات كثيرة متتالية. انتظر نحو دقيقتين ثم أعد المحاولة.</div>
+            </sc-if>
+          </div>
+          <button onClick="{{ siLogin }}" style="margin-top: 20px; width: 100%; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px; text-align: right;" style-hover="background: var(--color-accent-600);">دخول</button>
+          <div style="font-size: 13px; margin-top: 14px;"><span onClick="{{ siGoRecover }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text);">نسيت كلمة السر — لديّ رمز الاستعادة</span></div>
+        </sc-if>
+        <sc-if value="{{ siRecover }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">استعادة الحساب</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.8;">أدخل رمز الاستعادة الذي احتفظت به عند إنشاء الحساب. يُستعمل مرة واحدة، وبعدها يصدر رمز جديد.</div>
+          <div style="margin-top: 20px;"><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">رمز الاستعادة</div><input value="7Q4M-K2XR-98DF" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 15px; padding: 10px 12px; direction: ltr; text-align: center; letter-spacing: 0.15em;"></div>
+          <sc-if value="{{ siUsed }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 13px; line-height: 1.8; background: var(--color-neutral-100); border: 1px solid var(--color-divider); padding: 10px 14px; margin-top: 12px;">هذا الرمز استُعمل من قبل. الرمز الصالح هو الذي ظهر لك بعد آخر استعادة — إن فقدتَه فلا سبيل آخر حاليًا لاسترجاع الحساب.</div>
+          </sc-if>
+          <div style="margin-top: 16px;"><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">كلمة سر جديدة</div><input type="password" value="password" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+          <button onClick="{{ siConfirmRecover }}" style="margin-top: 20px; width: 100%; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px; text-align: right;" style-hover="background: var(--color-accent-600);">تأكيد</button>
+        </sc-if>
+        <sc-if value="{{ siNewCode }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">رمزك الجديد — الرمز القديم لم يعد صالحًا</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.8;">استُهلك الرمز القديم في هذه الاستعادة. هذا هو الرمز الوحيد الصالح الآن — احتفظ به كما فعلت أول مرة.</div>
+          <div style="margin-top: 20px; border: 1px solid var(--color-text); border-radius: 12px; padding: 24px; text-align: center; font-size: 26px; font-weight: 700; letter-spacing: 0.2em; direction: ltr;">M9TR-W4KA-51CQ</div>
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button style="flex: 1; background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 10px;" style-hover="background: var(--color-neutral-200);">نسخ الرمز</button>
+            <button style="flex: 1; background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 10px;" style-hover="background: var(--color-neutral-200);">تنزيل / طباعة</button>
+          </div>
+          <button onClick="{{ siLogin }}" style="margin-top: 16px; width: 100%; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px; text-align: right;" style-hover="background: var(--color-accent-600);">حفظتُ الرمز — متابعة</button>
+        </sc-if>
+        <sc-if value="{{ siAnon }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">لديك مواضيع محفوظة في جلسة سابقة</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 8px; line-height: 2;">على هذا الجهاز 3 مواضيع أُعدّت قبل تسجيل الدخول، وهي مرتبطة بجلسة مجهولة منفصلة عن حسابك. لا تُدمج تلقائيًا حتى لا يختلط عمل شخصين — وتبقى محفوظة، لا شيء يُحذف.</div>
+          <div style="border: 1px solid var(--color-divider); border-radius: 12px; padding: 14px 18px; margin-top: 16px; font-size: 13px; line-height: 2; background: var(--color-neutral-100);">فرض محروس — المتتاليات · سلسلة الأسبوع 9 · اختبار تجريبي</div>
+          <div style="display: flex; gap: 10px; margin-top: 18px;">
+            <button onClick="{{ siClaim }}" style="flex: 1; background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 13.5px; font-weight: 600; padding: 11px; text-align: right;" style-hover="background: var(--color-accent-600);">اربطها بحسابي</button>
+            <button onClick="{{ siClaim }}" style="flex: 1; background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13.5px; font-weight: 600; padding: 10px;" style-hover="background: var(--color-neutral-200);">لاحقًا — ادخل فقط</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ ACCOUNT ══════════ -->
+  <sc-if value="{{ routeAccount }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 760px; width: 100%; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;">
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 28px 32px;">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 700;">حسابي</h1>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px;">
+          <div><div style="font-weight: 600; margin-bottom: 4px;">البريد الإلكتروني</div><div style="color: var(--color-neutral-700);">benyoucef@gmail.com</div></div>
+          <div><div style="font-weight: 600; margin-bottom: 4px;">كلمة السر</div><span style="cursor: pointer; border-bottom: 1px solid var(--color-text);">تغيير كلمة السر</span></div>
+          <div><div style="font-weight: 600; margin-bottom: 4px;">رمز الاستعادة</div><span onClick="{{ siGoNewCode }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text);">إصدار رمز جديد</span> <span style="font-size: 12px; color: var(--color-neutral-600);">— يُبطل الرمز الحالي</span></div>
+          <div><div style="font-weight: 600; margin-bottom: 4px;">اسم الثانوية <span style="font-weight: 400; font-size: 12px; color: var(--color-neutral-600);">— يظهر على الموضوع المطبوع</span></div><div style="color: var(--color-neutral-700);">ثانوية الأمير عبد القادر — وهران</div></div>
+        </div>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 28px 32px;">
+        <div style="font-size: 15px; font-weight: 700;">أقسامي</div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+          <sc-for list="{{ acctClasses }}" as="c" hint-placeholder-count="3">
+            <div style="border: 1px solid var(--color-divider); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px;">
+              <div><b>{{ c.name }}</b> <span style="color: var(--color-neutral-700);">— {{ c.stream }}</span></div>
+              <div style="font-size: 12px; color: var(--color-neutral-600);">{{ c.pos }}</div>
+            </div>
+          </sc-for>
+          <div style="border: 1px dashed var(--color-neutral-500); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--color-neutral-700); cursor: pointer;" style-hover="background: var(--color-neutral-100);">+ أضف قسمًا — الشعب الست كلها متاحة</div>
+        </div>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 28px 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div style="font-size: 15px; font-weight: 700;">رصيدي</div>
+          <div style="font-size: 12px; color: var(--color-neutral-600);">التعديل داخل الموضوع غير محدود ولا يُحتسب — أبدًا</div>
+        </div>
+        <div style="font-size: 13.5px; margin-top: 10px;">مواضيع متبقية هذا الشهر: <b>3</b></div>
+        <div style="font-size: 12px; color: var(--color-neutral-600); margin-top: 6px;">الدفع بوسائل محلية (ذهبية · CIB · بريد موب) — دون بطاقة محفوظة ودون تجديد تلقائي.</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 0 4px;">
+        <span onClick="{{ goLandingOut }}" style="cursor: pointer; border-bottom: 1px solid var(--color-text); font-weight: 600;">تسجيل الخروج</span>
+        <span style="color: var(--color-neutral-600);">أعمال الجلسات المجهولة تبقى مرتبطة بهذا الجهاز — سجّل الدخول قبل مسح المتصفح.</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ SIGN-UP ══════════ -->
+  <sc-if value="{{ routeSignup }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 640px; width: 100%; margin: 0 auto; padding: 48px 24px 64px; box-sizing: border-box;">
+      <div style="display: flex; gap: 6px; margin-bottom: 20px;">
+        <sc-for list="{{ signupSteps }}" as="st" hint-placeholder-count="4">
+          <div style="flex: 1; height: 4px; background: {{ st.bg }};"></div>
+        </sc-for>
+      </div>
+      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 40px 44px;">
+        <sc-if value="{{ signup1 }}" hint-placeholder-val="{{ true }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">أنشئ حسابك</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px;">اختبارك الأول جاهز قبل أن تسألك المنصة عن أي شيء آخر — البريد وكلمة السر فقط.</div>
+          <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <div><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">البريد الإلكتروني</div><input value="benyoucef@gmail.com" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+            <div><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">كلمة السر</div><input type="password" value="password" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ signup2 }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">احتفظ بهذا الرمز</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.8;">هذا هو السبيل الوحيد لاستعادة حسابك إذا نسيت كلمة السر. يظهر مرة واحدة فقط — انسخه أو اطبعه الآن.</div>
+          <div style="margin-top: 24px; border: 1px solid var(--color-divider); padding: 24px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 0.2em; direction: ltr;">7Q4M-K2XR-98DF</div>
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button style="flex: 1; background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer;" style-hover="background: var(--color-neutral-300);">نسخ الرمز</button>
+            <button style="flex: 1; background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer;" style-hover="background: var(--color-neutral-300);">تنزيل / طباعة</button>
+          </div>
+          <label style="display: flex; gap: 8px; align-items: center; margin-top: 16px; font-size: 13px;"><input type="checkbox" checked>حفظت الرمز في مكان آمن</label>
+        </sc-if>
+        <sc-if value="{{ signup3 }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">أقسامك هذه السنة</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.8;">لكل قسم شعبته وموقعه في البرنامج — سمِّه كما تسمّيه أنت. أغلب الأساتذة يدرّسون أكثر من قسم.</div>
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="border: 1px solid var(--color-divider); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+              <div><b style="font-size: 15px;">3ر1</b> <span style="font-size: 13px; color: var(--color-neutral-700);">— شعبة الرياضيات</span></div>
+              <span style="font-size: 12px; color: var(--color-neutral-600);">تعديل</span>
+            </div>
+            <div style="border: 1px solid var(--color-divider); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+              <div><b style="font-size: 15px;">3تج2</b> <span style="font-size: 13px; color: var(--color-neutral-700);">— علوم تجريبية</span></div>
+              <span style="font-size: 12px; color: var(--color-neutral-600);">تعديل</span>
+            </div>
+            <div style="border: 1px dashed var(--color-neutral-500); padding: 14px 18px; font-size: 13px; color: var(--color-neutral-700); cursor: pointer;" style-hover="background: var(--color-neutral-100);">+ أضف قسمًا — الشعب الست كلها متاحة</div>
+          </div>
+          <div style="margin-top: 20px;"><div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">اسم الثانوية <span style="font-weight: 400; color: var(--color-neutral-600);">— سيظهر على الموضوع المطبوع</span></div><input value="ثانوية الأمير عبد القادر — وهران" style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); font: inherit; font-size: 14px; padding: 10px 12px;"></div>
+        </sc-if>
+        <sc-if value="{{ signup4 }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">أين وصل كل قسم؟</h1>
+          <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 6px; line-height: 1.8;">أثمن دقيقة في إعدادك: بها تعرف المنصة ما يجوز أن يدخل الموضوع وما لم يُدرَّس بعد. يمكن تعديله لاحقًا من «البرنامج».</div>
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="border: 1px solid var(--color-divider); padding: 16px 18px;">
+              <div style="display: flex; justify-content: space-between;"><b>3ر1 — شعبة الرياضيات</b><span style="font-size: 13px; font-weight: 700;">الأسبوع 10</span></div>
+              <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 4px;">الدوال الأصلية والحساب التكاملي — الأسبوع الأول من 3</div>
+            </div>
+            <div style="border: 1px solid var(--color-divider); padding: 16px 18px;">
+              <div style="display: flex; justify-content: space-between;"><b>3تج2 — علوم تجريبية</b><span style="font-size: 13px; color: var(--color-neutral-600);">تخطَّ الآن — يُضبط لاحقًا</span></div>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display: flex; justify-content: space-between; margin-top: 28px;">
+          <button onClick="{{ signupBack }}" style="background: transparent; border: 1px solid var(--color-divider); font: inherit; font-size: 13px; font-weight: 600; padding: 10px 18px; cursor: pointer; color: var(--color-neutral-700); visibility: {{ signupBackVis }};">رجوع</button>
+          <button onClick="{{ signupNext }}" style="background: var(--color-accent); color: #fff; border: none; font: inherit; font-size: 14px; font-weight: 600; padding: 12px 24px; cursor: pointer;" style-hover="background: var(--color-accent-600);">{{ signupNextLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;pace&quot;: {&quot;editor&quot;: null, &quot;default&quot;: null, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    route: "landing", classIdx: 0, signupStep: 1,
+    format: "exam", scope: "todate", docKind: "exam",
+    corrStatus: {}, corrVer: {}, verStatus: { b: "ready", c: "ready" }, printVariant: "a",
+    classes: [
+      { name: "3ر1", stream: "شعبة الرياضيات", week: 10 },
+      { name: "3تج2", stream: "علوم تجريبية", week: 7 },
+      { name: "3ر2", stream: "شعبة الرياضيات", week: 0 }
+    ],
+    signinState: "form", libFilter: "الكل", libQuery: "", docDemo: "normal", printKind: "exam",
+    exStates: {}, // id -> {status, ver, refineOpen, historyOpen, history:[]}
+    generated: false
+  };
+  componentDidMount() { this.typeset(); }
+  componentDidUpdate() { this.typeset(); }
+  typeset() {
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => {
+      if (window.renderMathInElement) window.renderMathInElement(document.body, {
+        delimiters: [{ left: "$", right: "$", display: false }], throwOnError: false
+      });
+    }, 60);
+  }
+  go(route) { this.setState({ route }); }
+  // ---------- data ----------
+  units() { return [
+    { name: "تقويم تشخيصي", h: 7, w: 1 },
+    { name: "الاشتقاقية والاستمرارية", h: 14, w: 2 },
+    { name: "الأسية واللوغاريتمية", h: 14, w: 2 },
+    { name: "النهايات", h: 7, w: 1 },
+    { name: "التزايد المقارن ودراسة الدوال", h: 14, w: 2 },
+    { name: "المتتاليات العددية", h: 14, w: 2 },
+    { name: "الدوال الأصلية والحساب التكاملي", h: 21, w: 3 },
+    { name: "الأعداد والحساب", h: 21, w: 3 },
+    { name: "الإحصاء والاحتمالات", h: 14, w: 2 },
+    { name: "الأعداد المركبة والتحويلات النقطية", h: 21, w: 3 },
+    { name: "الهندسة في الفضاء", h: 21, w: 3 },
+    { name: "معالجة بيداغوجية (×3)", h: 21, w: 3 }
+  ]; }
+  examData() { return [
+    {
+      id: "ex1", label: "التمرين الأول", pts: "05 نقاط", diff: "متوسط", unit: "المتتاليات العددية",
+      v1: "نعتبر المتتالية العددية $(u_n)$ المعرّفة بـ: $u_0 = 1$ و $u_{n+1} = \\frac{1}{2}u_n + 3$ من أجل كل عدد طبيعي $n$.\n1) احسب $u_1$ و $u_2$.\n2) نضع من أجل كل عدد طبيعي $n$: $v_n = u_n - 6$. بيّن أن $(v_n)$ متتالية هندسية يُطلب تعيين أساسها وحدّها الأول.\n3) اكتب $v_n$ ثم $u_n$ بدلالة $n$، ثم استنتج $\\lim_{n \\to +\\infty} u_n$.",
+      v2: "نعتبر المتتالية العددية $(u_n)$ المعرّفة بـ: $u_0 = 0$ و $u_{n+1} = \\frac{1}{2}u_n + 1$ من أجل كل عدد طبيعي $n$.\n1) احسب $u_1$ و $u_2$.\n2) نضع $v_n = u_n - 2$. بيّن أن $(v_n)$ متتالية هندسية أساسها $\\frac{1}{2}$.\n3) اكتب $u_n$ بدلالة $n$، ثم استنتج $\\lim_{n \\to +\\infty} u_n$."
+    },
+    {
+      id: "ex2", label: "التمرين الثاني", pts: "07 نقاط", diff: "متوسط", unit: "الدالتان الأسية واللوغاريتمية",
+      v1: "نعتبر الدالة $f$ المعرّفة على $\\mathbb{R}$ بـ: $f(x) = (x-1)e^{x} + 1$ وليكن $(C_f)$ تمثيلها البياني في معلم متعامد ومتجانس.\n1) احسب $\\lim_{x \\to -\\infty} f(x)$ و $\\lim_{x \\to +\\infty} f(x)$، وفسّر النتيجة الأولى بيانيًا.\n2) بيّن أن $f'(x) = x e^{x}$ ثم شكّل جدول تغيّرات $f$.\n3) بيّن أن $f$ تقبل قيمة حدّية صغرى عند $0$ ثم استنتج إشارة $f(x)$ على $\\mathbb{R}$.",
+      v2: "نعتبر الدالة $f$ المعرّفة على $\\mathbb{R}$ بـ: $f(x) = (x+2)e^{-x}$ وليكن $(C_f)$ تمثيلها البياني.\n1) احسب $\\lim_{x \\to -\\infty} f(x)$ و $\\lim_{x \\to +\\infty} f(x)$.\n2) ادرس اتجاه تغيّر $f$ وشكّل جدول تغيّراتها.\n3) اكتب معادلة المماس $(T)$ عند النقطة ذات الفاصلة $0$."
+    },
+    {
+      id: "ex3", label: "التمرين الثالث", pts: "08 نقاط", diff: "صعب", unit: "التزايد المقارن ودراسة الدوال",
+      v1: "نعتبر الدالة $g$ المعرّفة على $\\mathbb{R} \\setminus \\{1\\}$ بـ: $g(x) = \\frac{2x^2 - 3x + 3}{x - 1}$ وليكن $(C_g)$ تمثيلها البياني.\n1) عيّن الأعداد الحقيقية $a$ و $b$ و $c$ حيث: $g(x) = ax + b + \\frac{c}{x-1}$.\n2) ادرس تغيّرات $g$ وبيّن أن $(C_g)$ يقبل مستقيمًا مقاربًا مائلًا يُطلب تعيين معادلته.\n3) ادرس الوضع النسبي بين $(C_g)$ والمستقيم المقارب، ثم أنشئ $(C_g)$.",
+      v2: "نعتبر الدالة $g$ المعرّفة على $\\mathbb{R} \\setminus \\{-1\\}$ بـ: $g(x) = \\frac{x^2 + x + 1}{x + 1}$.\n1) عيّن $a$ و $b$ و $c$ حيث: $g(x) = ax + b + \\frac{c}{x+1}$.\n2) ادرس تغيّرات $g$ وعيّن المستقيم المقارب المائل لـ $(C_g)$.\n3) أنشئ $(C_g)$ في معلم متعامد ومتجانس."
+    }
+  ]; }
+  seriesData() { return [
+    { id: "s1", label: "التمرين 1", pts: "", diff: "سهل", unit: "الدوال الأصلية", v1: "عيّن الدوال الأصلية للدالة $f(x) = 3x^2 - 4x + 1$ على $\\mathbb{R}$.", v2: "عيّن الدوال الأصلية للدالة $f(x) = 2x - 3$ على $\\mathbb{R}$." },
+    { id: "s2", label: "التمرين 2", pts: "", diff: "سهل", unit: "الدوال الأصلية", v1: "عيّن الدالة الأصلية $F$ للدالة $f(x) = \\frac{2x}{x^2+1}$ على $\\mathbb{R}$ التي تحقق $F(0) = 0$.", v2: "عيّن الدالة الأصلية $F$ للدالة $f(x) = \\frac{1}{x}$ على $]0;+\\infty[$ التي تحقق $F(1) = 0$." },
+    { id: "s3", label: "التمرين 3", pts: "", diff: "متوسط", unit: "معادلات تفاضلية", v1: "حل المعادلة التفاضلية $y' = 2y$ مع الشرط $y(0) = 3$.", v2: "حل المعادلة التفاضلية $y' = -y$ مع الشرط $y(0) = 5$." },
+    { id: "s4", label: "التمرين 4", pts: "", diff: "متوسط", unit: "الدوال الأصلية", v1: "عيّن الدالة الأصلية للدالة $f(x) = e^{2x}$ على $\\mathbb{R}$ التي تنعدم عند $0$.", v2: "عيّن الدالة الأصلية للدالة $f(x) = e^{-x}$ على $\\mathbb{R}$ التي تساوي $1$ عند $0$." }
+  ]; }
+  courseData() { return [
+    { id: "c1", label: "التمرين 1", pts: "", diff: "سهل", unit: "الدالة الأصلية — الدرس", v1: "بيّن أن الدالة $F(x) = x^3 - 2x$ دالة أصلية للدالة $f(x) = 3x^2 - 2$ على $\\mathbb{R}$.", v2: "بيّن أن الدالة $F(x) = x^2 + x$ دالة أصلية للدالة $f(x) = 2x + 1$ على $\\mathbb{R}$." },
+    { id: "c2", label: "التمرين 2", pts: "", diff: "سهل", unit: "الدالة الأصلية — الدرس", v1: "عيّن الدالة الأصلية للدالة $f(x) = 4x - 1$ على $\\mathbb{R}$ التي تأخذ القيمة $2$ عند $1$.", v2: "عيّن الدالة الأصلية للدالة $f(x) = 6x^2$ على $\\mathbb{R}$ التي تنعدم عند $1$." }
+  ]; }
+  variants() { return {
+    ex1: {
+      b: "نعتبر المتتالية $(u_n)$: $u_0 = 2$ و $u_{n+1} = \\frac{1}{2}u_n + 2$.\n1) احسب $u_1$ و $u_2$.\n2) نضع $v_n = u_n - 4$. بيّن أن $(v_n)$ هندسية وعيّن أساسها وحدّها الأول.\n3) اكتب $u_n$ بدلالة $n$ واستنتج $\\lim_{n \\to +\\infty} u_n$.",
+      c: "نعتبر المتتالية $(u_n)$: $u_0 = 1$ و $u_{n+1} = \\frac{1}{3}u_n + 2$.\n1) احسب $u_1$ و $u_2$.\n2) نضع $v_n = u_n - 3$. بيّن أن $(v_n)$ هندسية وعيّن أساسها وحدّها الأول.\n3) اكتب $u_n$ بدلالة $n$ واستنتج $\\lim_{n \\to +\\infty} u_n$."
+    },
+    ex2: {
+      b: "نعتبر الدالة $f$ المعرّفة على $\\mathbb{R}$ بـ: $f(x) = (x-2)e^{x} + 2$.\n1) احسب $\\lim_{x \\to -\\infty} f(x)$ و $\\lim_{x \\to +\\infty} f(x)$ وفسّر النتيجة الأولى بيانيًا.\n2) بيّن أن $f'(x) = (x-1)e^{x}$ ثم شكّل جدول تغيّرات $f$.\n3) عيّن القيمة الحدّية الصغرى لـ $f$.",
+      c: "نعتبر الدالة $f$ المعرّفة على $\\mathbb{R}$ بـ: $f(x) = (x-3)e^{x} + 3$.\n1) احسب $\\lim_{x \\to -\\infty} f(x)$ و $\\lim_{x \\to +\\infty} f(x)$ وفسّر النتيجة الأولى بيانيًا.\n2) بيّن أن $f'(x) = (x-2)e^{x}$ ثم شكّل جدول تغيّرات $f$.\n3) عيّن القيمة الحدّية الصغرى لـ $f$."
+    },
+    ex3: {
+      b: "نعتبر الدالة $g$ المعرّفة على $\\mathbb{R} \\setminus \\{2\\}$ بـ: $g(x) = \\frac{2x^2 - 5x + 5}{x - 2}$.\n1) عيّن $a$ و $b$ و $c$ حيث: $g(x) = ax + b + \\frac{c}{x-2}$.\n2) ادرس تغيّرات $g$ وعيّن المستقيم المقارب المائل.\n3) ادرس الوضع النسبي ثم أنشئ $(C_g)$.",
+      c: "نعتبر الدالة $g$ المعرّفة على $\\mathbb{R} \\setminus \\{-1\\}$ بـ: $g(x) = \\frac{x^2 + 2x + 2}{x + 1}$.\n1) عيّن $a$ و $b$ و $c$ حيث: $g(x) = ax + b + \\frac{c}{x+1}$.\n2) ادرس تغيّرات $g$ وعيّن المستقيم المقارب المائل.\n3) ادرس الوضع النسبي ثم أنشئ $(C_g)$."
+    }
+  }; }
+  corrData() { return {
+    ex1: { scale: [["تعيين $u_1$ و $u_2$", "01 ن"], ["إثبات أن $(v_n)$ هندسية وتعيين الأساس والحد الأول", "02 ن"], ["عبارة $u_n$ بدلالة $n$ والنهاية", "02 ن"]], total: "05 نقاط",
+      answer: "1) $u_1 = \\frac{1}{2}(1) + 3 = \\frac{7}{2}$ و $u_2 = \\frac{1}{2} \\cdot \\frac{7}{2} + 3 = \\frac{19}{4}$.\n2) $v_{n+1} = u_{n+1} - 6 = \\frac{1}{2}u_n + 3 - 6 = \\frac{1}{2}(u_n - 6) = \\frac{1}{2}v_n$، فالمتتالية $(v_n)$ هندسية أساسها $\\frac{1}{2}$ وحدّها الأول $v_0 = u_0 - 6 = -5$.\n3) $v_n = -5\\left(\\frac{1}{2}\\right)^n$ ومنه $u_n = 6 - 5\\left(\\frac{1}{2}\\right)^n$، وبما أن $\\left|\\frac{1}{2}\\right| < 1$ فإن $\\lim_{n \\to +\\infty} u_n = 6$." },
+    ex2: { scale: [["حساب النهايتين والتفسير البياني", "02 ن"], ["الاشتقاق وجدول التغيّرات", "03 ن"], ["القيمة الحدّية وإشارة $f$", "02 ن"]], total: "07 نقاط",
+      answer: "1) $\\lim_{x \\to -\\infty} f(x) = 1$ لأن $\\lim_{x \\to -\\infty}(x-1)e^{x} = 0$، فالمستقيم $y = 1$ مقارب أفقي عند $-\\infty$. و $\\lim_{x \\to +\\infty} f(x) = +\\infty$.\n2) $f'(x) = e^{x} + (x-1)e^{x} = x e^{x}$، وإشارتها من إشارة $x$: $f$ متناقصة على $]-\\infty;0]$ ومتزايدة على $[0;+\\infty[$.\n3) القيمة الحدّية الصغرى $f(0) = 0$، ومنه $f(x) \\geq 0$ على $\\mathbb{R}$ والمساواة عند $x = 0$ فقط." },
+    ex3: { scale: [["تعيين $a$ و $b$ و $c$", "02 ن"], ["دراسة التغيّرات والمستقيم المقارب المائل", "03 ن"], ["الوضع النسبي والإنشاء", "03 ن"]], total: "08 نقاط",
+      answer: "1) بالقسمة الإقليدية: $g(x) = 2x - 1 + \\frac{2}{x-1}$ أي $a = 2$، $b = -1$، $c = 2$.\n2) $g'(x) = 2 - \\frac{2}{(x-1)^2}$ تنعدم عند $x = 0$ و $x = 2$: جدول التغيّرات على المجالين. وبما أن $\\lim_{x \\to \\pm\\infty} \\frac{2}{x-1} = 0$ فالمستقيم $y = 2x - 1$ مقارب مائل.\n3) $g(x) - (2x - 1) = \\frac{2}{x-1}$: موجب لما $x > 1$ فالمنحنى فوق المقارب، وسالب لما $x < 1$ فتحته." },
+    s1: { scale: [], total: "", answer: "الدوال الأصلية هي: $F(x) = x^3 - 2x^2 + x + c$ حيث $c$ ثابت حقيقي، لأن $F'(x) = 3x^2 - 4x + 1 = f(x)$." },
+    s2: { scale: [], total: "", answer: "$F(x) = \\ln(x^2 + 1) + c$، والشرط $F(0) = 0$ يعطي $c = 0$ لأن $\\ln 1 = 0$. إذن $F(x) = \\ln(x^2 + 1)$." },
+    s3: { scale: [], total: "", answer: "حلول المعادلة $y' = 2y$ هي $y = k e^{2x}$، والشرط $y(0) = 3$ يعطي $k = 3$. إذن $y = 3e^{2x}$." },
+    s4: { scale: [], total: "", answer: "$F(x) = \\frac{1}{2}e^{2x} + c$، وانعدامها عند $0$ يعطي $c = -\\frac{1}{2}$. إذن $F(x) = \\frac{1}{2}e^{2x} - \\frac{1}{2}$." },
+    c1: { scale: [], total: "", answer: "$F$ قابلة للاشتقاق على $\\mathbb{R}$ و $F'(x) = 3x^2 - 2 = f(x)$ من أجل كل $x$، فهي دالة أصلية لـ $f$ على $\\mathbb{R}$." },
+    c2: { scale: [], total: "", answer: "الدوال الأصلية لـ $f$ هي $F(x) = 2x^2 - x + c$. الشرط $F(1) = 2$ يعطي $2 - 1 + c = 2$ أي $c = 1$. إذن $F(x) = 2x^2 - x + 1$." }
+  }; }
+  goCorrection() {
+    const src = this.docSource();
+    const prev = this.state;
+    const corrStatus = {}, corrVer = {};
+    const fresh = []; // only exercises without an existing correction get written
+    src.forEach(e => {
+      const existing = prev.corrVer[e.id];
+      if (existing !== undefined) { corrStatus[e.id] = "ready"; corrVer[e.id] = existing; }
+      else { corrStatus[e.id] = "pending"; corrVer[e.id] = (prev.exStates[e.id] || { ver: 1 }).ver; fresh.push(e.id); }
+    });
+    this.setState({ corrStatus, corrVer, route: "correction" });
+    fresh.forEach((id, i) => setTimeout(() => this.setState(s => ({ corrStatus: { ...s.corrStatus, [id]: "ready" } })), 1200 + i * 1500));
+  }
+  redoCorr(id) {
+    this.setState(s => ({ corrStatus: { ...s.corrStatus, [id]: "pending" } }));
+    setTimeout(() => this.setState(s => ({
+      corrStatus: { ...s.corrStatus, [id]: "ready" },
+      corrVer: { ...s.corrVer, [id]: (s.exStates[id] || { ver: 1 }).ver }
+    })), 2200);
+  }
+  goVersions() {
+    this.setState({ verStatus: { b: "pending", c: "pending" }, route: "versions" });
+    setTimeout(() => this.setState(s => ({ verStatus: { ...s.verStatus, b: "ready" } })), 1800);
+    setTimeout(() => this.setState(s => ({ verStatus: { ...s.verStatus, c: "ready" } })), 3400);
+  }
+  docSource() { return this.state.docKind === "exam" ? this.examData() : this.state.docKind === "series" ? this.seriesData() : this.courseData(); }
+  // ---------- actions ----------
+  launchDoc(kind) {
+    const src = kind === "exam" ? this.examData() : kind === "series" ? this.seriesData() : this.courseData();
+    const exStates = {};
+    src.forEach((e, i) => { exStates[e.id] = { status: "pending", ver: 1, history: [] }; });
+    this.setState({ docKind: kind, exStates, route: "doc", generated: true, corrStatus: {}, corrVer: {} });
+    src.forEach((e, i) => {
+      const failHere = kind === "exam" && i === src.length - 1 && !this._failedOnce;
+      if (failHere) this._failedOnce = true;
+      setTimeout(() => this.setState(s => ({ exStates: { ...s.exStates, [e.id]: { ...s.exStates[e.id], status: failHere ? "failed" : "ready" } } })), 1400 + i * 1600);
+    });
+  }
+  retryEx(id) {
+    this.setState(s => ({ exStates: { ...s.exStates, [id]: { ...s.exStates[id], status: "pending" } } }));
+    setTimeout(() => this.setState(s => ({ exStates: { ...s.exStates, [id]: { ...s.exStates[id], status: "ready" } } })), 2200);
+  }
+  setClassWeek(w) {
+    this.setState(s => ({ classes: s.classes.map((c, i) => i === s.classIdx ? { ...c, week: w } : c) }));
+  }
+  refine(id, toVer) {
+    this.setState(s => ({ exStates: { ...s.exStates, [id]: { ...s.exStates[id], refining: true, refineOpen: false } } }));
+    setTimeout(() => this.setState(s => {
+      const st = s.exStates[id];
+      const hist = [...(st.history || []), st.ver];
+      return { exStates: { ...s.exStates, [id]: { ...st, refining: false, ver: toVer ?? (st.ver === 1 ? 2 : 1), history: hist } } };
+    }), 2400);
+  }
+  renderVals() {
+    const s = this.state;
+    const cls = s.classes[s.classIdx];
+    const units = this.units();
+    const totalH = units.reduce((n, u) => n + u.h, 0);
+    // cumulative weeks -> hours done
+    let acc = 0; const cum = units.map(u => { const from = acc + 1; acc += u.w; return { ...u, from, to: acc }; });
+    const hoursAt = wk => cum.reduce((n, u) => n + Math.max(0, Math.min(wk, u.to) - u.from + 1) * (u.h / u.w), 0);
+    const marked = cls.week, expected = 12;
+    const isMath = cls.stream === "شعبة الرياضيات";
+    const doneH = hoursAt(marked);
+    const expectedPos = (hoursAt(expected) / totalH * 100).toFixed(1) + "%";
+    const diff = marked - expected;
+    const paceLine = marked === 0 ? "" : diff < 0 ? `متأخرون ${diff === -2 ? "بأسبوعين" : "بـ" + Math.abs(diff) + " أسابيع"} عن التوزيع السنوي` : diff === 0 ? "في الموعد مع التوزيع السنوي" : "متقدّمون عن التوزيع السنوي";
+    const paceNum = marked === 0 ? "" : diff < 0 ? `(−${Math.abs(diff)} أسابيع)` : diff === 0 ? "" : `(+${diff} أسبوع)`;
+    const barSegments = cum.map(u => {
+      const segH = u.h;
+      const doneInSeg = Math.max(0, Math.min(marked, u.to) - u.from + 1) * (u.h / u.w);
+      return { name: `${u.name} · ${u.h} سا`, w: (segH / totalH * 100).toFixed(2) + "%", fill: Math.min(100, doneInSeg / segH * 100).toFixed(0) + "%" };
+    });
+    const nav = [["home", "هذا الأسبوع"], ["tracker", "البرنامج"], ["generate", "إعداد موضوع"], ["library", "مكتبتي"]];
+    const navItems = nav.map(([r, label]) => ({
+      label, go: () => this.go(r),
+      weight: s.route === r ? "700" : "400",
+      border: s.route === r ? "var(--color-accent)" : "transparent",
+      color: "var(--color-text)"
+    }));
+    const classTabs = s.classes.map((c, i) => ({
+      name: `${c.name} · أسبوع ${c.week}`,
+      pick: () => this.setState({ classIdx: i }),
+      bg: i === s.classIdx ? "#ffffff" : "transparent",
+      fg: i === s.classIdx ? "var(--color-text)" : "var(--color-neutral-700)",
+      railBg: "var(--color-neutral-300)",
+      railFg: i === s.classIdx ? "var(--color-accent)" : "var(--color-neutral-600)",
+      pct: (c.week / 27 * 100).toFixed(0) + "%"
+    }));
+    // week card (math stream week 10 vs sciences week 7)
+    const weekUnit = isMath ? "الدوال الأصلية والحساب التكاملي" : "المتتاليات العددية";
+    const weekSub = isMath ? "الأسبوع الأول من 3 أسابيع · 21 ساعة للمحور" : "الأسبوع الأول من 3 أسابيع · 15 ساعة للمحور";
+    const weekGuidance = isMath ? "«نقتصر على الأمثلة البسيطة سهلة الحساب» · «حل معادلات تفاضلية من الشكل: y′=f(x) ، y′=f(x)y»" : "«تُقدَّم المتتاليات انطلاقًا من وضعيات ملموسة» · «لا يُطلب البرهان بالتراجع»";
+    const weekContents = (isMath
+      ? ["تعريف الدالة الأصلية لدالة على مجال", "الدوال الأصلية للدوال المألوفة", "معادلات تفاضلية من الشكل y′=f(x)"]
+      : ["المتتاليات الحسابية والهندسية — تذكير", "السلوك التقاربي لمتتالية", "المتتاليات المعرّفة بعلاقة تراجعية"]
+    ).map(name => ({ name, open: () => this.go("course") }));
+    const recent = [
+      { title: "فرض محروس — المتتاليات", kind: "قبل 4 أيام", open: () => this.launchInstant("exam") },
+      { title: "سلسلة الأسبوع 9 — المتتاليات", kind: "قبل أسبوع", open: () => this.launchInstant("series") },
+      { title: "درس: الدالة الأصلية", kind: "أمس", open: () => this.go("course") }
+    ];
+    // tracker rows
+    const rowDefs = [
+      [8, "المتتاليات العددية", "المتتاليات الهندسية: الحد العام، مجموع حدود متتابعة", "«نقتصر على الأمثلة البسيطة سهلة الحساب»", true],
+      [9, "المتتاليات العددية", "السلوك التقاربي لمتتالية، المتتاليات المتجاورة", "دراسة النهاية انطلاقًا من الحد العام", false],
+      [10, "الدوال الأصلية والحساب التكاملي", "تعريف الدالة الأصلية · الدوال الأصلية للدوال المألوفة · معادلات تفاضلية y′=f(x)", "«حل معادلات تفاضلية من الشكل: y′=f(x) ، y′=f(x)y»", true],
+      [11, "الدوال الأصلية والحساب التكاملي", "التكامل: التعريف، الخواص، الحساب باستعمال دالة أصلية", "حساب مساحات بسيطة", false],
+      [12, "الدوال الأصلية والحساب التكاملي", "التكامل بالتجزئة · القيمة المتوسطة لدالة", "«نقتصر على الأمثلة البسيطة سهلة الحساب»", false],
+      [13, "الأعداد والحساب", "الموافقات في ℤ · القسمة الإقليدية", "أنشطة حول القاسم المشترك الأكبر", false],
+      [14, "الأعداد والحساب", "الأعداد الأولية · التحليل إلى جداء عوامل أولية", "«نقتصر على الأمثلة البسيطة»", false]
+    ];
+    const trackerRows = rowDefs.map(([n, unit, content, guidance, unitBar]) => {
+      const skipped = n === 9 && marked > 9 && s.classIdx === 0;
+      const done = n < marked && !skipped, cur = n === marked;
+      return {
+        n: String(n), unit, content, guidance, hours: "7 سا",
+        unitBar: !!({ 8: 1, 10: 1, 13: 1 }[n]),
+        unitPct: n === 8 ? "100%" : n === 10 ? (marked >= 12 ? "67%" : marked >= 11 ? "33%" : "10%") : "0%",
+        unitHours: n === 8 ? "14 من 14 ساعة ✎" : n === 10 ? ((marked >= 12 ? "14" : marked >= 11 ? "7" : "2") + " من 21 ساعة ✎") : "0 من 21 ساعة ✎",
+        bg: cur ? "var(--color-neutral-100)" : "transparent",
+        status: done ? "منجز" : skipped ? "متخطّى" : cur ? "الموقع الحالي" : "قادم",
+        tagBg: done ? "var(--color-neutral-300)" : cur ? "var(--color-accent)" : "transparent",
+        tagFg: done ? "var(--color-neutral-800)" : cur ? "#ffffff" : "var(--color-neutral-600)",
+        tagBorder: (!done && !cur) ? "1px solid var(--color-neutral-400)" : "none",
+        isCurrent: cur, isDone: done,
+        hasNote: skipped, note: "فصل مكتظ — نعود إليه في المعالجة البيداغوجية",
+        showSetHere: marked === 0,
+        setHere: () => this.setClassWeek(n),
+        doDone: () => this.markWeekDone(),
+        doSkip: () => this.markWeekDone(),
+        doSupport: () => this.setState({ format: "remed", scope: "unit", route: "generate" }),
+        doSeries: () => this.launchDoc("series")
+      };
+    });
+    // generate screen
+    const fmts = [["series", "سلسلة أسبوعية", "بلا توقيت ولا مجموع نقاط"], ["devoir", "فرض محروس", "ساعة · المقطع الأخير"], ["exam", "اختبار فصلي", "ساعتان · كل ما أُنجز"], ["remed", "تمارين دعم", "على محور متعثّر"]];
+    const formatOpts = fmts.map(([k, label, sub]) => ({
+      label, sub, pick: () => this.setState({ format: k, scope: k === "series" ? "week" : k === "devoir" ? "recent" : "todate" }),
+      bg: s.format === k ? "#ffffff" : "transparent",
+      fg: s.format === k ? "var(--color-text)" : "var(--color-neutral-700)",
+      subFg: s.format === k ? "var(--color-neutral-600)" : "var(--color-neutral-500)",
+      weight: s.format === k ? "600" : "400"
+    }));
+    const scopes = [["course", "محتوى واحد", "درس بعينه", 1], ["week", "هذا الأسبوع", `الأسبوع ${marked}`, 1], ["unit", "محور كامل", weekUnit, 1], ["recent", "المقطع الأخير", `الأسابيع ${marked - 2}–${marked}`, 1], ["todate", "ما تمّ إنجازه", `الأسابيع 1–${marked}`, 1.2]];
+    const scopeOpts = scopes.map(([k, label, sub, flex]) => ({
+      label, sub, flex,
+      pick: () => this.setState({ scope: k }),
+      bg: s.scope === k ? "#ffffff" : "transparent",
+      fg: s.scope === k ? "var(--color-text)" : "var(--color-neutral-700)",
+      subFg: s.scope === k ? "var(--color-neutral-600)" : "var(--color-neutral-500)",
+      weight: s.scope === k ? "600" : "400"
+    }));
+    const weights = [
+      { name: "الاشتقاقية والاستمرارية", pct: "20%", pts: "4 ن" },
+      { name: "الأسية واللوغاريتمية", pct: "20%", pts: "4 ن" },
+      { name: "النهايات", pct: "15%", pts: "3 ن" },
+      { name: "التزايد المقارن ودراسة الدوال", pct: "20%", pts: "4 ن" },
+      { name: "المتتاليات العددية", pct: "25%", pts: "5 ن" }
+    ];
+    const chips = ["وازن بين المحاور الأساسية", "ابدأ بتمرين سهل للتحفيز", "أضف تمرينًا تركيبيًا في الأخير", "اعتمد نمط مواضيع البكالوريا"].map(label => ({ label, tap: () => {} }));
+    const fmtName = { series: "سلسلة الأسبوع " + marked, devoir: "الفرض المحروس", exam: "اختبار الفصل الأول", remed: "تمارين الدعم" }[s.format];
+    const scopeName = { course: "درس «الدالة الأصلية»", week: `الأسبوع ${marked}`, unit: weekUnit, recent: `الأسابيع ${marked - 2}–${marked}`, todate: `الأسابيع 1–${marked}` }[s.scope];
+    const excluded = [
+      { name: "الدوال الأصلية والحساب التكاملي", why: "— جارٍ، الأسبوع 1 من 3" },
+      { name: "الأعداد والحساب", why: "— لم يُدرَّس" },
+      { name: "الأعداد المركبة والتحويلات النقطية", why: "— لم يُدرَّس" },
+      { name: "الهندسة في الفضاء", why: "— لم يُدرَّس" },
+      { name: "الإحصاء والاحتمالات", why: "— لم يُدرَّس" }
+    ];
+    // document view
+    const src = this.docSource();
+    const docExercises = src.map(e => {
+      const st = s.exStates[e.id] || { status: "ready", ver: 1, history: [] };
+      const statement = st.ver === 2 ? e.v2 : e.v1;
+      return {
+        label: e.label, ptsLabel: e.pts ? "(" + e.pts + ")" : "", diff: e.diff, unit: e.unit,
+        pending: st.status === "pending", failed: st.status === "failed",
+        ready: st.status !== "pending" && st.status !== "failed",
+        retry: () => this.retryEx(e.id),
+        refining: !!st.refining, refineOpen: !!st.refineOpen, historyOpen: !!st.historyOpen,
+        bodyOpacity: st.refining ? "0.45" : "1",
+        statement, histCount: (st.history || []).length,
+        history: (st.history || []).map(v => ({
+          text: (v === 2 ? e.v2 : e.v1).split("\n")[0] + " …",
+          restore: () => this.refine(e.id, v)
+        })),
+        toggleRefine: () => this.setState(x => ({ exStates: { ...x.exStates, [e.id]: { ...x.exStates[e.id], refineOpen: !x.exStates[e.id]?.refineOpen, historyOpen: false } } })),
+        toggleHistory: () => this.setState(x => ({ exStates: { ...x.exStates, [e.id]: { ...x.exStates[e.id], historyOpen: !x.exStates[e.id]?.historyOpen, refineOpen: false } } })),
+        applySmaller: () => this.refine(e.id),
+        applyHarder: () => this.refine(e.id),
+        swap: () => this.refine(e.id)
+      };
+    });
+    const docTitleMap = { exam: "اختبار الفصل الأول في مادة الرياضيات", series: `سلسلة تمارين — الأسبوع ${marked} · ${weekUnit}`, course: "تمارين على درس «الدالة الأصلية»" };
+    const printExercises = src.map(e => {
+      const st = s.exStates[e.id] || { ver: 1 };
+      let statement = st.ver === 2 ? e.v2 : e.v1;
+      if (s.docKind === "exam" && s.printVariant !== "a") statement = this.variants()[e.id][s.printVariant];
+      return { label: e.label, ptsLabel: e.pts ? "(" + e.pts + ")" : "", statement };
+    });
+    const stepLbl = ["", "أنشئ الحساب", "احفظ الرمز — تم", "التالي", "ابدأ ←"];
+    const vAll = this.variants(), cAll = this.corrData();
+    const corrections = src.map(e => {
+      const st = s.exStates[e.id] || { ver: 1 };
+      const cst = s.corrStatus[e.id] || "ready";
+      const cd = cAll[e.id] || { scale: [], total: "", answer: "" };
+      return {
+        label: e.label, ptsLabel: e.pts ? "(" + e.pts + ")" : "",
+        pending: cst === "pending", ready: cst === "ready",
+        stale: cst === "ready" && (s.corrVer[e.id] ?? st.ver) !== st.ver,
+        opacity: (cst === "ready" && (s.corrVer[e.id] ?? st.ver) !== st.ver) ? "0.5" : "1",
+        answer: cd.answer, total: cd.total, hasScale: cd.scale.length > 0,
+        scale: cd.scale.map(([part, pts]) => ({ part, pts })),
+        redo: () => this.redoCorr(e.id)
+      };
+    });
+    const exSrc = this.examData();
+    const versionCards = [
+      { key: "a", name: "النموذج أ", tag: "الأصل", status: "ready" },
+      { key: "b", name: "النموذج ب", tag: "أعداد مختلفة", status: s.verStatus.b },
+      { key: "c", name: "النموذج ج", tag: "أعداد مختلفة", status: s.verStatus.c }
+    ].map(v => ({
+      name: v.name, tag: v.tag,
+      pending: v.status === "pending", ready: v.status === "ready",
+      print: () => this.setState({ printVariant: v.key, docKind: "exam", printKind: "exam", route: "print" }),
+      items: exSrc.map(e => {
+        const st = s.exStates[e.id] || { ver: 1 };
+        const statement = v.key === "a" ? (st.ver === 2 ? e.v2 : e.v1) : vAll[e.id][v.key];
+        return { label: e.label, ptsLabel: "(" + e.pts + ")", statement };
+      })
+    }));
+    const variantSuffix = { a: "", b: " — النموذج ب", c: " — النموذج ج" }[s.printVariant] || "";
+    return {
+      showNav: s.route !== "signup" && s.route !== "print" && s.route !== "landing",
+      routeHome: s.route === "home", routeTracker: s.route === "tracker",
+      routeGenerate: s.route === "generate", routeDoc: s.route === "doc",
+      routeCourse: s.route === "course", routePrint: s.route === "print",
+      routeSignup: s.route === "signup",
+      routeLanding: s.route === "landing", routeCorrection: s.route === "correction", routeVersions: s.route === "versions",
+      routeLibrary: s.route === "library", routeSignin: s.route === "signin", routeAccount: s.route === "account",
+      landingStart: () => this.setState({ route: "signup", signupStep: 1 }),
+      landingSignin: () => this.setState({ route: "signin", signinState: "form" }),
+      siForm: ["form", "wrong", "limited"].includes(s.signinState),
+      siWrong: s.signinState === "wrong", siLimited: s.signinState === "limited",
+      siRecover: ["recover", "usedCode"].includes(s.signinState), siUsed: s.signinState === "usedCode",
+      siNewCode: s.signinState === "newCode", siAnon: s.signinState === "anon",
+      signinDemo: [["form", "النموذج"], ["wrong", "كلمة سر خاطئة"], ["limited", "محاولات كثيرة"], ["recover", "الاستعادة"], ["usedCode", "رمز مستعمل"], ["newCode", "الرمز الجديد"], ["anon", "جلسة سابقة"]].map(([k, label]) => ({
+        label, tap: () => this.setState({ signinState: k }),
+        bg: s.signinState === k ? "var(--color-text)" : "transparent",
+        fg: s.signinState === k ? "#fff" : "var(--color-neutral-600)"
+      })),
+      siLogin: () => this.setState({ signinState: "anon" }),
+      siGoRecover: () => this.setState({ signinState: "recover" }),
+      siConfirmRecover: () => this.setState({ signinState: "newCode" }),
+      siClaim: () => this.go("home"),
+      siGoNewCode: () => this.setState({ route: "signin", signinState: "newCode" }),
+      goLandingOut: () => this.go("landing"),
+      goAccount: () => this.go("account"),
+      goTracker: () => this.go("tracker"),
+      startFromOne: () => this.setClassWeek(1),
+      hasPosition: marked > 0, noPosition: marked === 0, hasReference: marked > 0,
+      libFilters: ["الكل", "اختبارات", "سلاسل", "دروس", "تصحيحات"].map(label => ({
+        label, tap: () => this.setState({ libFilter: label }),
+        bg: s.libFilter === label ? "var(--color-text)" : "transparent",
+        fg: s.libFilter === label ? "#fff" : "var(--color-neutral-700)",
+        weight: s.libFilter === label ? "600" : "400"
+      })),
+      libItems: [
+        { title: "اختبار الفصل الأول", kind: "اختبارات", unit: "الأسابيع 1–10", cls: "3ر1", date: "اليوم", open: () => this.launchInstant("exam") },
+        { title: "فرض محروس — المتتاليات", kind: "اختبارات", unit: "المتتاليات العددية", cls: "3ر1", date: "قبل 4 أيام", open: () => this.launchInstant("exam") },
+        { title: "سلسلة الأسبوع 9", kind: "سلاسل", unit: "المتتاليات العددية", cls: "3ر1", date: "قبل أسبوع", open: () => this.launchInstant("series") },
+        { title: "تصحيح فرض المتتاليات + السلّم", kind: "تصحيحات", unit: "المتتاليات العددية", cls: "3ر1", date: "قبل 4 أيام", open: () => this.goCorrection() },
+        { title: "درس: الدالة الأصلية", kind: "دروس", unit: "الحساب التكاملي", cls: "3ر1", date: "أمس", open: () => this.go("course") },
+        { title: "سلسلة الأسبوع 6 — النهايات", kind: "سلاسل", unit: "النهايات", cls: "3تج2", date: "قبل 3 أسابيع", open: () => this.launchInstant("series") },
+        { title: "تمارين دعم — الأسية واللوغاريتمية", kind: "سلاسل", unit: "الأسية واللوغاريتمية", cls: "3ر1", date: "قبل شهر", open: () => this.launchInstant("series") }
+      ].filter(it => (s.libFilter === "الكل" || it.kind === s.libFilter) && (!s.libQuery || it.title.includes(s.libQuery) || it.unit.includes(s.libQuery))).map(it => ({ ...it, dup: () => this.go("generate") })),
+      libSearch: (e) => this.setState({ libQuery: e.target.value }),
+      genBusy: src.some(e => (s.exStates[e.id] || {}).status === "pending"),
+      saveFail: s.docDemo === "savefail",
+      docDemoChips: [["normal", "عادي"], ["savefail", "تعذّر الحفظ"]].map(([k, label]) => ({
+        label, tap: () => this.setState({ docDemo: k }),
+        bg: s.docDemo === k ? "var(--color-text)" : "transparent",
+        fg: s.docDemo === k ? "#fff" : "var(--color-neutral-600)"
+      })),
+      retrySave: () => this.setState({ docDemo: "normal" }),
+      goPrintCorr: () => this.setState({ printKind: "corr", route: "print" }),
+      printIsExam: s.printKind !== "corr", printIsCorr: s.printKind === "corr",
+      printCorr: src.map(e => {
+        const cd = cAll[e.id] || { answer: "", scale: [] };
+        return { label: e.label, ptsLabel: e.pts ? "(" + e.pts + ")" : "", answer: cd.answer, scale: cd.scale.map(([part, pts]) => ({ part, pts })) };
+      }),
+      acctClasses: s.classes.map(c => ({ name: c.name, stream: c.stream, pos: c.week > 0 ? `الأسبوع ${c.week} من 27` : "لم يبدأ بعد" })),
+      landingSample: exSrc[0].v1,
+      isExam: s.docKind === "exam",
+      corrBtnLabel: s.docKind === "exam" ? "التصحيح النموذجي + السلّم" : "التصحيح النموذجي",
+      corrTitle: (s.docKind === "exam" ? "التصحيح النموذجي والسلّم — " : "التصحيح النموذجي — ") + docTitleMap[s.docKind],
+      goCorrection: () => this.goCorrection(),
+      goVersions: () => this.goVersions(),
+      corrections, versionCards,
+      printTitle: s.printKind === "corr" ? (s.docKind === "exam" ? "التصحيح النموذجي والسلّم — " : "التصحيح النموذجي — ") + docTitleMap[s.docKind] : docTitleMap[s.docKind] + variantSuffix,
+      navItems, classTabs,
+      className: cls.name, streamName: cls.stream,
+      markedWeek: marked, expectedWeek: expected, totalHours: totalH,
+      posLine: marked > 0 ? `الأسبوع ${marked} من 27` : "لم يبدأ بعد",
+      paceLine, paceNum, expectedPct: expectedPos,
+      barSegments, weekUnit, weekSub, weekGuidance, weekContents, recent,
+      trackerRows,
+      formatOpts, scopeOpts, weights, chips, excluded,
+      showWeights: s.format === "exam" || s.format === "devoir",
+      noteText: "اكتب بالعربية ما تريده في الموضوع — أو المس اقتراحًا",
+      genTitle: fmtName, genScopeLine: `يغطي: ${scopeName} — بحسب موقعكم المسجَّل، لا التقويم.`,
+      launchLabel: "توليد المسودة — يظهر الهيكل فورًا",
+      launch: () => this.launchDoc(s.format === "series" ? "series" : "exam"),
+      docCrumb: docTitleMap[s.docKind], docTitle: docTitleMap[s.docKind],
+      docMeta: s.docKind === "exam" ? `${cls.name} — ${cls.stream} · المدة: ساعتان · المجموع: 20 نقطة` : `${cls.name} — ${cls.stream} · واجب منزلي`,
+      docScope: s.docKind === "exam" ? `الأسابيع 1–${marked}` : `الأسبوع ${marked}`,
+      pointsLine: s.docKind === "exam" ? "مجموع النقاط: 5 + 7 + 8 = 20 ✓" : "بلا مجموع نقاط — سلسلة",
+      docExercises, printExercises,
+      printDuration: s.docKind === "exam" ? "ساعتان" : "—",
+      printDate: "ديسمبر 2026",
+      goHome: () => this.go("home"), goGenerate: () => this.go("generate"),
+      goSignup: () => this.setState({ route: "signup", signupStep: 1 }),
+      goPrint: () => this.setState({ printVariant: "a", printKind: "exam", route: "print" }), backToDoc: () => this.go("doc"),
+      startSeries: () => this.launchDoc("series"),
+      startCourseExercises: () => this.launchDoc("course"),
+      markDone: () => this.markWeekDone(),
+      signupSteps: [1, 2, 3, 4].map(i => ({ bg: i <= s.signupStep ? "var(--color-accent)" : "var(--color-neutral-300)" })),
+      signup1: s.signupStep === 1, signup2: s.signupStep === 2, signup3: s.signupStep === 3, signup4: s.signupStep === 4,
+      signupBackVis: s.signupStep > 1 ? "visible" : "hidden",
+      signupBack: () => this.setState(x => ({ signupStep: Math.max(1, x.signupStep - 1) })),
+      signupNext: () => s.signupStep >= 4 ? this.setState({ route: "home", signupStep: 1 }) : this.setState(x => ({ signupStep: x.signupStep + 1 })),
+      signupNextLabel: stepLbl[s.signupStep]
+    };
+  }
+  launchInstant(kind) {
+    const src = kind === "exam" ? this.examData() : this.seriesData();
+    const exStates = {};
+    src.forEach(e => { exStates[e.id] = { status: "ready", ver: 1, history: [] }; });
+    this.setState({ docKind: kind, exStates, route: "doc" });
+  }
+  markWeekDone() {
+    this.setState(s => {
+      const classes = s.classes.map((c, i) => i === s.classIdx ? { ...c, week: Math.min(27, c.week + 1) } : c);
+      return { classes };
+    });
+  }
+}
+</script>
+</body>
+</html>

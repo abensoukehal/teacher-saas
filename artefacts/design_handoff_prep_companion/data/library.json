@@ -1,0 +1,60 @@
+{
+  "items": [
+    {
+      "id": "lib-1",
+      "title": "اختبار الفصل الأول",
+      "kind": "exam",
+      "unit": "الأسابيع 1–10",
+      "classId": "cls-1",
+      "createdAt": "2026-12-10"
+    },
+    {
+      "id": "lib-2",
+      "title": "فرض محروس — المتتاليات",
+      "kind": "exam",
+      "unit": "المتتاليات العددية",
+      "classId": "cls-1",
+      "createdAt": "2026-12-06"
+    },
+    {
+      "id": "lib-3",
+      "title": "سلسلة الأسبوع 9",
+      "kind": "series",
+      "unit": "المتتاليات العددية",
+      "classId": "cls-1",
+      "createdAt": "2026-12-03"
+    },
+    {
+      "id": "lib-4",
+      "title": "تصحيح فرض المتتاليات + السلّم",
+      "kind": "correction",
+      "unit": "المتتاليات العددية",
+      "classId": "cls-1",
+      "createdAt": "2026-12-06"
+    },
+    {
+      "id": "lib-5",
+      "title": "درس: الدالة الأصلية",
+      "kind": "course",
+      "unit": "الحساب التكاملي",
+      "classId": "cls-1",
+      "createdAt": "2026-12-09"
+    },
+    {
+      "id": "lib-6",
+      "title": "سلسلة الأسبوع 6 — النهايات",
+      "kind": "series",
+      "unit": "النهايات",
+      "classId": "cls-2",
+      "createdAt": "2026-11-19"
+    },
+    {
+      "id": "lib-7",
+      "title": "تمارين دعم — الأسية واللوغاريتمية",
+      "kind": "series",
+      "unit": "الدالتان الأسية واللوغاريتمية",
+      "classId": "cls-1",
+      "createdAt": "2026-11-10"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "Sync ledger — OWNED BY the /linear-sync skill (planner.py), do not hand-edit. Maps this feature's milestones + ISSUES to company Linear objects, with a content hash per item so re-runs are idempotent (only changed items push). Sub-issues are PERSONAL and never appear here. company_linear_id is mirrored into each item's front-matter as the human-visible anchor. Issue/milestone status is the rolled-up value at last sync.",
+  "kind": "feature",
+  "feature_slug": "classes-progress",
+  "source_url": "file://project/artefacts/design_handoff_prep_companion/ANALYSIS.md#slice-1",
+  "company_linear_project_id": null,
+  "last_synced_at": null,
+  "milestones": {
+    "m1": { "company_linear_id": null, "title_hash": null, "status": null }
+  },
+  "issues": {
+    "i1": { "company_linear_id": null, "milestone": "m1", "title_hash": null, "summary_hash": null, "status": null },
+    "i2": { "company_linear_id": null, "milestone": "m1", "title_hash": null, "summary_hash": null, "status": null }
+  }
+}

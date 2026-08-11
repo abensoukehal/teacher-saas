@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T11:23:37",
+  "generated_at": "2026-08-11T09:08:21",
   "nodes": {
     "cmp-be-admin-api": {
       "kind": "component",
@@ -18,7 +18,17 @@
       "path": "docs/cmp-be-auth-api.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@f6cf955"
+        "teacher-be@7b13f12"
+      ]
+    },
+    "cmp-be-classes-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Class endpoints",
+      "path": "docs/cmp-be-classes-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
       ]
     },
     "cmp-be-claude-runner": {
@@ -60,6 +70,26 @@
       "path": "docs/cmp-be-inflight.md",
       "status": "fresh",
       "repos": []
+    },
+    "cmp-be-mutation-log": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Class and progress mutation log",
+      "path": "docs/cmp-be-mutation-log.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
+      ]
+    },
+    "cmp-be-progress-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Progress endpoints",
+      "path": "docs/cmp-be-progress-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
+      ]
     },
     "cmp-be-skill-exam-plan": {
       "kind": "component",
@@ -118,7 +148,17 @@
       "path": "docs/cmp-be-subjects-api.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@f6cf955"
+        "teacher-be@7b13f12"
+      ]
+    },
+    "cmp-be-teacher-school": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The teacher's school",
+      "path": "docs/cmp-be-teacher-school.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
       ]
     },
     "cmp-fe-admin-console": {
@@ -138,7 +178,27 @@
       "path": "docs/cmp-fe-auth-panel.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@8e190e0"
+        "teacher-fe@eadc55e"
+      ]
+    },
+    "cmp-fe-class-bar": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The class switcher",
+      "path": "docs/cmp-fe-class-bar.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@eadc55e"
+      ]
+    },
+    "cmp-fe-class-position": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Where this class has reached",
+      "path": "docs/cmp-fe-class-position.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@eadc55e"
       ]
     },
     "cmp-fe-controls": {
@@ -157,6 +217,16 @@
       "status": "fresh",
       "repos": []
     },
+    "cmp-fe-my-classes": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "«أقسامي» in the account panel",
+      "path": "docs/cmp-fe-my-classes.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@eadc55e"
+      ]
+    },
     "cmp-fe-refine": {
       "kind": "component",
       "plane": "implementation",
@@ -164,6 +234,16 @@
       "path": "docs/cmp-fe-refine.md",
       "status": "fresh",
       "repos": []
+    },
+    "cmp-fe-signup-classes": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Sign-up steps 3 and 4",
+      "path": "docs/cmp-fe-signup-classes.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@eadc55e"
+      ]
     },
     "cmp-fe-solution-view": {
       "kind": "component",
@@ -182,7 +262,7 @@
       "path": "docs/cmp-fe-subject-list.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@8e190e0"
+        "teacher-fe@eadc55e"
       ]
     },
     "feat-admin-console": {
@@ -190,6 +270,14 @@
       "plane": "product",
       "title": "Seeing the system you are running",
       "path": "docs/feat-admin-console.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "feat-classes-progress": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "A teacher's classes, and where each one has reached",
+      "path": "docs/feat-classes-progress.md",
       "status": "fresh",
       "repos": []
     },
@@ -246,6 +334,14 @@
       "plane": "product",
       "title": "A teacher's exams follow them",
       "path": "docs/feat-teacher-accounts.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-class-position-and-switch": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Making a class, telling it where it is, and switching to it",
+      "path": "docs/flow-class-position-and-switch.md",
       "status": "fresh",
       "repos": []
     },
@@ -307,6 +403,16 @@
       "status": "fresh",
       "repos": []
     },
+    "mod-be-class-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Class store",
+      "path": "docs/mod-be-class-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
+      ]
+    },
     "mod-be-claude-wrapper": {
       "kind": "module",
       "plane": "implementation",
@@ -314,6 +420,16 @@
       "path": "docs/mod-be-claude-wrapper.md",
       "status": "fresh",
       "repos": []
+    },
+    "mod-be-progress-store": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Progress store",
+      "path": "docs/mod-be-progress-store.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@7b13f12"
+      ]
     },
     "mod-be-revision-store": {
       "kind": "module",
@@ -342,7 +458,7 @@
       "path": "docs/mod-be-subject-store.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@f6cf955"
+        "teacher-be@7b13f12"
       ]
     },
     "mod-be-teacher-store": {
@@ -352,7 +468,7 @@
       "path": "docs/mod-be-teacher-store.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@f6cf955"
+        "teacher-be@7b13f12"
       ]
     },
     "mod-fe-exam-builder": {
@@ -361,7 +477,9 @@
       "title": "Exam builder UI",
       "path": "docs/mod-fe-exam-builder.md",
       "status": "fresh",
-      "repos": []
+      "repos": [
+        "teacher-fe@eadc55e"
+      ]
     },
     "prod-exam-builder": {
       "kind": "product",
@@ -378,7 +496,7 @@
       "path": "docs/svc-teacher-be.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@f6cf955"
+        "teacher-be@7b13f12"
       ]
     },
     "svc-teacher-fe": {
@@ -388,7 +506,7 @@
       "path": "docs/svc-teacher-fe.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@8e190e0"
+        "teacher-fe@eadc55e"
       ]
     }
   },
@@ -412,6 +530,26 @@
       "from": "cmp-be-auth-api",
       "to": "mod-be-teacher-store",
       "type": "part_of"
+    },
+    {
+      "from": "cmp-be-classes-api",
+      "to": "cmp-be-mutation-log",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-classes-api",
+      "to": "mod-be-class-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-classes-api",
+      "to": "mod-be-class-store",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-classes-api",
+      "to": "mod-be-progress-store",
+      "type": "depends_on"
     },
     {
       "from": "cmp-be-claude-runner",
@@ -489,6 +627,31 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-be-mutation-log",
+      "to": "mod-be-progress-store",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-progress-api",
+      "to": "cmp-be-mutation-log",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-progress-api",
+      "to": "mod-be-class-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-progress-api",
+      "to": "mod-be-progress-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-progress-api",
+      "to": "mod-be-progress-store",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-be-skill-exam-plan",
       "to": "mod-be-agent-workspace",
       "type": "part_of"
@@ -520,12 +683,27 @@
     },
     {
       "from": "cmp-be-subjects-api",
+      "to": "mod-be-class-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-subjects-api",
       "to": "mod-be-subject-store",
       "type": "depends_on"
     },
     {
       "from": "cmp-be-subjects-api",
       "to": "mod-be-subject-store",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-teacher-school",
+      "to": "mod-be-teacher-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-teacher-school",
+      "to": "mod-be-teacher-store",
       "type": "part_of"
     },
     {
@@ -549,6 +727,31 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-fe-class-bar",
+      "to": "cmp-be-classes-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-class-bar",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-class-bar",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-class-position",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-class-position",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-fe-controls",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
@@ -559,12 +762,47 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-fe-my-classes",
+      "to": "cmp-be-classes-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-my-classes",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-my-classes",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-fe-refine",
       "to": "cmp-fe-exam-view",
       "type": "depends_on"
     },
     {
       "from": "cmp-fe-refine",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-signup-classes",
+      "to": "cmp-be-classes-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-signup-classes",
+      "to": "cmp-be-teacher-school",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-signup-classes",
+      "to": "cmp-fe-class-position",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-signup-classes",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
     },
@@ -600,6 +838,56 @@
     },
     {
       "from": "feat-admin-console",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-be-classes-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-be-mutation-log",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-be-progress-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-be-teacher-school",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-fe-class-bar",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-fe-class-position",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-fe-my-classes",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "cmp-fe-signup-classes",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
+      "to": "flow-class-position-and-switch",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-classes-progress",
       "to": "prod-exam-builder",
       "type": "part_of"
     },
@@ -814,6 +1102,41 @@
       "type": "part_of"
     },
     {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-be-classes-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-be-progress-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-be-subjects-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-fe-class-bar",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-fe-class-position",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-fe-my-classes",
+      "type": "step"
+    },
+    {
+      "from": "flow-class-position-and-switch",
+      "to": "cmp-fe-subject-list",
+      "type": "step"
+    },
+    {
       "from": "flow-generate-correction",
       "to": "cmp-be-corrections-endpoint",
       "type": "step"
@@ -954,7 +1277,17 @@
       "type": "part_of"
     },
     {
+      "from": "mod-be-class-store",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
       "from": "mod-be-claude-wrapper",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-progress-store",
       "to": "svc-teacher-be",
       "type": "part_of"
     },

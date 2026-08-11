@@ -1,0 +1,35 @@
+/* shadcn/ui theme — تحضير (warm cream + deep green, Naskh voice)
+   Drop into app/globals.css. HSL values mirror the hex tokens in the README. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 50% 96%;        /* #faf7f0 desk */
+    --foreground: 20 6% 15%;         /* #292524 */
+    --card: 45 60% 99%;              /* #fffefb */
+    --card-foreground: 20 6% 15%;
+    --popover: 45 60% 99%;
+    --popover-foreground: 20 6% 15%;
+    --primary: 160 40% 31%;          /* #2f6f5e */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 38% 93%;         /* #f2edde */
+    --secondary-foreground: 20 6% 15%;
+    --muted: 45 43% 95%;             /* #f8f5ec */
+    --muted-foreground: 38 14% 46%;  /* #857b66 */
+    --accent: 156 25% 93%;           /* #e9f1ec primary tint */
+    --accent-foreground: 163 40% 21%;/* #235245 */
+    --destructive: 10 60% 45%;       /* reserved for true errors only — NEVER pacing */
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 30% 86%;            /* #e7e0d2 */
+    --input: 40 30% 86%;
+    --ring: 160 40% 31%;
+    --radius: 0.75rem;               /* cards 12px; controls use rounded-lg (8px) */
+  }
+  html { direction: rtl; }
+  body { @apply bg-background text-foreground; font-family: "Noto Naskh Arabic", serif; }
+  h1, h2, h3 { font-family: "Amiri", "Noto Naskh Arabic", serif; }
+  /* KaTeX inside RTL text — REQUIRED or math renders scrambled */
+  .katex { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: 1.05em; }
+}

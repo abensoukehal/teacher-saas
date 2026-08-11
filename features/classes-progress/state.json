@@ -1,0 +1,195 @@
+{
+  "slug": "classes-progress",
+  "current": "01-initial",
+  "iterations": {
+    "01-initial": {
+      "status": "active",
+      "opened": "2026-08-10",
+      "artifacts": {
+        "seed": {
+          "status": "locked",
+          "derived_from": {
+            "brief": "bcf4a14a707dd9f9"
+          }
+        },
+        "contracts": {
+          "status": "locked",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe"
+          }
+        },
+        "qa": {
+          "status": "done",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "subissues": "4392e473091cb264"
+          }
+        },
+        "staging": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "4392e473091cb264"
+          }
+        },
+        "pr": {
+          "status": "done",
+          "derived_from": {
+            "subissues": "4392e473091cb264"
+          }
+        },
+        "docs": {
+          "status": "done",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "subissues": "4392e473091cb264"
+          }
+        }
+      },
+      "subissues": {
+        "be-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-5": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-1",
+            "be-2",
+            "be-3"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "fe-1": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "be-1"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "fe-2": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "be-3"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "fe-3": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-1",
+            "be-2"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "fe-4": {
+          "status": "done",
+          "tag": "happy-path",
+          "depends_on": [
+            "fe-3",
+            "be-4"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "fe-5": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "fe-1",
+            "fe-2",
+            "fe-3",
+            "fe-4"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-6": {
+          "status": "done",
+          "tag": "hardening",
+          "depends_on": [
+            "be-5"
+          ],
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        },
+        "be-7": {
+          "status": "done",
+          "tag": "hardening",
+          "derived_from": {
+            "seed": "f2a4407d724b63fe",
+            "contracts": "7ff6c10ba46a46e2"
+          },
+          "reviewed": "{\"contracts\": \"7ff6c10ba46a46e2\", \"seed\": \"f2a4407d724b63fe\"}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "teacher": {
+    "id": "t-demo",
+    "email": "benyoucef@gmail.com",
+    "school": "ثانوية الأمير عبد القادر — وهران",
+    "classes": [
+      {
+        "id": "cls-1",
+        "name": "3ر1",
+        "stream": "شعبة الرياضيات"
+      },
+      {
+        "id": "cls-2",
+        "name": "3تج2",
+        "stream": "علوم تجريبية"
+      },
+      {
+        "id": "cls-3",
+        "name": "3ر2",
+        "stream": "شعبة الرياضيات"
+      }
+    ]
+  },
+  "progress": [
+    {
+      "classId": "cls-1",
+      "schoolYear": "2026/2027",
+      "programmeVersion": "2022-09",
+      "markedWeek": 10,
+      "entries": [
+        {
+          "week": 9,
+          "status": "skipped",
+          "note": "فصل مكتظ — نعود إليه في المعالجة البيداغوجية"
+        }
+      ]
+    },
+    {
+      "classId": "cls-2",
+      "schoolYear": "2026/2027",
+      "programmeVersion": "2022-09",
+      "markedWeek": 7,
+      "entries": []
+    },
+    {
+      "classId": "cls-3",
+      "schoolYear": "2026/2027",
+      "programmeVersion": "2022-09",
+      "markedWeek": 0,
+      "entries": []
+    }
+  ]
+}
