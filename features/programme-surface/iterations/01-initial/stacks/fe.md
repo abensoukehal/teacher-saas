@@ -443,7 +443,7 @@ kind: sub-issue
 id: fe-5
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-2, fe-3, fe-4]
 estimate: L
 ---
