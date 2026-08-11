@@ -258,7 +258,7 @@ kind: sub-issue
 id: be-3
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-1]
 estimate: M
 ---
@@ -266,7 +266,7 @@ estimate: M
 
 ### be-3 — subjects adopt `classId` without losing the past
 
-**status:** todo · **tag:** happy-path
+**status:** done · **tag:** happy-path
 
 **Intent.** A subject can belong to a class — and the 8,423 that predate classes belong
 to ALL of them: `classOf` is an allow-list where absent means legacy, and legacy is
