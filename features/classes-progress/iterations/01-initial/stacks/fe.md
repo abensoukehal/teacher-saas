@@ -359,7 +359,7 @@ kind: sub-issue
 id: fe-5
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-1, fe-2, fe-3, fe-4]
 estimate: M
 ---
@@ -367,7 +367,7 @@ estimate: M
 
 ### fe-5 — the guard rails: legacy invisibility, language, and one live pass
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** The slice's promises that no single sub-issue owns get pinned as one net:
 a class-less teacher's experience is bit-identical to today, every new string obeys

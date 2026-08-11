@@ -83,7 +83,7 @@
           ]
         },
         "fe-5": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "fe-1",
