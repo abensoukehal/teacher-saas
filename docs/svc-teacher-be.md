@@ -3,7 +3,7 @@ kind: service
 id: svc-teacher-be
 title: "teacher-be"
 plane: implementation
-repos: [teacher-be@7b13f12]
+repos: [teacher-be@65603d6]
 source: [teacher-be/]
 status: fresh
 last_verified: 2026-08-11
@@ -28,6 +28,7 @@ against a workspace that ships inside this repo.
 - [[mod-be-solution-store]] — one current correction per exercise
 - [[mod-be-class-store]] — the classes a teacher teaches
 - [[mod-be-progress-store]] — where each class has reached in the programme
+- [[mod-be-programme-corpus]] — the ministry's transcribed programmes, and the wire projection
 - [[mod-be-admin]] — the operator's read surfaces
 
 ## Two service-wide rules this slice tightened

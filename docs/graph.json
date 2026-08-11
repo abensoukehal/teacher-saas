@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T09:08:21",
+  "generated_at": "2026-08-11T23:12:07",
   "nodes": {
     "cmp-be-admin-api": {
       "kind": "component",
@@ -79,6 +79,16 @@
       "status": "fresh",
       "repos": [
         "teacher-be@7b13f12"
+      ]
+    },
+    "cmp-be-programme-api": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "Programme endpoint",
+      "path": "docs/cmp-be-programme-api.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@65603d6"
       ]
     },
     "cmp-be-progress-api": {
@@ -227,6 +237,36 @@
         "teacher-fe@eadc55e"
       ]
     },
+    "cmp-fe-nav": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The nav row, and the three screens behind it",
+      "path": "docs/cmp-fe-nav.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@9cc9815"
+      ]
+    },
+    "cmp-fe-programme-bar": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The year at a glance",
+      "path": "docs/cmp-fe-programme-bar.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@9cc9815"
+      ]
+    },
+    "cmp-fe-programme-lib": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "The programme, as fe holds it",
+      "path": "docs/cmp-fe-programme-lib.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@9cc9815"
+      ]
+    },
     "cmp-fe-refine": {
       "kind": "component",
       "plane": "implementation",
@@ -263,6 +303,26 @@
       "status": "fresh",
       "repos": [
         "teacher-fe@eadc55e"
+      ]
+    },
+    "cmp-fe-tracker": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "«البرنامج» — the whole year",
+      "path": "docs/cmp-fe-tracker.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@9cc9815"
+      ]
+    },
+    "cmp-fe-week-card": {
+      "kind": "component",
+      "plane": "implementation",
+      "title": "«هذا الأسبوع» — the marked week",
+      "path": "docs/cmp-fe-week-card.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-fe@9cc9815"
       ]
     },
     "feat-admin-console": {
@@ -313,6 +373,14 @@
       "status": "fresh",
       "repos": []
     },
+    "feat-programme-surface": {
+      "kind": "feature",
+      "plane": "product",
+      "title": "The official programme, on screen",
+      "path": "docs/feat-programme-surface.md",
+      "status": "fresh",
+      "repos": []
+    },
     "feat-solution-sheets": {
       "kind": "feature",
       "plane": "product",
@@ -358,6 +426,14 @@
       "plane": "flow",
       "title": "Generating a draft exam",
       "path": "docs/flow-generate-exam.md",
+      "status": "fresh",
+      "repos": []
+    },
+    "flow-mark-a-week": {
+      "kind": "flow",
+      "plane": "flow",
+      "title": "Opening the tracker and marking a week done",
+      "path": "docs/flow-mark-a-week.md",
       "status": "fresh",
       "repos": []
     },
@@ -421,6 +497,16 @@
       "status": "fresh",
       "repos": []
     },
+    "mod-be-programme-corpus": {
+      "kind": "module",
+      "plane": "implementation",
+      "title": "Programme corpus",
+      "path": "docs/mod-be-programme-corpus.md",
+      "status": "fresh",
+      "repos": [
+        "teacher-be@65603d6"
+      ]
+    },
     "mod-be-progress-store": {
       "kind": "module",
       "plane": "implementation",
@@ -428,7 +514,7 @@
       "path": "docs/mod-be-progress-store.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@7b13f12"
+        "teacher-be@65603d6"
       ]
     },
     "mod-be-revision-store": {
@@ -478,7 +564,7 @@
       "path": "docs/mod-fe-exam-builder.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@eadc55e"
+        "teacher-fe@9cc9815"
       ]
     },
     "prod-exam-builder": {
@@ -496,7 +582,7 @@
       "path": "docs/svc-teacher-be.md",
       "status": "fresh",
       "repos": [
-        "teacher-be@7b13f12"
+        "teacher-be@65603d6"
       ]
     },
     "svc-teacher-fe": {
@@ -506,7 +592,7 @@
       "path": "docs/svc-teacher-fe.md",
       "status": "fresh",
       "repos": [
-        "teacher-fe@eadc55e"
+        "teacher-fe@9cc9815"
       ]
     }
   },
@@ -629,6 +715,21 @@
     {
       "from": "cmp-be-mutation-log",
       "to": "mod-be-progress-store",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-be-programme-api",
+      "to": "mod-be-class-store",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-programme-api",
+      "to": "mod-be-programme-corpus",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-be-programme-api",
+      "to": "mod-be-programme-corpus",
       "type": "part_of"
     },
     {
@@ -777,6 +878,51 @@
       "type": "part_of"
     },
     {
+      "from": "cmp-fe-nav",
+      "to": "cmp-be-programme-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-nav",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-nav",
+      "to": "cmp-fe-tracker",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-nav",
+      "to": "cmp-fe-week-card",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-nav",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-programme-bar",
+      "to": "cmp-fe-programme-lib",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-programme-bar",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-programme-lib",
+      "to": "cmp-be-programme-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-programme-lib",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "cmp-fe-refine",
       "to": "cmp-fe-exam-view",
       "type": "depends_on"
@@ -818,6 +964,41 @@
     },
     {
       "from": "cmp-fe-subject-list",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-tracker",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-tracker",
+      "to": "cmp-fe-programme-bar",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-tracker",
+      "to": "cmp-fe-programme-lib",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-tracker",
+      "to": "mod-fe-exam-builder",
+      "type": "part_of"
+    },
+    {
+      "from": "cmp-fe-week-card",
+      "to": "cmp-be-progress-api",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-week-card",
+      "to": "cmp-fe-programme-lib",
+      "type": "depends_on"
+    },
+    {
+      "from": "cmp-fe-week-card",
       "to": "mod-fe-exam-builder",
       "type": "part_of"
     },
@@ -1017,6 +1198,46 @@
       "type": "part_of"
     },
     {
+      "from": "feat-programme-surface",
+      "to": "cmp-be-programme-api",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "cmp-fe-nav",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "cmp-fe-programme-bar",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "cmp-fe-programme-lib",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "cmp-fe-tracker",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "cmp-fe-week-card",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "flow-mark-a-week",
+      "type": "realized_by"
+    },
+    {
+      "from": "feat-programme-surface",
+      "to": "prod-exam-builder",
+      "type": "part_of"
+    },
+    {
       "from": "feat-solution-sheets",
       "to": "cmp-be-corrections-endpoint",
       "type": "realized_by"
@@ -1197,6 +1418,41 @@
       "type": "step"
     },
     {
+      "from": "flow-mark-a-week",
+      "to": "cmp-be-programme-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-be-progress-api",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-fe-class-bar",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-fe-nav",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-fe-programme-bar",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-fe-programme-lib",
+      "type": "step"
+    },
+    {
+      "from": "flow-mark-a-week",
+      "to": "cmp-fe-tracker",
+      "type": "step"
+    },
+    {
       "from": "flow-refine-exercise",
       "to": "cmp-be-claude-runner",
       "type": "step"
@@ -1283,6 +1539,11 @@
     },
     {
       "from": "mod-be-claude-wrapper",
+      "to": "svc-teacher-be",
+      "type": "part_of"
+    },
+    {
+      "from": "mod-be-programme-corpus",
       "to": "svc-teacher-be",
       "type": "part_of"
     },

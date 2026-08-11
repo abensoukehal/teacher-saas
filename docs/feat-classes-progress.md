@@ -86,8 +86,10 @@ by one, and [[mod-be-teacher-store]], which now holds the school.
   mistake is permanent. A name made only of invisible characters (a pasted RLM or ZWSP)
   passes both stacks' `trim()` and produces a permanently blank tab — reproduced live.
 - **`POST /api/classes` is not rate limited**, unlike the auth routes.
-- **Per-week entries** (`planned · done · skipped` + a note) are stored and validated, but
-  nothing in the UI writes one yet — only the marked week.
+- ~~**Per-week entries** have no client~~ — **closed.** The tracker
+  ([[feat-programme-surface]]) writes `done` and `skipped` from «تمّ ✓» and «تخطٍّ ↷»,
+  verified live including upsert-by-week and a forged client `completedAt` being discarded.
+  A **note** is still rendered and never authored, and `planned` is still written by nothing.
 - **Nothing is auto-selected.** A teacher returning on a wiped browser gets their classes
   back with no tab selected, and a newly created class does not become the current one.
 
@@ -95,3 +97,5 @@ by one, and [[mod-be-teacher-store]], which now holds the school.
 - [[feat-teacher-accounts]] — the account these hang off; sign-up steps 3 and 4 run after it
 - [[feat-subject-library]] — the list a class switch re-scopes
 - [[feat-exam-generation]] — does not yet know about classes
+- [[feat-programme-surface]] — what a marked week now *means*, and the first client of the
+  per-week entries

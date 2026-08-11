@@ -4,8 +4,8 @@ id: mod-be-progress-store
 title: "Progress store"
 plane: implementation
 part_of: svc-teacher-be
-repos: [teacher-be@7b13f12]
-source: [teacher-be/src/store/progress.ts, teacher-be/src/store/programmes.ts]
+repos: [teacher-be@65603d6]
+source: [teacher-be/src/store/progress.ts]
 status: fresh
 last_verified: 2026-08-11
 tags: [backend, mongodb, programme, concurrency]
@@ -92,13 +92,26 @@ is not involved — that guards ~110-second agent loops from duplicate work.
 5. **Entries come out week-ASCENDING** whatever order they were written in, so no client
    sorts and two clients never disagree about the order of the same data.
 
-## The stream reader
+## The stream reader lives next door
 
-`getProgrammeForStream(db, stream)` — `findOne({streams, current: true})` over the
-`{streams: 1, current: 1}` index that already existed and had no reader. It is what
-validates a stream at class creation, what bounds a week at write time, and what tells the
-client the picker's range. Six streams resolve onto five documents; the lettres document
+`getProgrammeForStream(db, stream)` belongs to [[mod-be-programme-corpus]], not here. It is
+what validates a stream at class creation, what bounds a week at write time, and what tells
+the client the picker's range. Six streams resolve onto five documents; the lettres document
 carries two.
+
+**The week bound is the class's own document, and that is now a tested fact.** It used to be
+only a code fact: a mutant hardcoding `27` survived all 411 backend tests, because every
+corpus document says 27 and the oracle read `totalWeeks` off a response that always said so.
+A synthetic 30-week programme inserted directly by the suite closed it — the loader
+(correctly) refuses to make one, so the fixture has to bypass it. **A hardcoded 27 now fails
+five clauses**, and two further mutants proved the pins are independent rather than one broad
+clause catching everything: hardcoding the *entry* bound kills exactly two, hardcoding the
+wire projection's `totals.weeks` kills exactly one. The fixture is on a stream value no real
+document carries and is deleted in `afterAll`, with a final clause asserting the corpus's six
+streams are back.
+
+`totals.hours` has an asserting clause but no mutation proof — `weeks` was the survivor,
+`hours` was not.
 
 ## Components
 - [[cmp-be-progress-api]] — the HTTP surface over this module
@@ -108,4 +121,4 @@ carries two.
 - [[feat-classes-progress]] — where each class has reached
 
 ## Related
-- [[mod-be-class-store]] · [[svc-teacher-be]]
+- [[mod-be-class-store]] · [[mod-be-programme-corpus]] · [[svc-teacher-be]]

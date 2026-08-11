@@ -45,7 +45,10 @@ this file is stale.
 > scale — now ships (`solution-sheets`), and `accounts-hardening` added roles, an admin
 > console with per-exam KPIs, and bounds on the auth surface. As of 2026-08-11
 > (`classes-progress`, slice 1 of 7) **a teacher has classes and each class has its own
-> position in the official programme** — the spine every later prep surface reads. Sections still marked ★ PENDING are stubs on purpose — they
+> position in the official programme** — the spine every later prep surface reads. Same day
+> (`programme-surface`, slice 2 of 7) **that programme became visible**: one read route, a
+> nav row, «هذا الأسبوع» and «البرنامج», and the first client of the per-week entries.
+> Sections still marked ★ PENDING are stubs on purpose — they
 > get written from the real checkouts as work lands, not guessed ahead of it. See
 > `workflow/PROFILE.md` → "Greenfield deltas" for how the phases behave until then.
 
@@ -262,6 +265,8 @@ wrapper that does the generating.
 | `src/store/progress.ts` | the `progress` collection — the lazy read and the one-operation CAS |
 | `src/routes/classes.ts` | `/api/classes`, behind `requireTeacher` on the **prefix** |
 | `src/routes/progress.ts` | `/api/progress/:classId` — the one 404, and the bounds |
+| `src/routes/programme.ts` | `GET /api/classes/:classId/programme` — the read, and **its own ETag/304** |
+| `src/store/programmes.ts` | the corpus: the two readers, and `toProgrammeRecord` — the wire whitelist |
 | `src/mutationlog.ts` | one structured line per class/progress write, **including CAS losses** |
 | `agent/.claude/skills/<name>/SKILL.md` | **the capabilities themselves** — under `agent/`, NOT the repo root: `config.ts` points the CLI at `<repo>/agent` and `claude/skills.ts` lists `<cwd>/.claude/skills`. Adding a directory there IS the registration; `/api/skills` is that listing. |
 
@@ -276,6 +281,15 @@ answers, then fills each exercise concurrently) ·
 **`/api/progress/:classId`** (`GET` — synthesizes week 0 for a class never written to, and
 carries a live `programme {docKey, edition, totalWeeks}`; `PUT` — the compare-and-set, whose
 200 body carries **no** `programme`) ·
+**`GET /api/classes/:classId/programme`** (behind `requireTeacher`; returns the **whole
+projected programme document** for that class's stream, and answers **`304` with a zero-byte
+body on a matching `If-None-Match`**. The precondition is evaluated at the origin, by hand:
+Express's default ETag hashes the response body, and this body carries a per-request
+`correlationId`, which made the validator a **nonce** that could never match — so the tag is
+computed over the projection alone; and `fetch` forces `Cache-Control: no-cache` when a caller
+sets `If-None-Match`, which makes Express's `fresh()` refuse to revalidate, so the comparison
+happens in the handler. Neither is a cache: the `findOne` still runs every time. Note the same
+two causes mean **`GET /api/progress/:classId` still cannot 304**) ·
 `/api/subjects` (create — takes an optional `classId` · list, filterable with `?classId=` ·
 get · replace one exercise ·
 `GET /subjects/:id/exercises/:exerciseId/revisions` ·
@@ -418,6 +432,32 @@ and reports "repo not attached", which is harmless. Tests belong in
 > Black-box suites take their lane from `CHAR_BE_URL` / `CHAR_BE_LOG`, which `tools/ci`
 > derives from the checkout's own slot. **Never hardcode a port in a suite** — it will skip
 > forever on every other lane, which is indistinguishable from passing.
+>
+> ⚠ **`tools/ci be` from the clone root is currently UNTRUSTWORTHY, and the cause is engine,
+> not this product.** `maxWorkers: 1` keeps disappearing from
+> `tools/tests/jest.characterization.config.js`: added by WF-89, deleted by a pull, restored,
+> and **deleted again by the next pull within three hours** — comment and all. Without it the
+> promoted net runs on jest's default pool and reports a different failure count every run on
+> an unchanged tree (30 / 33 / 32 of 509 at the time of writing; 34 / 28 / 41 earlier). Forced
+> serial it is stable at 3 of 509, five runs byte-identical. Twenty-four of thirty failures
+> were manufactured by the pool — one black-box suite driving the live service while another
+> snapshots `run-log.jsonl`, and a loader suite dropping its scratch database in `beforeEach`
+> while a sibling's child process is using it. Filed as **WF-95** (the instance, whose durable
+> fix asserts the flag is present) and **WF-96** (the mechanism — a path-scoped pull takes
+> upstream's copy with no notion of newer). **The job gates are unaffected** and stay the real
+> evidence: run from the worktree with `--slug`.
+>
+> Two more promoted-net facts recorded while measuring that: one suite resolves its seed with
+> one `..` too many after promotion (right where authored, wrong where `tools/promote-tests`
+> puts it) and reads a nonexistent path; and one `auth-recover` clause does two scrypt hashes
+> against jest's 5 s default, so it times out under load.
+>
+> **A job lane cannot judge maths typography.** `tools/provision` symlinks the worktree fe's
+> `node_modules` to the main checkout's, Vite resolves KaTeX font URLs through the symlink to
+> the real path, and `server.fs` denies it — every `KaTeX_*` family 403s and all maths renders
+> in a browser fallback face. Glyphs, structure and error counts are unaffected, so every
+> recorded oracle still means what it said, but no lane screenshot shows the type a production
+> build would. Main-checkout fe is unaffected. Harness fix, not a product one.
 
 ## Ports and log stems (reserved)
 
@@ -578,6 +618,36 @@ indexes: { docKey: 1, edition: 1 } unique · { streams: 1, current: 1 } · { doc
 programme_revisions           ← append-only, mirroring exercise_revisions
 ```
 
+**The wire projection — `toProgrammeRecord`, a field-explicit WHITELIST built key by key.**
+Eight keys reach a client: `docKey · edition · weeklyHours · totals{weeks,hours} ·
+source{authority,title} · emphasisLegend{text,pdfPage}|null · units[{id,name}] ·
+weeks[{week,unitId,hours,pdfPages,rows[]}]`, each row `{competencies, contents, guidance,
+hours, emphasis}`. Anything unnamed is excluded by construction, and the oracle asserts
+key-set equality at three depths — a field arrives on the wire by amendment, never by
+passthrough.
+
+> **`units[].weeks` and `units[].hours` are deliberately NOT sent, and that is a correctness
+> exclusion, not a byte saving.** They are the summary table's numbers and **they disagree
+> with the week rows**. A bar segment is one unit **RUN** — a maximal stretch of consecutive
+> weeks sharing a `unitId` — not one per unit: maths yields **15 runs from 14 units**, because
+> `u12` is non-contiguous (week 20, `u11` at 21, `u12` again at 22–23). Sizing those runs by
+> the declared per-unit hours counts `u12`'s twice and sums to **210 against a 189-hour
+> total — 111%, a bar that overflows its own track**. Withholding the declared figures makes
+> the correct computation (run-summed `weeks[].hours`) the only one a client can perform;
+> shipping them "for completeness" hands a caller a plausible wrong number. The defect is
+> invisible on the three documents that happen to have no split unit.
+
+Also excluded, each for its own reason: `contentHash` (it hashes the STORED document while
+this emits a projection — a validator that had silently stopped validating);
+`transcriptionRev` (the one obvious use is diffing it against the class's stamp, which is the
+two-axes collapse below); `weekNumberPrinted` (equal to `week` in all 135 rows — it records a
+disagreement that does not exist); `nameText`/`weeksText`/`hoursText`;
+`source.file/pages/renderedAt` and `weeks[].source.docPages`; document-level `competencies`;
+`frontMatter`; and the storage bookkeeping. Row-level `competencies` is **in**: it is the
+densest field in the corpus (76 of 103 maths rows, against contents' 63 and guidance's 55),
+and excluding it renders four of week 20's seven ministry rows blank. Measured cost of
+including it: **+28%** — maths is 49,673 B projected.
+
 **Corpus as it stands: 5 documents · 6 streams · 135 weeks · 379 rows · 648 hours.**
 
 **The rules that shape it:**
@@ -627,6 +697,26 @@ programme_revisions           ← append-only, mirroring exercise_revisions
   structurally consistent and untampered relative to its own loader. **They certify nothing
   about whether any Arabic string matches the printed page.** Page fidelity rests on the
   independent human re-read and on sampling. Never quote a green as a fidelity certificate.
+- **The corpus has had one EDITORIAL RESTORATION, and it is the first.** `\square` was not a
+  misreading — it was a placeholder for double-struck set symbols **the source PDFs fail to
+  embed**. `pdftotext` on the ministry's own page finds *no character at all* where ℤ should
+  be, because the documents carry `Cambria`/`Calibri`/`Symbol`/`Arial`/`Arabic`/`Wingdings`
+  and no math font, while every other formula on the same page extracts cleanly. Whoever
+  transcribed it wrote a box because a box is what the page shows, and every reader sees one.
+  On **2026-08-11** all **61 occurrences across 48 strings in 3 documents** were restored
+  through the loader with `--correct`: `transcriptionRev` **4→5 · 3→4 · 4→5**, `edition`
+  untouched at `2022-09` on all five, `programme_revisions` **9 → 12**, A1–A8 green on each,
+  zero `\square` left corpus-wide. Document totals are unchanged — still 5 · 6 streams · 135
+  weeks · 379 rows. It is defensible only because the mathematics fixes each symbol uniquely,
+  and it was **not** safe to batch-replace: the same decoration means ℝ*₊ in week 8 and ℤ*₊ in
+  week 15. These 61 are now *our* symbols in a corpus whose whole point is that it is the
+  ministry's — so they head the human page-check queue, together with one still open: week
+  15's division theorem quantifies over `a` twice where the second variable is almost
+  certainly `b`. **That one must not be fixed the same way.** A restored glyph reproduces what
+  the page means to show; a wrong *letter* may be what the ministry actually printed, and
+  verbatim then means keeping it. Only the page can say. And the standing rule above is
+  unchanged by any of it: the verifier green that followed certifies structure and arithmetic,
+  never fidelity.
 - **`solutions` upserts** — one current correction per exercise. A history of corrections is
   deliberately out of scope; the exam's history is not.
 - **Classes are their own collection, not an array on `teachers`.** Both `progress.classId`
@@ -663,10 +753,17 @@ programme_revisions           ← append-only, mirroring exercise_revisions
   changes, and nothing compares on it — that is the two-version-axes rule above.
 - **`markedWeek`'s ceiling comes from the class's own programme**, read live through
   `getProgrammeForStream`. Every corpus document says 27 today, which is exactly what would
-  let a hardcoded 27 survive until the first one that doesn't. Note this is a **code fact,
-  not a tested one** on `be`: a mutant hardcoding 27 survives all 411 backend tests, because
-  the oracle reads `totalWeeks` off a response that always says 27. `fe`'s twin mutant IS
-  killed — its fixtures vary the ceiling.
+  let a hardcoded 27 survive until the first one that doesn't. **That pin is now closed on
+  `be` too** (`programme-surface`, be-2): a mutant hardcoding 27 used to survive all 411
+  backend tests, and now **fails 5 clauses**. The fixture is a synthetic `totals.weeks: 30`
+  programme **inserted directly into Mongo by the suite** — it cannot come through the loader,
+  because `WEEKS_PER_YEAR = 27` is enforced by the seed validator and those guards are
+  correct — on a stream value no real document carries, deleted in `afterAll`, with a final
+  clause asserting the corpus's six streams are back. Two further mutants proved the pins are
+  independent rather than one broad clause catching everything: hardcoding the *entry* bound
+  kills exactly 2, hardcoding the wire projection's `totals.weeks` kills exactly 1. `fe`'s
+  twin mutant is killed the same way, and `27` appears on zero lines of `lib/programme.ts`.
+  Still not mutation-proven: `totals.hours`.
 - **A class is never deleted, renamed or archived.** No route, no field, no store function.
   The design has no remove affordance on any screen.
 
@@ -749,10 +846,13 @@ plus `{op, subjectId}` link lines. It holds no teacher content and must not star
 | ~~Generation cost per subject~~ | **CLOSED.** `subjects.genCorrelationId` joins to `run-log.jsonl`'s `costUsd`. `/api/generate` needed no change: it already returned the envelope. |
 | ~~Failed saves~~ | **CLOSED.** A retryable failure queues to `teacher.pending.v1` and is **offered** on next load, never replayed silently — `create` is insert-only, so a silent double replay would make two exams. |
 | ~~A teacher's classes~~ | **CLOSED.** `classes`, one document per class, owner-scoped in the query. Declared at sign-up (step 3) or from «أقسامي». No update, delete or archive — a class made by mistake is permanent, and an invisible-only name (a pasted RLM/ZWSP) passes `trim()` on both stacks and makes a permanently blank tab. |
-| ~~Where a class has reached~~ | **CLOSED.** `progress`, one lazy document per class, compare-and-set on `rev`. Per-week `entries` are stored and validated but **no client writes one yet** — slice 1 sets `markedWeek` only. |
+| ~~Where a class has reached~~ | **CLOSED.** `progress`, one lazy document per class, compare-and-set on `rev`. Per-week `entries` now have a client too: the tracker's «تمّ ✓» / «تخطٍّ ↷» write `done` and `skipped`, verified live including upsert-by-week and a forged client `completedAt` being discarded. A **note** is still rendered and never authored, and nothing writes `planned`. |
+| ~~The programme itself~~ | **CLOSED.** `GET /api/classes/:classId/programme` serves the projected document, and «هذا الأسبوع» + «البرنامج» render it. Before this the corpus was loaded and **nothing served it** — the conformity claim had no surface. |
 | ~~The teacher's school~~ | **HALF closed.** Stored on `teachers` by `PUT /api/teacher/school`, and **read by nothing** — no route returns it, so «أقسامي» cannot show it. End to end it reads as "the setting does not work". The print sheet is what will read it. |
 | **A generated exam belongs to no class** | `subjects.classId` exists and generation never sets it, so every exam is legacy and appears under **every** class. Deliberate — tagging generation is a later slice — and it is the sharpest teacher-facing surprise the class layer ships. |
-| **A class's own stream list** | `fe` mirrors the six corpus streams by hand in `lib/classdraft.ts`; there is no `GET /api/streams`. Proven a live drift hazard: with a synthetic seventh-stream programme, `be` accepted a class the picker could not offer. Defensible only because `be` refuses an unknown value, so drift fails loudly. |
+| **A class's own stream list** | `fe` mirrors the six corpus streams by hand in `lib/classdraft.ts`; there is no `GET /api/streams`. Proven a live drift hazard: with a synthetic seventh-stream programme, `be` accepted a class the picker could not offer. Defensible only because `be` refuses an unknown value, so drift fails loudly. **Recorded a third time now** — the programme route is class-scoped precisely so `fe` never holds a second stream mapping, which makes this the only one left. |
+| **Ministry text in a `title` attribute** | Three surfaces speak only through an attribute, where KaTeX cannot run: the programme bar's unit name, and both emphasis markers' legend caption. Safe **today only because the data is safe** — no unit name and no legend contains `$`, measured — and the guard-rail sweep certifies current data only. It contradicts the rule those components state: the channel is chosen by **who wrote the string**, never by what this corpus contains. A future transcription with maths in a unit name leaks LaTeX source to a teacher, which is a hard-constraint violation. (Paired with: a `title` on a `div` is announced by nothing, so the fifteen unit names are unreachable non-visually. One fix retires both.) |
+| **`fe`'s programme types narrow `be`'s nullables** | `emphasisLegend` and `weeks[].unitId` are non-null in `fe/src/lib/programme.ts` and nullable on the wire. Unreachable against all five documents — but a legend-less document would **crash** `legend.text` rather than degrade. Widen in `fe`'s types, never by branching in the components. |
 | **Signing IN does not merge an anonymous session** | Open by design: adopting on sign-in would re-point subject documents. The displaced id is kept in `teacher.previous.v1` and the teacher is told in Arabic — the loss is visible and recoverable, not silent. |
 | **Accounts, billing, credits** | Accounts exist; billing and credits do not. |
 | **Backups / a deploy target** | Still nothing. See Deployments — and note the store now holds **credentials**, not just exam drafts. |

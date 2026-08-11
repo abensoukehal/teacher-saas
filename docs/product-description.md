@@ -103,7 +103,7 @@ runs September to June around three trimesters.
 |---|---|---|---|
 | **Late August / September** | Being assigned classes and streams. Getting oriented for the year. | Sign-up, pick stream(s) and school, see the whole official programme laid out as a plan rather than a lost PDF. Mark a starting position. | Sign-up SHIPS · profile + programme **DECIDED** |
 | **Weeks 1–2, September** | Diagnostic assessment (تقويم تشخيصي — the programme's own first week). | A short diagnostic series over last year's prerequisites. | **DECIDED** (J5, series) |
-| **Every week, all year** | Teaching a unit; preparing what to say; needing homework and classwork. | The week's content items as course sheets to prepare from, this week's exercise series (سلسلة تمارين) scoped to what has actually been taught, and **where the class stands against the schedule**. Mark the week done. | tracker + series **DECIDED** (J3/J5) · courses **DECIDED** (J8) · pacing **DECIDED** (§6h) |
+| **Every week, all year** | Teaching a unit; preparing what to say; needing homework and classwork. | The week's content items as course sheets to prepare from, this week's exercise series (سلسلة تمارين) scoped to what has actually been taught, and **where the class stands against the schedule**. Mark the week done. | tracker **SHIPS** (2026-08-11) incl. «تمّ ✓»/«تخطٍّ ↷» · series **DECIDED** (J5) · courses **DECIDED** (J8) · pacing **NOT BUILT and deliberately absent** — no calendar exists (§6.4) |
 | **Every 3–4 weeks** | Setting a devoir surveillé (~1h, narrow, recent material). | A devoir whose scope is derived from the last few weeks, not typed from memory. | Generation SHIPS · scope-from-progress **DECIDED** (J4) |
 | **December · March · May** | Trimester composition (~2h, everything so far). Highest-stakes prep of the trimester. | «اختبار الفصل الأول» as one choice: scope = weeks 1..N, weighting derived from hours actually spent, and **nothing the class has not reached**. Plus the model correction and the grading scale. | Generation + correction SHIP · derived scope **DECIDED** (J4) |
 | **Exam day** | Copying, invigilating a crowded room. | Multiple versions of the same paper — same questions, different numbers, shuffled order. | **DECIDED** (J7, independent) |
@@ -161,6 +161,14 @@ wrong screen for the other eight.
 Five destinations, one working surface. **The document view — exam, series or sheet — is where the
 teacher spends their time**; everything else is a route into or out of it. Note the generator is
 one box, not four: scope and format are its two inputs (§5b).
+
+> **As built, 2026-08-11:** the top row exists as a real nav row with **four** items —
+> «الرئيسية» (still the builder, still the landing view) · «هذا الأسبوع» · «البرنامج» ·
+> «الحساب». `امتحان جديد` and `مكتبتي` are **absent from it, not greyed**, and `سلسلة`,
+> `الدرس` and the scope/format box do not exist yet. Two departures from the diagram worth
+> knowing: home is the **builder**, not the week — the week is its own destination — and the
+> row appears only for a teacher with classes, with the two per-class items appearing only
+> once one is selected.
 
 ---
 
@@ -298,7 +306,7 @@ Screen order that respects the eight-second rule:
    > As built: no «رجوع» on this step (the screen upstream is the recovery code, shown once and gone). Classes are created one at a time in the order typed, because that order is the switcher's tab order. A row the server refuses keeps its text and gets its own Arabic reason; a row that succeeded is dropped, because creating is insert-only and re-sending is a second class. **A reload here loses what was typed** — the wizard is not persisted — and the browser Back button exits the app, because the wizard pushes no history.
 4. **School name**, optional-but-encouraged, because it goes on the printed header. Explain that: «سيظهر على الموضوع المطبوع». **Collected and stored — and read by nothing yet**, so it appears nowhere, including the account screen. Design the read before promising it back to the teacher.
    > **OPEN:** does the school belong to the *teacher* or to the *exam*? A teacher who moves schools, or writes for two, breaks the first model. The class model does not settle this. As built it is on the teacher.
-5. **Where has each class reached?** **SHIPS.** Per class, since they differ. Skippable per class, and settable later from the class's own surface on home — the tracker (§6.5) is not built. Asked here it makes the first home screen useful instead of empty, and it is the single most valuable thing a new teacher can do in their first minute.
+5. **Where has each class reached?** **SHIPS.** Per class, since they differ. Skippable per class, and settable later from the class's own surface on home, or from any row of the tracker (§6.5), which now ships. Asked here it makes the first home screen useful instead of empty, and it is the single most valuable thing a new teacher can do in their first minute.
    > As built: **skipping writes nothing at all.** A class nobody positioned simply has no stored position and reads back as week 0. Recording the skip as "week 0" would make "not started" and "started at zero" the same fact. And this step reuses the home surface at full size, so its heading and lede repeat once per class — the host hides them with styling; it wants a compact variant.
 
 **Deliberately not collected:** تقني رياضي speciality (all four share one maths programme),
@@ -313,13 +321,24 @@ teacher id that never expires and cannot be revoked.
 
 **States:** wrong password · unknown email · rate-limited (`429`, retryable — say when to try again) · recovery code already used · service down.
 
-### 6.4 Home — «هذا الأسبوع» — **today: a class switcher, a position, and a list. DECIDED: the week.**
+### 6.4 Home — «هذا الأسبوع» — **the week card SHIPS, as its own screen. The pacing line does not.**
 
-Today home is: a class switcher across the top, the selected class's position, the controls form
-and a list of saved exams. The switcher and the position ship; **the week card and the pacing
-line do not.** That is still the right screen for a generator and the wrong one for a companion,
-and **this is the anchor screen of the redesign** — the one that decides whether the product is
-opened weekly or three times a trimester.
+Today «الرئيسية» is: a class switcher across the top, the selected class's position, the
+controls form and a list of saved exams. **The week card now ships too — but as a second
+screen, «هذا الأسبوع» in a new nav row, not folded into home.** The builder stayed the landing
+view and its DOM is byte-identical to before.
+
+That split is as-built, not a decision this document made, and it is worth arguing before the
+redesign: home is still the right screen for a generator and the wrong one for a companion, and
+**this is the anchor screen of the redesign** — the one that decides whether the product is
+opened weekly or three times a trimester. Merging the two is a layout question now, not a
+build one.
+
+**What the nav row is.** Four items — «الرئيسية» · «هذا الأسبوع» · «البرنامج» · «الحساب». The
+row appears only for a teacher with classes, and the two middle items only once a class is
+selected. «إعداد موضوع» and «مكتبتي» are **absent, not greyed**: a disabled item is a promise
+with a date on it. There is still no router — the view is derived from the URL hash, so Back
+and Forward move the screen and `#/week` survives a refresh.
 
 **The class selector sits above everything — SHIPS.** Per §5b rule 4, a teacher has classes and
 each has its own position. Home shows one class, named the way the teacher names it («3ر1»,
@@ -351,15 +370,33 @@ As built:
   appears under every tab. That is the first thing a teacher trying the switcher will notice,
   and closing it is a later slice.
 
-**The week card — the largest thing on the screen.** Not a list item, not a stat tile: a card that
-reads like a page from their own planner.
+**The week card — SHIPS.** Not a list item, not a stat tile: a card that reads like a page from
+their own planner.
 
-- **Where the class is** — «الأسبوع 12 من 27», the unit («المحور: الدوال الأصلية والحساب التكاملي»), and a progress bar **over the programme, not over the calendar**. Position is what the teacher marked, never what the date implies.
-- **What this week contains** — the week's المحتويات المعرفية, listed. Each line is a content item, so each is a course, so each is one tap from targeted exercises. This is where the course layer earns its place on the home screen rather than in a menu.
-- **The السير المنهجي note for this week**, readable — the ministry's own guidance on how far to go and what not to ask. It is the most reassuring thing the product can put in front of a teacher, and it is currently nowhere in the UI.
-- **Two actions, in the teacher's language:** «سلسلة هذا الأسبوع» and «أنهيت هذا الأسبوع» (which advances the position and offers the next one).
+- **Where the class is** — «هذا الأسبوع — الأسبوع 8 من 27», the unit, and the segmented bar over the programme. **SHIPS.** Position is what the teacher marked, never what the date implies — nothing on this card reads a calendar.
+- **What this week contains** — the week's المحتويات المعرفية, listed. **SHIPS, as inert plain text.** No course link: courses are a later slice and the corpus has no stable id to address, so a link would be a promise addressed to nothing.
+- **The السير المنهجي note for this week**, readable. **SHIPS, verbatim through KaTeX**, with the ministry's own provenance line and the printed page it came from, both from the wire rather than written into the markup. It is the most reassuring thing the product can put in front of a teacher, and it was nowhere in the UI until now.
+- **Two actions:** «أنهيت هذا الأسبوع ✓» **SHIPS** (it advances the position, records the week as `done`, and the next week becomes current). «سلسلة هذا الأسبوع» is **absent** — generation against a week is a later slice, and an absent action is honester than a greyed one.
 
-**Pacing — «هل أنا متأخر؟» — the second-largest thing on the screen.**
+**Three things the as-built card does that the design above did not say:**
+
+- **A week is `rows[]`, not one row.** Real week 20 of the maths document has **seven** rows. Rendered as one contents list and one guidance paragraph, three of those seven are silently blank and the densest field in the corpus — الكفاءات المستهدفة, 76 of 103 maths rows — never appears at all. So the ministry's three columns are the card's three columns, and every row renders. An empty column renders **nothing**, because a labelled void reads as «the ministry said nothing here».
+- **Three registers, marked.** Theirs, verbatim and unmarked. Ours, marked ✎ — and exactly one figure wears it, hours-to-date. The teacher's own — their week, their «أنهيت» — wears no ✎, because marking their decision as ours is the product taking credit for it.
+- **At week 0 the card is replaced by the question**, «أين وصل هذا القسم؟» plus a way to the tracker. No week content, no bar, no pacing.
+
+**Pacing — «هل أنا متأخر؟» — the second-largest thing on the screen. NOT BUILT, and the
+absence is deliberate.**
+
+> **As built, 2026-08-11: there is no pacing marker and no pacing sentence anywhere.** Not
+> deferred as polish — there is **no calendar in this product and the corpus carries no date
+> of any kind**, so the marker's position has no data source. In the prototype the
+> "do we have a reference schedule?" test is *literally the same expression* as "does this
+> class have a position?", with `expected = 12` written into the source. Shipping it would put
+> an invented reference on the one screen whose whole promise is that the numbers are the
+> ministry's. A field on `progress` is ruled out separately (§5b rule 5: a calendar is one per
+> teacher-year, not one per class). Both new screens are pinned against it — eleven phrases
+> the prototype's pace line can produce are asserted absent from the DOM *and* from every
+> attribute, at four different positions.
 
 A teacher wants to know whether they are **behind or ahead of the programme**. It is the first
 thing the product says that they cannot easily work out themselves: position they already know,
@@ -370,10 +407,26 @@ trimester.
 - **The line itself:** «متأخرون بأسبوعين عن التوزيع» / «في الموعد» / «متقدّمون بأسبوع». Neutral, factual, no colour-coding that reads as a grade.
 - **And the bar** — see below. The gap between two markers on one bar *is* the pacing; the sentence names it, the bar shows it.
 
-#### The progress bar — one bar, two markers
+#### The progress bar — one bar, two markers · **SHIPS with one marker; the second has no data**
 
 The primary instrument on home and along the top of the tracker. It carries both facts at once:
 how far through the programme this class is, and how that compares to the schedule.
+
+> **As built:** the unit-segmented bar ships on both new screens, sized by hours exactly as the
+> rules below require — but with **the fill only**. No second marker, no gap, no number, no
+> text of any kind (the component renders zero text nodes, so there is nowhere for a pace
+> sentence to appear). That is the last rule below — «no reference schedule → no marker» —
+> applied, not a shortcut.
+>
+> One correction the corpus forced: **a segment is a unit RUN, not a unit.** Units are
+> non-contiguous, so maths draws **15 segments from 14 units**. Sizing them by the units'
+> own declared hours double-counts the split one and sums to **210 of 189 — 111%, a bar
+> overflowing its own track** — and it is exact on the three documents that happen to have no
+> split unit, so the bug is invisible on three of five. The run's own weeks are the size.
+>
+> At week 0 the segmented track still draws and **no fill element exists at all** — not a
+> zero-width one. The ministry's year has a shape and showing it is information; what is
+> absent at week 0 is the *comparison*.
 
 ```
     ← RTL: the programme starts at the RIGHT and fills leftward →
@@ -402,13 +455,15 @@ how far through the programme this class is, and how that compares to the schedu
 
 | place | form |
 |---|---|
-| **Home** | Full bar, unit-segmented, both markers, the pacing sentence beneath it. The second-largest thing on the screen. |
-| **Tracker** | The same bar pinned along the top as the spine of the week list, so a row's position in the year is always visible while scrolling. |
-| **Class switcher** | One thin bar per class, no segments — so a teacher sees at a glance that 3ر1 is fine and 3ع2 is three weeks behind. This is the strongest argument for the whole class model being visible in the UI. |
+| **Home** | Full bar, unit-segmented, both markers, the pacing sentence beneath it. **As built: on «هذا الأسبوع», not on the builder, and fill only — no marker and no sentence. It is hidden entirely at week 0**, where the invitation takes its place. |
+| **Tracker** | The same bar along the top as the spine of the week list. **Ships, but NOT pinned.** Sticky it covered a quarter of a 900-px workspace and hid the very band the mount scroll had just landed on. Pinning the *bar alone* — without the provenance line and hours-to-date coming with it — needs a structural split; worth doing, and a real loss until then. |
+| **Class switcher** | One thin bar per class, no segments — so a teacher sees at a glance that 3ر1 is fine and 3ع2 is three weeks behind. **Ships as position only**, since there is no pacing to compare against. This is the strongest argument for the whole class model being visible in the UI. |
 
-**Per-unit bars, in the tracker:** each unit also gets its own small bar — hours done against the
-ministry's budget for it. That is where «متأخرون» becomes actionable: it names *which* unit ran
-long.
+**Per-unit bars, in the tracker: NOT BUILT.** Each unit also getting its own small bar — hours
+done against the ministry's budget for it — is where «متأخرون» becomes actionable: it names
+*which* unit ran long. Note it would need the corpus's declared per-unit hours, which are
+deliberately **not** on the wire because they disagree with the week rows; a per-unit bar has
+to be sized from the run's own weeks like the main bar is.
 - **Then be useful, immediately.** Behind → what to compress, and an exam scope that already reflects reality. Ahead → the next unit's material, offered now. **Ahead is easy to forget and just as real.**
 - **It feeds everything else.** Pacing is the input to every recommendation: what the composition can cover, whether this week's series should be lighter, which units are at risk.
 
@@ -439,34 +494,58 @@ in one tap. This is a strip, not the page.
 **Design note:** everything else in the product is reachable from a menu. The position line is the
 only thing that earns a weekly open, so it gets the weight.
 
-### 6.5 The programme tracker — «البرنامج» — **DECIDED (J3), not built**
+### 6.5 The programme tracker — «البرنامج» — **SHIPS (2026-08-11)**
 
 The ministry's own week-by-week table, rendered as something a teacher works with instead of a
-PDF they lose. This is the surface that earns weekly opens and it does not exist yet.
+PDF they lose. This is the surface that earns weekly opens, and it now exists: all 27 weeks of
+the selected class's own document, with the segmented bar above them.
 
 **Structure per row (the ministry's own columns — keep the names):**
 
 `الأسبوع · المحور · الكفاءات المستهدفة · المحتويات المعرفية · السير المنهجي لتدرج التعلمات · الحجم الساعي`
 
-**السير المنهجي is the richest column in the corpus** and nothing in the product can currently
-express any of it. It carries precise level and explicit prohibitions, e.g.
+**السير المنهجي is the richest column in the corpus**, and as of 2026-08-11 the product finally
+shows it — on both the week card and the tracker, verbatim, with its printed page. It carries
+precise level and explicit prohibitions, e.g.
 «الدوال الناطقة (حاصل قسمة كثير حدود من الدرجة 2 أو 3 على كثير حدود من الدرجة 1 أو 2)» and
 «لا تُختار مسألة البحث في إثبات استمرارية دالة». Design it as readable guidance, not a
 collapsed detail nobody opens — it is the reason a teacher trusts the generated paper.
 
+As shipped it is **paragraphs, not a clause**: median 96 characters, longest 432, up to three
+strings per row across up to seven rows, and 36 of 103 maths rows carry maths inside it (219
+`$…$` spans in guidance alone). It goes through KaTeX inside RTL prose — measured on the 432
+-character worst case: 12 maths islands, 0 render errors, every line reading right to left in
+order, no horizontal overflow.
+
+**Nothing here reaches generation yet.** The tracker and the exam generator read *different*
+corpora: the generator reads a curriculum reference file that exists only for شعبة الرياضيات,
+while these screens read the transcribed التدرج السنوي for all six streams. So a teacher can
+see the ministry's prohibitions for their week and the generator still cannot.
+
 **What the teacher does here:**
 
-- Sees the units, their week budgets and hours, grouped as the ministry groups them.
-- **Marks where they are.** Per week: `planned · done · skipped`, plus a free note («الصف تأخر أسبوعا», «فصل صعب»). Marking is per class — the tracker shows one class at a time and switching is a full context change.
-- **Sees the pacing along the spine** — where the reference schedule says they'd be versus where they marked, rendered along the weeks rather than as a separate chart. §6.4 carries the rules; they apply identically here.
-- From any week: open a content item's course, generate that week's series, or start an exam scoped to weeks 1..here.
+- Sees the units, their week budgets and hours, grouped as the ministry groups them. **SHIPS.**
+- **Marks where they are.** **SHIPS, partly:** «تمّ ✓» writes `done`, «تخطٍّ ↷» writes `skipped`, and both advance the position one week (clamped at the last). «وصلنا هنا» on any other row re-positions without annotating. **`planned` is written by nothing, and a note is rendered but never authored** — there is no note input in this slice. Marking is per class, and switching is a full context change that keeps the current screen.
+- **Sees the pacing along the spine** — **NOT BUILT**, and deliberately: see §6.4. No marker, no sentence, no percentage of the year done.
+- From any week: open a content item's course, generate that week's series, or start an exam scoped to weeks 1..here. **NONE of these ship.** Contents are inert plain text, and «سلسلة الأسبوع» and «تمارين دعم على هذا المحور» appear nowhere — absent, not greyed.
+
+**As built, and it differs from the design above in ways worth designing around:**
+
+- **A week is `rows[]`, so the tracker is not a table with one row per week.** Three of the design's five columns are week-scoped and two are row-scoped, so each week is a **band** and the row-scoped pair repeats *inside* it as a nested sub-grid — a week's per-row hours stacking in one column with the week's own total at the foot. Week 20 is seven rows of one hour under a seven-hour total, so «the rows sum to the week» is something the teacher can see rather than something we assert.
+- **It is enormous, and that is why it collapses.** Fully open the maths tracker measures **28,194 px — about 39 screens** (the earlier ~8,060 estimate measured a flat layout without the ministry's three columns). Band heights range 12.6× between a one-row and a seven-row week. **So every band ships collapsed to one summary line**, the current week mounts open, any band the teacher opens stays open, and the marked week is scrolled to on mount. Collapsed the page is 3,544 px — an 8× reduction. A folded band's rows are *absent from the page*, not merely hidden.
+- **Emphasis is provenance, never status.** An `added-2022` row gets a muted «✱» in ink, and the caption quotes **the ministry's own legend verbatim** («تم ادراج ما هو ملّون باللون الأحمر لعدم تناوله في السنة الدراسية 2022-2021») with its page number, from the wire rather than as a UI string. **Never red.** Red is ruled out twice over: `--danger` is reserved for true errors, and the product never grades.
+- **`red-unlegended` occurs zero times in all five documents.** Corpus-wide the distribution is `normal 358 · added-2022 21 · red-unlegended 0`. The type is kept and no branch was built for it — anything built would be untestable against real data. Rule 4 below still stands as a rule; its "unlegended red" case is currently empty as transcribed.
+- **No pacing marker and no pacing sentence.** Repeated here because it is the single largest visible difference from the design, and it is not a gap: there is no calendar and the corpus carries no date.
+- **The teacher's own note is rendered as plain text, never through the maths renderer** — it pairs `$` characters and would silently corrupt «من 5 $ إلى 9 $ دينار». One channel per author: the ministry's strings through KaTeX, the teacher's never.
+- **Below 820 px the band becomes one column.** At 414 px the fixed tracks had squeezed the ministry's content column to zero width — nothing overflowed, the words simply stopped being on screen, on the surface whose whole job is showing them.
+- **Two known rough edges.** The mount scroll centres the band, so on a tall week the week number, the status tag and both buttons land above the fold and the teacher arrives mid-paragraph. And after re-positioning *backwards*, weeks ahead of the new mark keep their «منجز» tags — truthful, since nothing is deleted, but the teacher sees "done" weeks in their future.
 
 **Four rules that are load-bearing and must survive the design:**
 
-1. **The teacher's marked position is the truth — never the calendar.** Classes fall behind, schools lose weeks, teachers reorder units. A product that assumes "it's December, so week 12" is confidently wrong for most real classrooms. The calendar produces a *default*, never a fact.
-2. **The official text is shown verbatim.** Never paraphrased, never summarised. The product's value here is precisely that it is not the author of the programme.
-3. **Anything derived is visibly marked as derived** — inferred weights, mappings onto the product's own topic names, trimester boundaries. The corpus itself has no trimester grouping; inventing one is invention.
-4. **⚠ Red text in the ministry documents is semantic.** In at least two streams a legend says red marks content not covered in 2021–2022 (post-COVID catch-up). The maths document has red blocks with no legend on the page. Whatever the design does with emphasis, it must **carry it, not flatten it** — and unlegended red must be marked unknown, never guessed.
+1. **The teacher's marked position is the truth — never the calendar.** Classes fall behind, schools lose weeks, teachers reorder units. A product that assumes "it's December, so week 12" is confidently wrong for most real classrooms. The calendar produces a *default*, never a fact. **Held: nothing on either screen reads a date.**
+2. **The official text is shown verbatim.** Never paraphrased, never summarised. The product's value here is precisely that it is not the author of the programme. **Held, and it is executable:** the wire is byte-compared to the store, and the components are asserted to contain none of the ministry's strings and no remapping of any symbol in them.
+3. **Anything derived is visibly marked as derived.** **Held, with a third register the two-rule version could not state:** theirs (unmarked, verbatim), ours (**✎** — the bar's run boundaries and their sums, hours-to-date), and **the teacher's own** (their position, their «تمّ ✓», their note — unmarked, and attributed to them in words). A ✎ on a teacher's decision would be the product taking credit for it. The tracker's footer says all three.
+4. **⚠ Red text in the ministry documents is semantic.** In at least two streams a legend says red marks content not covered in 2021–2022 (post-COVID catch-up). Whatever the design does with emphasis, it must **carry it, not flatten it** — and unlegended red must be marked unknown, never guessed. **Held: carried as muted provenance quoting the legend, never as red and never as status.** Correction to this rule's premise: **as transcribed, the maths document has no unlegended red** — all five documents carry the legend, and `red-unlegended` appears zero times corpus-wide.
 
 **Weeks are not integers** — `أسبوع ونصف`, `أسبوعان ونصف`, `3 أسابيع ونصف` all appear. Units repeat
 and are non-contiguous. Do not draw a clean 1..27 stepper and assume the data fits it.
@@ -730,7 +809,7 @@ Design each of these; they are all reachable.
 | Wrong password / bad recovery code | Say which, without revealing whether the account exists more than the product already does. | — |
 | Too many attempts | Wait, and say roughly how long. | Yes, later |
 | Same exercise being refined twice | Not an error — reassurance. «التمرين قيد الكتابة الآن.» | — |
-| The same class's position moved somewhere else while they were choosing | Their view is stale, and only they can decide again. **Ships:** the surface re-reads and re-asks — «تغيّر موقع هذا القسم في مكان آخر… أعد الاختيار.» The write is never silently resent. | Re-choose, not retry |
+| The same class's position moved somewhere else while they were choosing | Their view is stale, and only they can decide again. **Ships:** the surface re-reads and re-asks — «تغيّر موقع هذا القسم في مكان آخر… أعد الاختيار.» The write is never silently resent. **In the tracker the re-ask happens AT THE ROW that lost** — no banner, other rows untouched — and this stopped being an edge case: the tracker makes many small writes where the position card made one per session. | Re-choose, not retry |
 | The class no longer resolves (gone, or never theirs) | Generic and identical either way — existence must not be probeable. | No |
 | Request too large / malformed | Rare, developer-facing. Generic, apologetic, no code. | — |
 
@@ -815,8 +894,8 @@ The designer needs these because they are visible, not internal:
 10. **The course layer is IN** (decided 2026-08-10, reversing the recorded exclusion). Each content item in a week gets an authored course with a sheet — high-level explanation, demonstration, equations. Stored separately from the ministry corpus and visibly marked as ours. Sheet contents are still to be detailed.
 11. **Progress is per class**, not per teacher — §5b rule 4. Sign-up collects classes; every generation is for a class.
 12. **One scope selector, four scopes** — course · week · unit · progress-to-date — feeding one generator, with format as an independent choice.
-13. **Pacing is a named feature**, not a chart: the teacher is told whether they are behind or ahead, shown as one bar with two markers (§6.4). Informational only — the marked position stays the truth, the reference calendar is teacher-made and never authoritative, and the product never grades.
-14. **Conformity to the official programme is the lead value**, and it must be *shown* — source named on the artifact, ministry wording visible, scope and exclusions stated, authored material marked as ours. The word "AI" appears nowhere in the UI.
+13. **Pacing is a named feature**, not a chart: the teacher is told whether they are behind or ahead, shown as one bar with two markers (§6.4). Informational only — the marked position stays the truth, the reference calendar is teacher-made and never authoritative, and the product never grades. **Still decided, still unbuilt — and as of 2026-08-11 shipped as a deliberate absence**: the bar draws its fill and no marker, and no screen carries a pacing sentence, because there is no calendar and the corpus has no date. This stays a decision waiting on J6, not a gap in the tracker.
+14. **Conformity to the official programme is the lead value**, and it must be *shown* — source named on the artifact, ministry wording visible, scope and exclusions stated, authored material marked as ours. The word "AI" appears nowhere in the UI. **First actually shown 2026-08-11** (§6.4, §6.5): the ministry's own words, its own provenance line and the printed page number all come from the data rather than from UI literals, and three registers are visible on the page — theirs unmarked, ours ✎, the teacher's own attributed to them.
 
 **OPEN — do not draw as settled**
 
