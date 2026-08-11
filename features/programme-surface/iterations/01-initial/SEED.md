@@ -151,6 +151,16 @@ the two-axes rule working: our reading changed, the ministry's programme did not
 `verify-programmes --db teacher_saas --docKey …` reports **A1–A8 · 8 passed / 0 failed** on
 each, and zero `\square` remain anywhere in the corpus.
 
+**A SECOND transcription question, found by the QA gate and deliberately NOT fixed.** Week 15's
+Euclidean-division theorem reads «من أجل $a \in \mathbb{Z}$ و $a \in \mathbb{Z}_{+}^{*}$ … حيث
+$a = b q + r$ و $0 \le r \le b$». The second variable is almost certainly **`b`** — the statement
+quantifies over `a` and `b`, and `b` is what the rest of the sentence uses. **This is a different
+class of defect from the restored glyphs and must not be fixed the same way.** A `\square` was a
+placeholder for a character the source PDF could not render — restoring it reproduces what the page
+means to show. A wrong *letter* may be what the ministry actually printed, and «verbatim» then means
+keeping it. Only the page can say which. It is first in the human page-check queue, with the restored
+symbols.
+
 **What is still true and must not be forgotten:** a verifier green certifies structure and
 arithmetic, never page fidelity. These 61 are now *our* symbols, restored on mathematical
 grounds, in a corpus whose whole point is that it is the ministry's words. They are the
