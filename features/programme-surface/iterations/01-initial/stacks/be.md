@@ -295,3 +295,77 @@ fixture lives and dies inside Mongo and this suite.
 programme-surface` green · the promoted `project/tests/be` net still green. Ask-when:
 class creation refuses the synthetic stream (the corpus-validation contract moved) ·
 the synthetic insert trips any guard other than the ones named · budget blown.
+
+---
+
+```yaml
+---
+kind: sub-issue
+id: be-3
+parent: i1
+stack: be
+status: todo
+depends_on: [be-1]
+estimate: S
+---
+```
+
+### be-3 — main's promoted gate is red, and one comment argues with its own file
+
+**status:** todo · **tag:** hardening
+
+**Intent.** Two defects the be-1 verifier found, neither of them be-1's fault, both worth
+closing here because the first one blocks honest verification for **every** later slice.
+
+**1 · `tools/ci be` from the clone root is `gate FAIL` on `main` today.** Slice 1 added the
+`classes` and `progress` collections; three clauses in the **promoted** net enumerate the
+database's collections and were recorded before those existed:
+
+```
+project/tests/be/programme-corpus/loader.characterization.test.js:562
+project/tests/be/programme-corpus/programmes-store.characterization.test.js:665
+project/tests/be/programme-corpus/verifier.characterization.test.js:609
+    "teacher_saas is untouched by this suite" / "holds the same collections before and after"
+    → fails with  + "classes", + "progress"
+```
+
+Proven pre-existing, not caused by this job: the verifier ran the same suites against base
+`7c18729` and got **byte-identical** results on both sides. A red mainline gate means no later
+slice can tell its own regression from this one.
+
+**2 · `src/routes/programme.ts:22-23` contradicts the rest of its own file.** The comment
+still carries the pre-fix reasoning — *"Express's default ETag already answers a repeat visit
+with a zero-byte 304"* — which the two long comments ~100 lines below prove false twice over.
+be-1 amended the contract and left the code comment repeating the disproved claim.
+
+**Ground truth (recorded 2026-08-11).**
+```
+tools/ci be                     (from the clone root)  → gate FAIL, 28 failed / 481 passed
+tools/ci be --slug programme-surface  (from be wt)     → gate PASS, 49/49
+sed -n '20,26p' src/routes/programme.ts                → the stale sentence
+```
+
+**Delta (freeze).** May touch: the **three named clauses** in `project/tests/be/programme-corpus/`
+(this is a **WF-65 declared supersession** of a promoted oracle — declare it in the journal:
+which clause, why, what did not change), and the comment block at
+`src/routes/programme.ts:20-26`. **Frozen:** every other promoted clause · all product code
+except that comment · the corpus and its loader · `WEEKS_PER_YEAR` and the seed validator.
+
+**The amendment must not weaken.** Those clauses exist to catch a suite that writes to the
+product database. Keep them asserting exact collection-set equality — widen the *expected set*
+to include `classes` and `progress`, never relax the comparison to a subset check. If the
+right fix is to assert "this suite added nothing" by diffing before/after within the run
+rather than against a hardcoded list, that is stronger and preferred — say which you chose.
+
+**Oracle.** `tools/ci be` from the **clone root** goes green, and `tools/ci be --slug
+programme-surface` stays green. Add one clause to this slice's own suite asserting the
+programme route's comment block and its behaviour agree — or, if that is untestable, state so
+and rely on the diff. Negative: the three amended clauses must still go **red** if a suite
+actually creates a collection — prove it by planting one temporarily.
+
+**Boundaries.** Budget 6. Do not fix the other pre-existing reds in the mainline net unless
+they are the same root cause; report them instead.
+
+**Exit protocol.** Done-when: `tools/ci be` green from the clone root · this slice's gate
+still green · the supersession declared · freeze audit. Ask-when: a promoted clause turns out
+to be red for a *different* reason · the amendment cannot keep exact-set semantics.
