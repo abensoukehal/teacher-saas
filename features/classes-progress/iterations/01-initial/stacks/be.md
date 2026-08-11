@@ -382,7 +382,7 @@ kind: sub-issue
 id: be-5
 parent: i1
 stack: be
-status: todo
+status: done
 depends_on: [be-1, be-2, be-3]
 estimate: M
 ---
@@ -390,7 +390,7 @@ estimate: M
 
 ### be-5 — the perimeter drill: probes, abuse, and log truth under fire
 
-**status:** todo · **tag:** hardening
+**status:** done · **tag:** hardening
 
 **Intent.** The new surfaces hold credentialed-adjacent data behind a bearer id with no
 rate limiting (inherited knowingly) — so what CAN be verified must be: existence is not

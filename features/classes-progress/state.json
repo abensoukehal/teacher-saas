@@ -43,7 +43,7 @@
           "tag": "happy-path"
         },
         "be-5": {
-          "status": "todo",
+          "status": "done",
           "tag": "hardening",
           "depends_on": [
             "be-1",
