@@ -94,8 +94,21 @@ const PROGRESS_KEYS = [
  * `toSummary`'s recorded key set (`subjects.ts:189-202`), SEED §3. Pinned here so that a
  * `classId` key arriving early — it belongs to be-3, not to this sub-issue — reads as this
  * slice leaking into a surface it was frozen out of.
+ *
+ * ── AMENDED BY be-3 (WF-65, declared supersession) ────────────────────────────────────
+ * `classId` has now arrived, on time and by charter: adding exactly this one key to
+ * `toRecord` and `toSummary` IS be-3's declared scope (stack spec be-3 Delta; contract §5,
+ * "Projections"). The clause above was a TEMPORAL guard — "not yet, and not from be-2" —
+ * and be-3 is the sub-issue it was waiting for.
+ *
+ * What is amended is the expected SET, never the assertion: the clause below still demands
+ * exact set equality, so a second key, a leaked `teacherId` or a dropped `topic` is as red
+ * as it ever was. be-3's own suite pins the same key set independently
+ * (`subjects-classid.characterization.test.js`, "the perimeter"), so the invariant is now
+ * held in two places rather than relaxed in one.
  */
 const RECORDED_SUMMARY_KEYS = [
+  "classId",
   "costUsd",
   "createdAt",
   "durationMs",
@@ -1060,9 +1073,10 @@ describeIfLane(BE, "be-2 — progress: synthesized on read, compare-and-set on w
       expect(body.routes.length).toBe(RECORDED_ROUTES.length + 1);
     });
 
-    test("GET /api/subjects still answers the recorded key set, with NO classId", async () => {
-      // `classId` on a subject is be-3's, not this sub-issue's. A key appearing here would
-      // mean this slice leaked into a surface it was frozen out of.
+    test("GET /api/subjects still answers the recorded key set, and only that", async () => {
+      // `classId` on a subject is be-3's, not this sub-issue's — see the amendment note on
+      // RECORDED_SUMMARY_KEYS. Any OTHER key appearing here would still mean a slice leaked
+      // into a surface it was frozen out of.
       const teacher = await mintTeacher();
       const empty = await call("GET", "/api/subjects", { teacher });
       expect(empty.status).toBe(200);

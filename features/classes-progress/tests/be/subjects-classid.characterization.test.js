@@ -192,6 +192,14 @@ describeIfLane(BE, "be-3 — subjects.classId: additive, allow-listed, legacy-in
       if (PLANTED_SUBJECTS.length > 0) {
         await db.collection("subjects").deleteMany({ _id: { $in: PLANTED_SUBJECTS } });
       }
+      // SWEEP BY OWNER, not only by tracked id. Half of this suite POSTs subjects it
+      // EXPECTS to be refused, and a tracked-id list only ever learns about the ones that
+      // came back 201 — so on a red run, where a refusal wrongly succeeds, the litter is
+      // exactly the documents nothing knows to remove. Every subject this suite can create
+      // belongs to a teacher it minted, so the owner is the complete key.
+      if (MINTED_TEACHERS.length > 0) {
+        await db.collection("subjects").deleteMany({ teacherId: { $in: MINTED_TEACHERS } });
+      }
       if (PLANTED_CLASSES.length > 0) {
         const ids = PLANTED_CLASSES.map((o) => o.toHexString());
         await db.collection("progress").deleteMany({ classId: { $in: ids } });
