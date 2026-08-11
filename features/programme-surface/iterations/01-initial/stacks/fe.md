@@ -346,7 +346,7 @@ kind: sub-issue
 id: fe-4
 parent: i1
 stack: fe
-status: todo
+status: done
 depends_on: [fe-1, fe-2]
 estimate: L
 ---
