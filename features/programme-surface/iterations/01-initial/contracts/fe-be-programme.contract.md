@@ -210,6 +210,16 @@ segment fill = Σ week.hours where week.week ≤ markedWeek, within the run ÷ r
 - Fill direction is RTL — the document's own direction, no physical side pinned
   (the `ClassBar` rail precedent, `ClassBar.tsx:56-62`).
 - `markedWeek: 0` → **zero fill and no invented pacing** (slice 1 §7.2 carries over).
+
+> **Settled at fe-2 (the component asked rather than guessed).** «No pacing» does **not**
+> mean «no bar». At `markedWeek: 0` the segmented track still renders — the segments are the
+> ministry's own year, and showing its shape is information, not a judgement — but **no fill
+> node exists in any segment**, matching `railPercent`'s slice-1 ruling that a fill width is
+> `null` rather than `"0%"` («a 0% fill is still a fill»). What must be absent at week 0 is
+> the *comparison*: no marker, no pace sentence, no percentage of the year «done».
+> **The hosts decide whether the bar appears at all** — the tracker shows it, and the home
+> week card shows the «أين وصل هذا القسم؟» invitation instead. That is a host decision in
+> fe-4/fe-5, not a branch inside the component.
 - **No accent marker, no expected week, no pacing sentence — ship the absence** (§6).
 
 ## 5 · The write — «تمّ ✓» / «تخطٍّ ↷» over slice 1's PUT, unchanged on the wire
